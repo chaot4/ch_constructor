@@ -114,6 +114,8 @@ void Graph<Node, Edge>::initOffsets()
 
 	std::sort(_out_edges.begin(), _out_edges.end(), OutEdgeSort());
 	std::sort(_in_edges.begin(), _in_edges.end(), InEdgeSort());
+	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
+	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), EdgeSortTgt<Edge>()));
 
 	std::vector<uint> out_edge_count(_nr_of_nodes, 0);
 	std::vector<uint> in_edge_count(_nr_of_nodes, 0);

@@ -75,7 +75,6 @@ struct Edge
 
 	void read(std::stringstream& ss);
 	NodeID otherNode(EdgeType edge_type);
-	bool operator<(Edge const& edge) const { return src < edge.src; }
 };
 
 void Edge::read(std::stringstream& ss)
@@ -127,8 +126,7 @@ struct EdgeSortSrc
 {
 	bool operator()(Edge const& edge1, Edge const& edge2) const
 	{
-		return edge1.src < edge2.src ||
-			(edge1.src == edge2.src && edge1.tgt < edge2.tgt);
+		return edge1.src < edge2.src;
 	}
 };
 
@@ -137,8 +135,7 @@ struct EdgeSortTgt
 {
 	bool operator()(Edge const& edge1, Edge const& edge2) const
 	{
-		return edge1.tgt < edge2.tgt ||
-			(edge1.tgt == edge2.tgt && edge1.src < edge2.src);
+		return edge1.tgt < edge2.tgt;
 	}
 };
 
