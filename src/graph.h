@@ -110,10 +110,10 @@ template <typename Node, typename Edge>
 template <class OutEdgeSort, class InEdgeSort>
 void Graph<Node, Edge>::initOffsets()
 {
+	Print("Init the offsets.");
+
 	std::sort(_out_edges.begin(), _out_edges.end(), OutEdgeSort());
 	std::sort(_in_edges.begin(), _in_edges.end(), InEdgeSort());
-	assert(std::is_sorted(_out_edges.begin(), _out_edges.end()));
-	assert(std::is_sorted(_in_edges.begin(), _in_edges.end()));
 
 	std::vector<uint> out_edge_count(_nr_of_nodes, 0);
 	std::vector<uint> in_edge_count(_nr_of_nodes, 0);
@@ -141,6 +141,8 @@ void Graph<Node, Edge>::initOffsets()
 template <typename Node, typename Edge>
 void Graph<Node, Edge>::initIdToIndex()
 {
+	Print("Renew the index mapper.");
+
 	_id_to_index.resize(_nr_of_edges);
 	for (uint i(0); i<_out_edges.size(); i++) {
 		_id_to_index[_out_edges[i].id] = i;

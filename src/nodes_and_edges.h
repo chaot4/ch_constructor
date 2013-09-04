@@ -118,19 +118,27 @@ struct CHEdge : Edge
 		: Edge(edge), child_edge1(child_edge1), child_edge2(child_edge2){}
 };
 
-template <typename Edge>
-struct EdgeSort
-{
-	virtual bool operator()(Edge const& edge1, Edge const& edge2) const = 0;
-};
+/*
+ * EdgeSort
+ */
 
 template <typename Edge>
-struct EdgeSortSrc : EdgeSort<Edge>
+struct EdgeSortSrc
 {
 	bool operator()(Edge const& edge1, Edge const& edge2) const
 	{
 		return edge1.src < edge2.src ||
 			(edge1.src == edge2.src && edge1.tgt < edge2.tgt);
+	}
+};
+
+template <typename Edge>
+struct EdgeSortTgt
+{
+	bool operator()(Edge const& edge1, Edge const& edge2) const
+	{
+		return edge1.tgt < edge2.tgt ||
+			(edge1.tgt == edge2.tgt && edge1.src < edge2.src);
 	}
 };
 

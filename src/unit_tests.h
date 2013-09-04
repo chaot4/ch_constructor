@@ -38,19 +38,30 @@ namespace unit_tests
 		Graph<Node, Edge> g;
 		Test(g.read("../data/15kSZHK.txt"));
 
-		g.initOffsets<EdgeSortSrc<Edge>, EdgeSortSrc<Edge> >();
+		g.initOffsets<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >();
 		g.initIdToIndex();
-
-		Graph<Node, Edge>::EdgeIt it(g, 0, OUT);
-		Test(it.getNext().tgt == 6588);
-		Test(it.getNext().tgt == 11947);
-		Test(!it.hasNext());
-
-		// TODO (Fast) vollständiger Test des Iterators.
 
 		for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
 			Test(g.getNode(node_id).id == node_id);
+
+			/* Find for every out_edge the corresponding in edge. */
+			Graph<Node, Edge>::EdgeIt it_out(g, node_id, OUT);
+			while (it_out.hasNext()) {
+				bool found(false);
+				Edge const& out_edge(it_out.getNext());
+
+				Graph<Node, Edge>::EdgeIt it_in(g, out_edge.tgt, IN);
+				while (it_in.hasNext()) {
+					Edge const& in_edge(it_in.getNext());
+					if (in_edge.id == out_edge.id) {
+						found = true;
+					}
+				}
+
+				Test(found);
+			}
 		}
+
 		for (EdgeID edge_id(0); edge_id<g.getNrOfEdges(); edge_id++) {
 			Test(g.getEdge(edge_id).id == edge_id);
 		}
