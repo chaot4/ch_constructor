@@ -10,6 +10,7 @@
 #define Test(x)\
 if (!(x)) {\
 	std::cout << "TEST_FAILED: " << #x << std::endl;\
+	return;\
 }\
 
 namespace unit_tests
@@ -31,6 +32,8 @@ namespace unit_tests
 
 		Test(edge0.otherNode(IN) == 0);
 		Test(ch_edge.otherNode(OUT) == 3);
+
+		Print("TEST: Nodes and edges test successful.");
 	}
 
 	void testGraph()
@@ -65,6 +68,8 @@ namespace unit_tests
 		for (EdgeID edge_id(0); edge_id<g.getNrOfEdges(); edge_id++) {
 			Test(g.getEdge(edge_id).id == edge_id);
 		}
+
+		Print("TEST: Graph test successful.");
 	}
 
 	void testAll()
