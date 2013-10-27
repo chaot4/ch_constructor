@@ -11,6 +11,11 @@
 #include <algorithm>
 #include <cassert>
 
+namespace unit_tests
+{
+	void testGraph();
+}
+
 template <typename Node, typename Edge>
 class Graph
 {
@@ -25,7 +30,7 @@ class Graph
 		std::vector<Edge> _out_edges;
 		std::vector<Edge> _in_edges;
 
-		/* The index is of the _out_edges vector. */
+		/* Maps edge id to index in the _out_edge vector. */
 		std::vector<EdgeID> _id_to_index;
 
 	public:
@@ -42,10 +47,12 @@ class Graph
 		void initOffsets();
 		void initIdToIndex();
 
-		uint getNrOfNodes();
-		uint getNrOfEdges();
+		uint getNrOfNodes() const;
+		uint getNrOfEdges() const;
 		Edge const& getEdge(EdgeID edge_id);
 		Node const& getNode(NodeID node_id);
+
+		friend void unit_tests::testGraph();
 };
 
 /*
@@ -164,13 +171,13 @@ Node const& Graph<Node, Edge>::getNode(NodeID node_id)
 }
 
 template <typename Node, typename Edge>
-uint Graph<Node, Edge>::getNrOfNodes()
+uint Graph<Node, Edge>::getNrOfNodes() const
 {
 	return _nr_of_nodes;
 }
 
 template <typename Node, typename Edge>
-uint Graph<Node, Edge>::getNrOfEdges()
+uint Graph<Node, Edge>::getNrOfEdges() const
 {
 	return _nr_of_edges;
 }
@@ -183,38 +190,44 @@ template <typename Node, typename Edge>
 class Graph<Node, Edge>::EdgeIt
 {
 	private:
-		Edge* current;
-		Edge* end;
+		Edge const* _current;
+		Edge const* _end;
 	public:
-		EdgeIt(Graph<Node, Edge>& g, NodeID node_id, EdgeType type);
+		EdgeIt(Graph<Node, Edge> const& g, NodeID node_id, EdgeType type);
 
 		bool hasNext() const;
 		Edge const& getNext();
 };
 
 template <typename Node, typename Edge>
-Graph<Node, Edge>::EdgeIt::EdgeIt(Graph<Node, Edge>& g, NodeID node_id, EdgeType type)
+Graph<Node, Edge>::EdgeIt::EdgeIt(Graph<Node, Edge> const& g, NodeID node_id, EdgeType type)
 {
 	if (type == OUT) {
-		current = &g._out_edges[g._out_offsets[node_id]];
-		end = &g._out_edges[g._out_offsets[node_id+1]];
+		_current = &g._out_edges[g._out_offsets[node_id]];
+		_end = &g._out_edges[g._out_offsets[node_id+1]];
 	}
 	else {
-		current = &g._in_edges[g._in_offsets[node_id]];
-		end = &g._in_edges[g._in_offsets[node_id+1]];
+		_current = &g._in_edges[g._in_offsets[node_id]];
+		_end = &g._in_edges[g._in_offsets[node_id+1]];
 	}
 }
 
 template <typename Node, typename Edge>
 bool Graph<Node, Edge>::EdgeIt::hasNext() const
 {
-	return current != end;
+	return _current != _end;
 }
 
 template <typename Node, typename Edge>
 Edge const& Graph<Node, Edge>::EdgeIt::getNext()
 {
-	return *(current++);
+	return *(_current++);
 }
+
+/*
+ * CHGraph
+ */
+
+typedef Graph<CHNode, CHEdge<Edge> > CHGraph;
 
 #endif

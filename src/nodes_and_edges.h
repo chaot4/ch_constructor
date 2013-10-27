@@ -6,6 +6,11 @@
 #include <sstream>
 #include <vector>
 
+namespace unit_tests
+{
+	void testNodesAndEdges();
+}
+
 typedef uint NodeID;
 typedef uint EdgeID;
 
@@ -74,7 +79,7 @@ struct Edge
 		: id(id), src(src), tgt(tgt), dist(dist){}
 
 	void read(std::stringstream& ss);
-	NodeID otherNode(EdgeType edge_type);
+	NodeID otherNode(EdgeType edge_type) const;
 };
 
 void Edge::read(std::stringstream& ss)
@@ -87,7 +92,7 @@ void Edge::read(std::stringstream& ss)
 	dist = edge.dist;
 }
 
-NodeID Edge::otherNode(EdgeType edge_type)
+NodeID Edge::otherNode(EdgeType edge_type) const
 {
 	if (edge_type == OUT) {
 		return tgt;
