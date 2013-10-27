@@ -1,0 +1,13 @@
+Iterator:
+	- Die node ids auf die offset array indizes setzen usw.
+
+Dynamischer Graph:
+	- Edge arrays immer nur setzen, indem durch das alte gegangen wird und die noch aktuellen Kanten gespeichert werden (Dadurch müssen die node_ids neu gesetzt werden, da sich die offsets ändern). Dann wohl am besten in vector.swap.
+	- Methode die die node id's auf offset indizes setzt. tgt -> out_offset, src -> in_offset. (Vllt lieber die ganze Klasse umschreiben? Oder lieber wrapper Graph?)
+	- Shortcuts alle in einem vector halten.
+	- keine Listen!
+	- dynamimschen graph testen
+
+ch_constructor:
+	x independent set algo testen
+	- contract zeugs schreiben
