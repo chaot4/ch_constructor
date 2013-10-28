@@ -35,6 +35,7 @@ class Graph
 
 	public:
 		class EdgeIt;
+		class OffEdgeIt;
 
 		/* Read the nodes and edges from the file <filename>.
 		 * The offset vectors aren't initialized! */
@@ -46,11 +47,13 @@ class Graph
 		template <class OutEdgeSort, class InEdgeSort>
 		void initOffsets();
 		void initIdToIndex();
+		void setEdgeSrcTgtToOffset();
 
 		uint getNrOfNodes() const;
 		uint getNrOfEdges() const;
 		Edge const& getEdge(EdgeID edge_id);
 		Node const& getNode(NodeID node_id);
+		NodeID getOffId(NodeID node_id, EdgeType type);
 
 		friend void unit_tests::testGraph();
 };
@@ -159,6 +162,19 @@ void Graph<Node, Edge>::initIdToIndex()
 }
 
 template <typename Node, typename Edge>
+void Graph<Node, Edge>::setEdgeSrcTgtToOffset()
+{
+	assert(_in_edges.size() == _out_edges.size());
+
+	for (uint i(0); i<_in_edges.size(); i++) {
+		_in_edges[i].src = _in_offsets[_in_edges[i].src];
+		_in_edges[i].tgt = _out_offsets[_in_edges[i].tgt];
+		_out_edges[i].src = _in_offsets[_out_edges[i].src];
+		_out_edges[i].tgt = _out_offsets[_out_edges[i].tgt];
+	}
+}
+
+template <typename Node, typename Edge>
 Edge const& Graph<Node, Edge>::getEdge(EdgeID edge_id)
 {
 	return _out_edges[_id_to_index[edge_id]];
@@ -168,6 +184,17 @@ template <typename Node, typename Edge>
 Node const& Graph<Node, Edge>::getNode(NodeID node_id)
 {
 	return _nodes[node_id];
+}
+
+template <typename Node, typename Edge>
+NodeID Graph<Node, Edge>::getOffId(NodeID node_id, EdgeType type)
+{
+	if (type == OUT) {
+		return _out_offsets[node_id];
+	}
+	else {
+		return _in_offsets[node_id];
+	}
 }
 
 template <typename Node, typename Edge>
@@ -220,6 +247,66 @@ bool Graph<Node, Edge>::EdgeIt::hasNext() const
 
 template <typename Node, typename Edge>
 Edge const& Graph<Node, Edge>::EdgeIt::getNext()
+{
+	return *(_current++);
+}
+
+/*
+ * OffEdgeIt
+ */
+
+template <typename Node, typename Edge>
+class Graph<Node, Edge>::OffEdgeIt
+{
+	private:
+		EdgeType _type;
+		NodeID _off_node_id;
+		Edge const* _current;
+		Edge const* _end_of_vector;
+	public:
+		OffEdgeIt(Graph<Node, Edge> const& g, NodeID off_node_id, EdgeType type);
+
+		bool hasNext() const;
+		Edge const& getNext();
+};
+
+template <typename Node, typename Edge>
+Graph<Node, Edge>::OffEdgeIt::OffEdgeIt(Graph<Node, Edge> const& g,
+		NodeID off_node_id, EdgeType type)
+	: _type(type), _off_node_id(off_node_id)
+{
+	if (type == OUT) {
+		_current = &g._out_edges[off_node_id];
+		_end_of_vector = &*g._out_edges.end();
+	}
+	else {
+		_current = &g._in_edges[off_node_id];
+		_end_of_vector = &*g._in_edges.end();
+	}
+}
+
+template <typename Node, typename Edge>
+bool Graph<Node, Edge>::OffEdgeIt::hasNext() const
+{
+	NodeID next_off_node_id;
+
+	if (_current != _end_of_vector) {
+		next_off_node_id = _current->otherNode(_type);
+	}
+	else {
+		return false;
+	}
+
+	if (next_off_node_id == _off_node_id) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+template <typename Node, typename Edge>
+Edge const& Graph<Node, Edge>::OffEdgeIt::getNext()
 {
 	return *(_current++);
 }

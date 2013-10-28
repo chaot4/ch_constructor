@@ -6,6 +6,7 @@
 #include "graph.h"
 #include "ch_constructor.h"
 
+#include <map>
 #include <iostream>
 
 #define Test(x)\
@@ -57,6 +58,7 @@ void unit_tests::testGraph()
 	g.initOffsets<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >();
 	g.initIdToIndex();
 
+	/* Test the normal iterator. */
 	for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
 		Test(g.getNode(node_id).id == node_id);
 
@@ -80,6 +82,37 @@ void unit_tests::testGraph()
 
 	for (EdgeID edge_id(0); edge_id<g.getNrOfEdges(); edge_id++) {
 		Test(g.getEdge(edge_id).id == edge_id);
+	}
+
+	/* Test the offset iterator. */
+	g.setEdgeSrcTgtToOffset();
+	std::map<NodeID, NodeID> out_to_in_id;
+	for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
+		out_to_in_id.insert(
+				std::pair<NodeID, NodeID>(
+				g.getOffId(node_id, OUT), g.getOffId(node_id, IN)));
+	}
+
+	for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
+		Test(g.getNode(node_id).id == node_id);
+
+		/* Find for every out_edge the corresponding in edge. */
+		Graph<Node, Edge>::OffEdgeIt it_out(g, g.getOffId(node_id, OUT), OUT);
+		while (it_out.hasNext()) {
+			bool found(false);
+			Edge const& out_edge(it_out.getNext());
+
+			Graph<Node, Edge>::OffEdgeIt it_in(
+					g, out_to_in_id[out_edge.tgt], IN);
+			while (it_in.hasNext()) {
+				Edge const& in_edge(it_in.getNext());
+				if (in_edge.id == out_edge.id) {
+					found = true;
+				}
+			}
+
+			Test(found);
+		}
 	}
 
 	Print("TEST: Graph test successful.");
