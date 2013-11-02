@@ -16,6 +16,16 @@ typedef uint EdgeID;
 
 enum EdgeType {OUT = 0, IN = 1};
 
+EdgeType operator!(EdgeType type)
+{
+	if (type == IN) {
+		return OUT;
+	}
+	else {
+		return IN;
+	}
+}
+
 /*
  * Nodes
  */

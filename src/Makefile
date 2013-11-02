@@ -1,6 +1,6 @@
 CC = g++
-CPPFLAGS = -Wall -g -std=c++11
-LFLAGS =
+CPPFLAGS = -Wall -g -std=c++11 -fopenmp
+LFLAGS = -fopenmp
 BIN = main
 OBJ = 
 SRCS = $(wildcard **/*.cpp) $(wildcard **/*.h) $(wildcard *.cpp) $(wildcard *.h)

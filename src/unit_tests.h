@@ -127,7 +127,7 @@ void unit_tests::testCHConstructor()
 	g.initOffsets<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >();
 	g.initIdToIndex();
 
-	CHConstructor<Node, Edge> chc(g);
+	CHConstructor<Node, Edge> chc(g, 2);
 
 	/* 
 	 * Test the independent set construction.
@@ -139,7 +139,7 @@ void unit_tests::testCHConstructor()
 	}
 
 	std::list<NodeID> remaining_nodes(all_nodes);
-	std::list<NodeID> independent_set;
+	std::vector<NodeID> independent_set;
 	std::vector<bool> is_in_ind_set(g.getNrOfNodes(), false);
 
 	chc._extractIndependentSet(remaining_nodes, independent_set);
