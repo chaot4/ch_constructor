@@ -19,7 +19,7 @@ namespace unit_tests
 
 namespace
 {
-	int MAX_INT(std::numeric_limits<int>::max());
+	int MAX_UINT(std::numeric_limits<uint>::max());
 }
 
 // TODO should not be in global scope
@@ -69,14 +69,14 @@ class CHConstructor{
 		std::vector< std::vector<CHEdge<Edge> > > _new_shortcuts;
 
 		std::vector<PQ> _pq;
-		std::vector< std::vector<bool> > _dists;
+		std::vector< std::vector<uint> > _dists;
 		std::vector< std::vector<uint> > _reset_dists;
 
 		void _init_thread_vectors();
 		void _contract(NodeID center_node);
 		void _calcShortcuts(Edge const& start_edge, NodeID center_node,
 				EdgeType direction);
-		void _handleNextPQElement(NodeID center_node, EdgeType direction);
+		void _handleNextPQElement(EdgeType direction);
 
 		void _extractIndependentSet(std::list<NodeID>& nodes,
 				std::vector<NodeID>& independent_set);
@@ -108,9 +108,9 @@ void CHConstructor<Node, Edge>::_resetThreadData()
 	_pq[t] = PQ();
 
 	for (uint i(0); i<_reset_dists[t].size(); i++) {
-		_dists[t][_reset_dists[t][i]] = MAX_INT;
+		_dists[t][_reset_dists[t][i]] = MAX_UINT;
 	}
-	_reset_dists.clear();
+	_reset_dists[t].clear();
 }
 
 template <typename Node, typename Edge>
@@ -118,7 +118,7 @@ void CHConstructor<Node, Edge>::_init_thread_vectors()
 {
 	for (uint i(0); i<_num_threads; i++) {
 		_pq[i] = PQ();
-		_dists[i].assign(_base_graph.getNrOfNodes(), MAX_INT);
+		_dists[i].assign(_base_graph.getNrOfNodes(), MAX_UINT);
 		_reset_dists[i].clear();
 	}
 }
@@ -155,7 +155,7 @@ void CHConstructor<Node, Edge>::_calcShortcuts(Edge const& start_edge, NodeID ce
 	end_nodes.reserve(_base_graph.getNrOfEdges(center_node, direction));
 	end_nodes_dists.reserve(_base_graph.getNrOfEdges(center_node, direction));
 
-	typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, center_node, (EdgeType) direction);
+	typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, center_node, direction);
 	while (edge_it.hasNext()) {
 		Edge const& edge(edge_it.getNext());
 		end_nodes.push_back(edge.otherNode(direction));
@@ -169,7 +169,7 @@ void CHConstructor<Node, Edge>::_calcShortcuts(Edge const& start_edge, NodeID ce
 	for (uint i(0); i<end_nodes.size(); i++) {
 
 		while (_dists[t][end_nodes[i]] > _pq[t].top().dist) {
-			_handleNextPQElement(center_node, direction);
+			_handleNextPQElement(direction);
 		}
 
 		if (_dists[t][end_nodes[i]] == end_nodes_dists[i]) {
@@ -179,17 +179,19 @@ void CHConstructor<Node, Edge>::_calcShortcuts(Edge const& start_edge, NodeID ce
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_handleNextPQElement(NodeID center_node, EdgeType direction)
+void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
 {
 	uint t(_myThreadNum());
 
 	NodeID node(_pq[t].top().id);
-	uint dist(_pq[t].top().id);
+	uint dist(_pq[t].top().dist);
 
 	// TODO sobald ein Knoten rausgenommen wird, kann man die dist auf 0 stellen
 	// um zu zeigen, dass der Knoten nichtmehr rausgenommen werden soll.
 	// Gut überprüfen ob das nicht komische Bugs bringt!!
 	if (_dists[t][node] == dist) {
+
+	// _dists[t][node] = 0;
 
 		typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, node, direction);
 		while (edge_it.hasNext()) {
