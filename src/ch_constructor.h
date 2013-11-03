@@ -24,6 +24,7 @@ namespace
 
 // TODO should not be in global scope
 
+template <typename Node, typename Edge>
 struct CompInOutProduct
 {
 	Graph<Node, Edge> const& g;
@@ -294,7 +295,8 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 		_initThreadVectors();
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
-		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
+		nodes.sort<CompInOutProduct<Node, Edge> >(
+				CompInOutProduct<Node, Edge>(_base_graph));
 
 		Print("Constructing the independent set.");
 		std::vector<NodeID> independent_set;

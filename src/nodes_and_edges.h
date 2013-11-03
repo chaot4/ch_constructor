@@ -110,10 +110,10 @@ struct MetricEdge : Edge
 template <typename Edge>
 struct CHEdge : Edge
 {
-	EdgeID child_edge1;
-	EdgeID child_edge2;
+	int child_edge1;
+	int child_edge2;
 
-	CHEdge() : child_edge1(0), child_edge2(0){}
+	CHEdge() : child_edge1(-1), child_edge2(-1){}
 	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2)
 		: Edge(edge), child_edge1(child_edge1), child_edge2(child_edge2){}
 };
