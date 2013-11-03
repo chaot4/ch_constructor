@@ -16,16 +16,15 @@ ch_constructor im Detail:
 	x je nach Anzahl der eingehenden und ausgehenden Kanten vom kleineren aus aufzählen
 	x Das Pfadchecken mit EdgeType als Parameter machen.
 	x Nur für jeden center_node wird parallelisiert mit OpenMP
-	- Das rausnehmen der Knoten genauso machen, wie schon im Pferd. ODER über die Anzahl!
-	- while (#gef. Knoten != #ausgehende Kanten)
-		Die zu findenden Knoten in einen vector machen. Ist shortcut, wenn der Knoten von dem wir kommen der center_node ist.
+	x Das rausnehmen der Knoten genauso machen, wie schon im Pferd. ODER über die Anzahl!
+		x Die zu findenden Knoten in einen vector machen. Ist shortcut, wenn der Knoten von dem wir kommen der center_node ist.
 	- Doppelte Kanten nach jeder Runde prunen.
 	- Shortcuts direkt einfügen mit mutex eben.
 	- Auf allen vectors immer ein reserve machen
 	- Wie machen wir das mit der edge difference?
 		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
-	- Wie kann man auf die pq verzichen? <- Bringt's wahrscheinlich nicht so sehr.
-	- Manueller reset der Dijkstra vectors über Member var's vllt?
+	(- Wie kann man auf die pq verzichen? <- Bringt's wahrscheinlich nicht so sehr.)
+	x Manueller reset der Dijkstra vectors über Member var's vllt?
 
 Graph umbauen:
 	- Gleiche SCs prunen

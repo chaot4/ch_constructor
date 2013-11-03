@@ -9,6 +9,7 @@
 #include <list>
 #include <queue>
 #include <algorithm>
+#include <limits>
 #include <omp.h>
 
 namespace unit_tests
@@ -16,11 +17,18 @@ namespace unit_tests
 	void testCHConstructor();
 }
 
-struct InOutProduct
+namespace
+{
+	int MAX_INT(std::numeric_limits<int>::max());
+}
+
+// TODO should not be in global scope
+
+struct CompInOutProduct
 {
 	Graph<Node, Edge> const& g;
 
-	InOutProduct(Graph<Node, Edge> const& g)
+	CompInOutProduct(Graph<Node, Edge> const& g)
 		: g(g) {}
 
 	bool operator()(NodeID node1, NodeID node2) const
@@ -46,7 +54,8 @@ struct PQElement
 	}
 };
 
-typedef std::priority_queue<PQElement, std::vector<PQElement>, std::greater<PQElement> > PQ;
+typedef std::priority_queue<
+		PQElement, std::vector<PQElement>, std::greater<PQElement> > PQ;
 
 template <typename Node, typename Edge>
 class CHConstructor{
@@ -60,11 +69,13 @@ class CHConstructor{
 		std::vector< std::vector<CHEdge<Edge> > > _new_shortcuts;
 
 		std::vector<PQ> _pq;
-		std::vector< std::vector<bool> > _found;
-		std::vector< std::vector<uint> > _reset_found;
+		std::vector< std::vector<bool> > _dists;
+		std::vector< std::vector<uint> > _reset_dists;
 
+		void _init_thread_vectors();
 		void _contract(NodeID center_node);
-		void _calcShortcuts(NodeID start_node, NodeID center_node, EdgeType direction);
+		void _calcShortcuts(Edge const& start_edge, NodeID center_node,
+				EdgeType direction);
 		void _handleNextPQElement(NodeID center_node, EdgeType direction);
 
 		void _extractIndependentSet(std::list<NodeID>& nodes,
@@ -92,11 +103,23 @@ uint CHConstructor<Node, Edge>::_myThreadNum()
 template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::_resetThreadData()
 {
-	uint thread_num(_myThreadNum());
+	uint t(_myThreadNum());
 
-	_pq[thread_num] = PQ();
-	for (uint i(0); i<_reset_found[thread_num].size(); i++) {
-		_found[thread_num][_reset_found[thread_num][i]] = false;
+	_pq[t] = PQ();
+
+	for (uint i(0); i<_reset_dists[t].size(); i++) {
+		_dists[t][_reset_dists[t][i]] = MAX_INT;
+	}
+	_reset_dists.clear();
+}
+
+template <typename Node, typename Edge>
+void CHConstructor<Node, Edge>::_init_thread_vectors()
+{
+	for (uint i(0); i<_num_threads; i++) {
+		_pq[i] = PQ();
+		_dists[i].assign(_base_graph.getNrOfNodes(), MAX_INT);
+		_reset_dists[i].clear();
 	}
 }
 
@@ -115,36 +138,76 @@ void CHConstructor<Node, Edge>::_contract(NodeID node)
 	typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, node, !search_direction);
 	while (edge_it.hasNext()) {
 		_resetThreadData();
-		_calcShortcuts(edge_it.getNext().otherNode(!search_direction),
-				node, search_direction);
+		_calcShortcuts(edge_it.getNext(), node, search_direction);
 	}
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_calcShortcuts(NodeID start_node, NodeID center_node,
+void CHConstructor<Node, Edge>::_calcShortcuts(Edge const& start_edge, NodeID center_node,
 		EdgeType direction)
 {
+	uint t(_myThreadNum());
+
+	NodeID start_node(start_edge.otherNode(!direction));
+
 	std::vector<NodeID> end_nodes;
+	std::vector<NodeID> end_nodes_dists;
 	end_nodes.reserve(_base_graph.getNrOfEdges(center_node, direction));
+	end_nodes_dists.reserve(_base_graph.getNrOfEdges(center_node, direction));
 
 	typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, center_node, (EdgeType) direction);
 	while (edge_it.hasNext()) {
-		end_nodes.push_back(edge_it.getNext().otherNode(direction));
+		Edge const& edge(edge_it.getNext());
+		end_nodes.push_back(edge.otherNode(direction));
+		end_nodes_dists.push_back(start_edge.dist + edge.dist);
 	}
 
-	_pq[_myThreadNum()].push(PQElement(start_node, 0));
+	_pq[t].push(PQElement(start_node, 0));
+	_dists[t][start_node] = 0;
+	_reset_dists[t].push_back(start_node);
 
 	for (uint i(0); i<end_nodes.size(); i++) {
-		do {
+
+		while (_dists[t][end_nodes[i]] > _pq[t].top().dist) {
 			_handleNextPQElement(center_node, direction);
-		} while (true);
+		}
+
+		if (_dists[t][end_nodes[i]] == end_nodes_dists[i]) {
+//			_new_shortcuts[t].push_back(CHEdge()); TODO
+		}
 	}
 }
 
 template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::_handleNextPQElement(NodeID center_node, EdgeType direction)
 {
-	// TODO
+	uint t(_myThreadNum());
+
+	NodeID node(_pq[t].top().id);
+	uint dist(_pq[t].top().id);
+
+	// TODO sobald ein Knoten rausgenommen wird, kann man die dist auf 0 stellen
+	// um zu zeigen, dass der Knoten nichtmehr rausgenommen werden soll.
+	// Gut überprüfen ob das nicht komische Bugs bringt!!
+	if (_dists[t][node] == dist) {
+
+		typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, node, direction);
+		while (edge_it.hasNext()) {
+
+			Edge const& edge(edge_it.getNext());
+			NodeID tgt_node(edge.otherNode(direction));
+			uint new_dist(dist + edge.dist);
+
+			if (new_dist < _dists[t][tgt_node]) {
+
+				_dists[t][tgt_node] = new_dist;
+				_reset_dists[t].push_back(tgt_node);
+				_pq[t].push(PQElement(tgt_node, new_dist));
+			}
+		}
+	}
+
+	_pq[t].pop();
 }
 
 template <typename Node, typename Edge>
@@ -196,8 +259,8 @@ CHConstructor<Node, Edge>::CHConstructor(Graph<Node, Edge> const& base_graph,
 
 	_new_shortcuts.resize(_num_threads);
 	_pq.resize(_num_threads);
-	_found.resize(_num_threads);
-	_reset_found.resize(_num_threads);
+	_dists.resize(_num_threads);
+	_reset_dists.resize(_num_threads);
 }
 
 template <typename Node, typename Edge>
@@ -205,15 +268,19 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 {
 	for (uint i(0); i<_num_threads; i++) {
 		_new_shortcuts[i].reserve(_base_graph.getNrOfEdges());
-		_found[i].reserve(_base_graph.getNrOfNodes());
-		_reset_found[i].reserve(_base_graph.getNrOfNodes());
+		_dists[i].reserve(_base_graph.getNrOfNodes());
+		_reset_dists[i].reserve(_base_graph.getNrOfNodes());
 	}
 
 	Print("\nStarting the contraction of the remaining " << nodes.size() << " nodes.");
 
 	while (!nodes.empty()) {
-		Print("\nSorting the remaining " << nodes.size() << " nodes.");
-		nodes.sort<InOutProduct>(InOutProduct(_base_graph));
+
+		Print("\nInitializing the threads' vectors for a new round.");
+		_init_thread_vectors();
+
+		Print("Sorting the remaining " << nodes.size() << " nodes.");
+		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
 
 		Print("Constructing the independent set.");
 		std::vector<NodeID> independent_set;
