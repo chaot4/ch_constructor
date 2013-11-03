@@ -77,6 +77,8 @@ class CHConstructor{
 		void _calcShortcuts(Edge const& start_edge, NodeID center_node,
 				EdgeType direction);
 		void _handleNextPQElement(EdgeType direction);
+		void _createShortcut(Edge const& edge1, Edge const& edge2,
+				EdgeType direction);
 
 		void _extractIndependentSet(std::list<NodeID>& nodes,
 				std::vector<NodeID>& independent_set);
@@ -151,15 +153,15 @@ void CHConstructor<Node, Edge>::_calcShortcuts(Edge const& start_edge, NodeID ce
 	NodeID start_node(start_edge.otherNode(!direction));
 
 	std::vector<NodeID> end_nodes;
-	std::vector<NodeID> end_nodes_dists;
+	std::vector<Edge const*> end_edges;
 	end_nodes.reserve(_base_graph.getNrOfEdges(center_node, direction));
-	end_nodes_dists.reserve(_base_graph.getNrOfEdges(center_node, direction));
+	end_edges.reserve(_base_graph.getNrOfEdges(center_node, direction));
 
 	typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, center_node, direction);
 	while (edge_it.hasNext()) {
 		Edge const& edge(edge_it.getNext());
+		end_edges.push_back(&edge);
 		end_nodes.push_back(edge.otherNode(direction));
-		end_nodes_dists.push_back(start_edge.dist + edge.dist);
 	}
 
 	_pq[t].push(PQElement(start_node, 0));
@@ -172,8 +174,9 @@ void CHConstructor<Node, Edge>::_calcShortcuts(Edge const& start_edge, NodeID ce
 			_handleNextPQElement(direction);
 		}
 
-		if (_dists[t][end_nodes[i]] == end_nodes_dists[i]) {
-//			_new_shortcuts[t].push_back(CHEdge()); TODO
+		uint center_node_dist(start_edge.dist + end_edges[i]->dist);
+		if (_dists[t][end_nodes[i]] == center_node_dist) {
+			_createShortcut(start_edge, *end_edges[i], direction);
 		}
 	}
 }
@@ -186,12 +189,7 @@ void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
 	NodeID node(_pq[t].top().id);
 	uint dist(_pq[t].top().dist);
 
-	// TODO sobald ein Knoten rausgenommen wird, kann man die dist auf 0 stellen
-	// um zu zeigen, dass der Knoten nichtmehr rausgenommen werden soll.
-	// Gut überprüfen ob das nicht komische Bugs bringt!!
 	if (_dists[t][node] == dist) {
-
-	// _dists[t][node] = 0;
 
 		typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, node, direction);
 		while (edge_it.hasNext()) {
@@ -210,6 +208,20 @@ void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
 	}
 
 	_pq[t].pop();
+}
+
+template <typename Node, typename Edge>
+void CHConstructor<Node, Edge>::_createShortcut(Edge const& edge1, Edge const& edge2,
+		EdgeType direction)
+{
+	uint t(_myThreadNum());
+
+	if (direction == OUT) {
+		_new_shortcuts[t].push_back(edge1.concat(edge2));
+	}
+	else {
+		_new_shortcuts[t].push_back(edge2.concat(edge1));
+	}
 }
 
 template <typename Node, typename Edge>

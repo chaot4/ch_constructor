@@ -5,6 +5,7 @@
 
 #include <sstream>
 #include <vector>
+#include <cassert>
 
 namespace unit_tests
 {
@@ -69,6 +70,9 @@ struct CHNode : Node
  * Edges
  */
 
+template <typename Edge>
+struct CHEdge;
+
 struct Parser_Edge{
 	NodeID src;
 	NodeID tgt;
@@ -90,6 +94,28 @@ struct Edge
 
 	void read(std::stringstream& ss);
 	NodeID otherNode(EdgeType edge_type) const;
+
+	CHEdge<Edge> concat(Edge const& edge) const;
+};
+
+template <typename Edge>
+struct MetricEdge : Edge
+{
+	uint metric;
+
+	MetricEdge() : Edge(), metric(0){}
+	MetricEdge(Edge const& edge, uint metric) : Edge(edge), metric(metric){}
+};
+
+template <typename Edge>
+struct CHEdge : Edge
+{
+	EdgeID child_edge1;
+	EdgeID child_edge2;
+
+	CHEdge() : child_edge1(0), child_edge2(0){}
+	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2)
+		: Edge(edge), child_edge1(child_edge1), child_edge2(child_edge2){}
 };
 
 void Edge::read(std::stringstream& ss)
@@ -112,25 +138,11 @@ NodeID Edge::otherNode(EdgeType edge_type) const
 	}
 }
 
-template <typename Edge>
-struct MetricEdge : Edge
+CHEdge<Edge> Edge::concat(Edge const& edge) const
 {
-	uint metric;
-
-	MetricEdge() : Edge(), metric(0){}
-	MetricEdge(Edge const& edge, uint metric) : Edge(edge), metric(metric){}
-};
-
-template <typename Edge>
-struct CHEdge : Edge
-{
-	EdgeID child_edge1;
-	EdgeID child_edge2;
-
-	CHEdge() : child_edge1(0), child_edge2(0){}
-	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2)
-		: Edge(edge), child_edge1(child_edge1), child_edge2(child_edge2){}
-};
+	assert(tgt == edge.src);
+	return CHEdge<Edge>(Edge(0, src, edge.tgt, dist + edge.dist), id, edge.id);
+}
 
 /*
  * EdgeSort
