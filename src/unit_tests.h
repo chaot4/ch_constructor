@@ -27,7 +27,9 @@ namespace unit_tests
 
 void unit_tests::testNodesAndEdges()
 {
+	Print("\n=================================");
 	Print("TEST: Start Nodes And Edges test.");
+	Print("=================================\n");
 
 	typedef MetricEdge<Edge> MetricEdge;
 	typedef CHEdge<MetricEdge> CHEdge;
@@ -45,12 +47,16 @@ void unit_tests::testNodesAndEdges()
 	Test(edge0.otherNode(IN) == 0);
 	Test(ch_edge.otherNode(OUT) == 3);
 
+	Print("\n======================================");
 	Print("TEST: Nodes and edges test successful.");
+	Print("======================================\n");
 }
 
 void unit_tests::testGraph()
 {
+	Print("\n=======================");
 	Print("TEST: Start Graph test.");
+	Print("=======================\n");
 
 	Graph<Node, Edge> g;
 	Test(g.read("../data/15kSZHK.txt"));
@@ -115,12 +121,16 @@ void unit_tests::testGraph()
 		}
 	}
 
+	Print("\n============================");
 	Print("TEST: Graph test successful.");
+	Print("============================\n");
 }
 
 void unit_tests::testCHConstructor()
 {
+	Print("\n===============================");
 	Print("TEST: Start CHConstructor test.");
+	Print("===============================\n");
 
 	Graph<Node, Edge> g;
 	g.read("../data/15kSZHK.txt");
@@ -163,7 +173,9 @@ void unit_tests::testCHConstructor()
 	 */
 	chc.contract(all_nodes);
 
+	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
+	Print("====================================\n");
 }
 
 #endif

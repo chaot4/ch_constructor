@@ -72,7 +72,7 @@ class CHConstructor{
 		std::vector< std::vector<uint> > _dists;
 		std::vector< std::vector<uint> > _reset_dists;
 
-		void _init_thread_vectors();
+		void _initThreadVectors();
 		void _contract(NodeID center_node);
 		void _calcShortcuts(Edge const& start_edge, NodeID center_node,
 				EdgeType direction);
@@ -116,7 +116,7 @@ void CHConstructor<Node, Edge>::_resetThreadData()
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_init_thread_vectors()
+void CHConstructor<Node, Edge>::_initThreadVectors()
 {
 	for (uint i(0); i<_num_threads; i++) {
 		_pq[i] = PQ();
@@ -286,12 +286,12 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 		_reset_dists[i].reserve(_base_graph.getNrOfNodes());
 	}
 
-	Print("\nStarting the contraction of the remaining " << nodes.size() << " nodes.");
+	Print("\nStarting the contraction of " << nodes.size() << " nodes.");
 
 	while (!nodes.empty()) {
 
 		Print("\nInitializing the threads' vectors for a new round.");
-		_init_thread_vectors();
+		_initThreadVectors();
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
 		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
@@ -305,6 +305,10 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 		#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
 		for (uint i = 0; i < independent_set.size(); i++) {
 			_contract(independent_set[i]);
+		}
+
+		for (uint i(0); i<_num_threads; i++) {
+			Print("#Shortcuts of thread " << i << ": " << _new_shortcuts[i].size());
 		}
 	}
 }

@@ -3,14 +3,14 @@ Iterator:
 
 Dynamischer Graph:
 	- Edge arrays immer nur setzen, indem durch das alte gegangen wird und die noch aktuellen Kanten gespeichert werden (Dadurch müssen die node_ids neu gesetzt werden, da sich die offsets ändern). Dann wohl am besten in vector.swap.
-	- Methode die die node id's auf offset indizes setzt. tgt -> out_offset, src -> in_offset. (Vllt lieber die ganze Klasse umschreiben? Oder lieber wrapper Graph?)
+	x Methode die die node id's auf offset indizes setzt. tgt -> out_offset, src -> in_offset. (Vllt lieber die ganze Klasse umschreiben? Oder lieber wrapper Graph?)
 	- Shortcuts alle in einem vector halten.
 	- keine Listen!
 	- dynamimschen graph testen
 
 ch_constructor:
 	x independent set algo testen
-	- contract zeugs schreiben
+	x contract zeugs schreiben
 
 ch_constructor im Detail:
 	x je nach Anzahl der eingehenden und ausgehenden Kanten vom kleineren aus aufzählen
@@ -19,7 +19,7 @@ ch_constructor im Detail:
 	x Das rausnehmen der Knoten genauso machen, wie schon im Pferd. ODER über die Anzahl!
 		x Die zu findenden Knoten in einen vector machen. Ist shortcut, wenn der Knoten von dem wir kommen der center_node ist.
 	- Doppelte Kanten nach jeder Runde prunen.
-	- Shortcuts direkt einfügen mit mutex eben.
+	x Shortcuts direkt einfügen mit mutex eben.
 	- Auf allen vectors immer ein reserve machen
 	- Wie machen wir das mit der edge difference?
 		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
