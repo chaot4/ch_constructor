@@ -4,6 +4,7 @@
 
 #include "nodes_and_edges.h"
 #include "graph.h"
+#include "chgraph.h"
 #include "ch_constructor.h"
 
 #include <map>
@@ -34,10 +35,10 @@ void unit_tests::testNodesAndEdges()
 	typedef MetricEdge<Edge> MetricEdge;
 	typedef CHEdge<MetricEdge> CHEdge;
 
-	CHNode node0(Node(0), 0);
-	CHNode node1(Node(1), 1);
-	CHNode node2(Node(2), 2);
-	CHNode node3(Node(3), 3);
+	CHNode<Node> node0(Node(0), 0);
+	CHNode<Node> node1(Node(1), 1);
+	CHNode<Node> node2(Node(2), 2);
+	CHNode<Node> node3(Node(3), 3);
 
 	MetricEdge edge0(Edge(0, node0.id, node1.id, 42), 23);
 	MetricEdge edge1(Edge(1, node2.id, node3.id, 24), 32);
@@ -61,7 +62,9 @@ void unit_tests::testGraph()
 	Graph<Node, Edge> g;
 	Test(g.read("../data/15kSZHK.txt"));
 
-	g.initOffsets<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >();
+	g.sortOutEdges<EdgeSortSrc<Edge> >();
+	g.sortInEdges<EdgeSortTgt<Edge> >();
+	g.initOffsets();
 	g.initIdToIndex();
 
 	/* Test the normal iterator. */
@@ -132,9 +135,15 @@ void unit_tests::testCHConstructor()
 	Print("TEST: Start CHConstructor test.");
 	Print("===============================\n");
 
-	Graph<Node, Edge> g;
+	typedef CHNode<Node> LvlNode;
+	typedef CHEdge<Edge> Shortcut;
+	typedef SCGraph<Node, Edge> CHGraph;
+
+	CHGraph g;
 	g.read("../data/15kSZHK.txt");
-	g.initOffsets<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >();
+	g.sortOutEdges<EdgeSortSrc<Edge> >();
+	g.sortInEdges<EdgeSortTgt<Edge> >();
+	g.initOffsets();
 	g.initIdToIndex();
 
 	CHConstructor<Node, Edge> chc(g, 2);
@@ -160,10 +169,10 @@ void unit_tests::testCHConstructor()
 	}
 
 	for (auto it(independent_set.begin()); it != independent_set.end(); it++) {
-		typename Graph<Node, Edge>::EdgeIt edge_it(g, *it, OUT);
+		typename CHGraph::EdgeIt edge_it(g, *it, OUT);
 
 		while (edge_it.hasNext()) {
-			Edge const& edge(edge_it.getNext());
+			Shortcut const& edge(edge_it.getNext());
 			Test(!is_in_ind_set[edge.tgt]);
 		}
 	}

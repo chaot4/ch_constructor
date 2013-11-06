@@ -4,12 +4,14 @@
 #include "defs.h"
 #include "nodes_and_edges.h"
 #include "graph.h"
+#include "chgraph.h"
 
 #include <vector>
 #include <list>
 #include <queue>
 #include <algorithm>
 #include <limits>
+#include <mutex>
 #include <omp.h>
 
 namespace unit_tests
@@ -22,26 +24,77 @@ namespace
 	int MAX_UINT(std::numeric_limits<uint>::max());
 }
 
-// TODO should not be in global scope
+template <typename Node, typename Edge>
+class CHConstructor{
+	private:
+		typedef CHNode<Node> LvlNode;
+		typedef CHEdge<Edge> Shortcut;
+		typedef SCGraph<Node, Edge> CHGraph;
+
+		struct CompInOutProduct;
+		struct PQElement;
+		typedef std::priority_queue<
+				PQElement, std::vector<PQElement>, std::greater<PQElement> > PQ;
+
+		CHGraph& _base_graph;
+
+		uint _num_threads;
+		uint _myThreadNum();
+		void _resetThreadData();
+
+		std::vector<Shortcut> _new_shortcuts;
+		std::vector<bool> _delete;
+		std::mutex _new_shortcuts_mutex;
+
+		std::vector<PQ> _pq;
+		std::vector< std::vector<uint> > _dists;
+		std::vector< std::vector<uint> > _reset_dists;
+
+		void _initVectors();
+		void _contract(NodeID center_node);
+		void _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
+				EdgeType direction);
+		void _handleNextPQElement(EdgeType direction);
+		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
+				EdgeType direction);
+
+		void _extractIndependentSet(std::list<NodeID>& nodes,
+				std::vector<NodeID>& independent_set);
+		void _markNeighbours(NodeID node, std::vector<bool>& marked);
+	public:
+		CHConstructor(CHGraph& base_graph, uint num_threads = 1);
+
+		void contract(std::list<NodeID> nodes);
+		void getCHGraph(CHGraph& ch_graph);
+
+		friend void unit_tests::testCHConstructor();
+};
+
+/*
+ * private
+ */
 
 template <typename Node, typename Edge>
-struct CompInOutProduct
+struct CHConstructor<Node, Edge>::CompInOutProduct
 {
-	Graph<Node, Edge> const& g;
+	CHGraph const& g;
 
-	CompInOutProduct(Graph<Node, Edge> const& g)
+	CompInOutProduct(CHGraph const& g)
 		: g(g) {}
 
 	bool operator()(NodeID node1, NodeID node2) const
 	{
-		uint edge_product1(g.getNrOfEdges(node1, IN) * g.getNrOfEdges(node1, OUT));
-		uint edge_product2(g.getNrOfEdges(node2, IN) * g.getNrOfEdges(node2, OUT));
+		uint edge_product1(g.getNrOfEdges(node1, IN)
+				* g.getNrOfEdges(node1, OUT));
+		uint edge_product2(g.getNrOfEdges(node2, IN)
+				* g.getNrOfEdges(node2, OUT));
 
 		return edge_product1 < edge_product2;
 	}
 };
 
-struct PQElement
+template <typename Node, typename Edge>
+struct CHConstructor<Node, Edge>::PQElement
 {
 	NodeID id;
 	uint dist;
@@ -54,48 +107,6 @@ struct PQElement
 		return dist > other.dist;
 	}
 };
-
-typedef std::priority_queue<
-		PQElement, std::vector<PQElement>, std::greater<PQElement> > PQ;
-
-template <typename Node, typename Edge>
-class CHConstructor{
-	private:
-		Graph<Node, Edge> const& _base_graph;
-
-		uint _num_threads;
-		uint _myThreadNum();
-		void _resetThreadData();
-
-		std::vector< std::vector<CHEdge<Edge> > > _new_shortcuts;
-
-		std::vector<PQ> _pq;
-		std::vector< std::vector<uint> > _dists;
-		std::vector< std::vector<uint> > _reset_dists;
-
-		void _initThreadVectors();
-		void _contract(NodeID center_node);
-		void _calcShortcuts(Edge const& start_edge, NodeID center_node,
-				EdgeType direction);
-		void _handleNextPQElement(EdgeType direction);
-		void _createShortcut(Edge const& edge1, Edge const& edge2,
-				EdgeType direction);
-
-		void _extractIndependentSet(std::list<NodeID>& nodes,
-				std::vector<NodeID>& independent_set);
-		void _markNeighbours(NodeID node, std::vector<bool>& marked);
-	public:
-		CHConstructor(Graph<Node, Edge> const& base_graph, uint num_threads = 1);
-
-		void contract(std::list<NodeID> nodes);
-		void getCHGraph(CHGraph& ch_graph);
-
-		friend void unit_tests::testCHConstructor();
-};
-
-/*
- * private
- */
 
 template <typename Node, typename Edge>
 uint CHConstructor<Node, Edge>::_myThreadNum()
@@ -117,8 +128,11 @@ void CHConstructor<Node, Edge>::_resetThreadData()
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_initThreadVectors()
+void CHConstructor<Node, Edge>::_initVectors()
 {
+	_new_shortcuts.clear();
+	_delete.assign(_base_graph.getNrOfNodes(), false);
+
 	for (uint i(0); i<_num_threads; i++) {
 		_pq[i] = PQ();
 		_dists[i].assign(_base_graph.getNrOfNodes(), MAX_UINT);
@@ -138,7 +152,7 @@ void CHConstructor<Node, Edge>::_contract(NodeID node)
 		search_direction = IN;
 	}
 
-	typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, node, !search_direction);
+	typename CHGraph::EdgeIt edge_it(_base_graph, node, !search_direction);
 	while (edge_it.hasNext()) {
 		_resetThreadData();
 		_calcShortcuts(edge_it.getNext(), node, search_direction);
@@ -146,7 +160,7 @@ void CHConstructor<Node, Edge>::_contract(NodeID node)
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_calcShortcuts(Edge const& start_edge, NodeID center_node,
+void CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeID center_node,
 		EdgeType direction)
 {
 	uint t(_myThreadNum());
@@ -154,13 +168,13 @@ void CHConstructor<Node, Edge>::_calcShortcuts(Edge const& start_edge, NodeID ce
 	NodeID start_node(start_edge.otherNode(!direction));
 
 	std::vector<NodeID> end_nodes;
-	std::vector<Edge const*> end_edges;
+	std::vector<Shortcut const*> end_edges;
 	end_nodes.reserve(_base_graph.getNrOfEdges(center_node, direction));
 	end_edges.reserve(_base_graph.getNrOfEdges(center_node, direction));
 
-	typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, center_node, direction);
+	typename CHGraph::EdgeIt edge_it(_base_graph, center_node, direction);
 	while (edge_it.hasNext()) {
-		Edge const& edge(edge_it.getNext());
+		Shortcut const& edge(edge_it.getNext());
 		end_edges.push_back(&edge);
 		end_nodes.push_back(edge.otherNode(direction));
 	}
@@ -192,10 +206,10 @@ void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
 
 	if (_dists[t][node] == dist) {
 
-		typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, node, direction);
+		typename CHGraph::EdgeIt edge_it(_base_graph, node, direction);
 		while (edge_it.hasNext()) {
 
-			Edge const& edge(edge_it.getNext());
+			Shortcut const& edge(edge_it.getNext());
 			NodeID tgt_node(edge.otherNode(direction));
 			uint new_dist(dist + edge.dist);
 
@@ -212,16 +226,15 @@ void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_createShortcut(Edge const& edge1, Edge const& edge2,
+void CHConstructor<Node, Edge>::_createShortcut(Shortcut const& edge1, Shortcut const& edge2,
 		EdgeType direction)
 {
-	uint t(_myThreadNum());
-
+	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	if (direction == OUT) {
-		_new_shortcuts[t].push_back(edge1.concat(edge2));
+		_new_shortcuts.push_back(edge1.concat(edge2));
 	}
 	else {
-		_new_shortcuts[t].push_back(edge2.concat(edge1));
+		_new_shortcuts.push_back(edge2.concat(edge1));
 	}
 }
 
@@ -251,9 +264,9 @@ template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::_markNeighbours(NodeID node, std::vector<bool>& marked)
 {
 	for (uint i(0); i<2; i++) {
-		typename Graph<Node, Edge>::EdgeIt edge_it(_base_graph, node, (EdgeType) i);
+		typename CHGraph::EdgeIt edge_it(_base_graph, node, (EdgeType) i);
 		while (edge_it.hasNext()) {
-			Edge const& edge(edge_it.getNext());
+			Shortcut const& edge(edge_it.getNext());
 			marked[edge.otherNode((EdgeType) i)] = true;
 		}
 	}
@@ -264,7 +277,7 @@ void CHConstructor<Node, Edge>::_markNeighbours(NodeID node, std::vector<bool>& 
  */
 
 template <typename Node, typename Edge>
-CHConstructor<Node, Edge>::CHConstructor(Graph<Node, Edge> const& base_graph,
+CHConstructor<Node, Edge>::CHConstructor(CHGraph& base_graph,
 		uint num_threads)
 		:_base_graph(base_graph), _num_threads(num_threads)
 {
@@ -272,7 +285,6 @@ CHConstructor<Node, Edge>::CHConstructor(Graph<Node, Edge> const& base_graph,
 		_num_threads = 1;
 	}
 
-	_new_shortcuts.resize(_num_threads);
 	_pq.resize(_num_threads);
 	_dists.resize(_num_threads);
 	_reset_dists.resize(_num_threads);
@@ -282,7 +294,7 @@ template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 {
 	for (uint i(0); i<_num_threads; i++) {
-		_new_shortcuts[i].reserve(_base_graph.getNrOfEdges());
+		_new_shortcuts.reserve(_base_graph.getNrOfEdges());
 		_dists[i].reserve(_base_graph.getNrOfNodes());
 		_reset_dists[i].reserve(_base_graph.getNrOfNodes());
 	}
@@ -291,12 +303,11 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 
 	while (!nodes.empty()) {
 
-		Print("\nInitializing the threads' vectors for a new round.");
-		_initThreadVectors();
+		Print("\nInitializing the vectors for a new round.");
+		_initVectors();
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
-		nodes.sort<CompInOutProduct<Node, Edge> >(
-				CompInOutProduct<Node, Edge>(_base_graph));
+		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
 
 		Print("Constructing the independent set.");
 		std::vector<NodeID> independent_set;
@@ -307,11 +318,13 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 		#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
 		for (uint i = 0; i < independent_set.size(); i++) {
 			_contract(independent_set[i]);
+			_delete[independent_set[i]] = true;
 		}
 
-		for (uint i(0); i<_num_threads; i++) {
-			Print("#Shortcuts of thread " << i << ": " << _new_shortcuts[i].size());
-		}
+		Print("Number of new Shortcuts: " << _new_shortcuts.size());
+
+		Print("Restructuring the graph.");
+		_base_graph.restructure(_delete, _new_shortcuts);
 	}
 }
 

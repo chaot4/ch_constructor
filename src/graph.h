@@ -19,10 +19,7 @@ namespace unit_tests
 template <typename Node, typename Edge>
 class Graph
 {
-	private:
-		uint _nr_of_nodes;
-		uint _nr_of_edges;
-
+	protected:
 		std::vector<Node> _nodes;
 
 		std::vector<uint> _out_offsets;
@@ -41,10 +38,11 @@ class Graph
 		 * The offset vectors aren't initialized! */
 		bool read(std::string const& filename);
 
-		/* Inits in and out offsets for the in and out edge vectors.
-		 * The edges are primarily sorted by src id (out) or tgt id (in).
-		 * Secondarily they are sorted according to <edge_sort> */
-		template <class OutEdgeSort, class InEdgeSort>
+		template <class InEdgeSort>
+		void sortInEdges();
+		template <class OutEdgeSort>
+		void sortOutEdges();
+
 		void initOffsets();
 		void initIdToIndex();
 		void setEdgeSrcTgtToOffset();
@@ -69,6 +67,8 @@ bool Graph<Node, Edge>::read(std::string const& filename)
 	std::ifstream f(filename.c_str());
 
 	if (f.is_open()) {
+		uint nr_of_nodes(_nodes.size());
+		uint nr_of_edges(_out_edges.size());
 		std::string file;
 
 		/* Read the file into RAM */
@@ -79,13 +79,13 @@ bool Graph<Node, Edge>::read(std::string const& filename)
 
 		std::stringstream ss(file);
 
-		ss >> _nr_of_nodes >> _nr_of_edges;
-		Print("Number of nodes: " << _nr_of_nodes);
-		Print("Number of edges: " << _nr_of_edges);
+		ss >> nr_of_nodes >> nr_of_edges;
+		Print("Number of nodes: " << nr_of_nodes);
+		Print("Number of edges: " << nr_of_edges);
 
 		/* Read the nodes. */
-		_nodes.resize(_nr_of_nodes);
-		for (uint i(0); i<_nr_of_nodes; i++){
+		_nodes.resize(nr_of_nodes);
+		for (uint i(0); i<nr_of_nodes; i++){
 			_nodes[i].read(ss);
 		}
 		std::sort(_nodes.begin(), _nodes.end());
@@ -93,10 +93,10 @@ bool Graph<Node, Edge>::read(std::string const& filename)
 		Print("Read all the nodes.");
 
 		/* Read the edges into _out_edges and _in_edges. */
-		_out_edges.resize(_nr_of_edges);
-		_in_edges.reserve(_nr_of_edges);
+		_out_edges.resize(nr_of_edges);
+		_in_edges.reserve(nr_of_edges);
 
-		for (EdgeID edge_id(0); edge_id<_nr_of_edges; edge_id++) {
+		for (EdgeID edge_id(0); edge_id<nr_of_edges; edge_id++) {
 			Edge& edge(_out_edges[edge_id]);
 			edge.id = edge_id;
 			edge.read(ss);
@@ -118,37 +118,54 @@ bool Graph<Node, Edge>::read(std::string const& filename)
 }
 
 template <typename Node, typename Edge>
-template <class OutEdgeSort, class InEdgeSort>
+template <class InEdgeSort>
+void Graph<Node, Edge>::sortInEdges()
+{
+	Print("Sort the incomming edges.");
+
+	std::sort(_in_edges.begin(), _in_edges.end(), InEdgeSort());
+	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), InEdgeSort()));
+}
+
+template <typename Node, typename Edge>
+template <class OutEdgeSort>
+void Graph<Node, Edge>::sortOutEdges()
+{
+	Print("Sort the outgoing edges.");
+
+	std::sort(_out_edges.begin(), _out_edges.end(), OutEdgeSort());
+	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), OutEdgeSort()));
+}
+
+template <typename Node, typename Edge>
 void Graph<Node, Edge>::initOffsets()
 {
 	Print("Init the offsets.");
 
-	std::sort(_out_edges.begin(), _out_edges.end(), OutEdgeSort());
-	std::sort(_in_edges.begin(), _in_edges.end(), InEdgeSort());
-	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
-	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), EdgeSortTgt<Edge>()));
+	uint nr_of_nodes(_nodes.size());
+	uint nr_of_edges(_out_edges.size());
 
-	std::vector<uint> out_edge_count(_nr_of_nodes, 0);
-	std::vector<uint> in_edge_count(_nr_of_nodes, 0);
-	for (uint i(0); i<_nr_of_edges; i++) {
+	std::vector<uint> out_edge_count(nr_of_nodes, 0);
+	std::vector<uint> in_edge_count(nr_of_nodes, 0);
+	for (uint i(0); i<nr_of_edges; i++) {
 		out_edge_count[_out_edges[i].src]++;
 		in_edge_count[_in_edges[i].tgt]++;
 	}
 
 	uint out_sum(0);
 	uint in_sum(0);
-	_out_offsets.resize(_nr_of_nodes + 1);
-	_in_offsets.resize(_nr_of_nodes + 1);
-	for (NodeID i(0); i<_nr_of_nodes; i++) {
+	_out_offsets.resize(nr_of_nodes + 1);
+	_in_offsets.resize(nr_of_nodes + 1);
+	for (NodeID i(0); i<nr_of_nodes; i++) {
 		_out_offsets[i] = out_sum;
 		_in_offsets[i] = in_sum;
 		out_sum += out_edge_count[i];
 		in_sum += in_edge_count[i];
 	}
-	assert(out_sum == _nr_of_edges);
-	assert(in_sum == _nr_of_edges);
-	_out_offsets[_nr_of_nodes] = _nr_of_edges;
-	_in_offsets[_nr_of_nodes] = _nr_of_edges;
+	assert(out_sum == nr_of_edges);
+	assert(in_sum == nr_of_edges);
+	_out_offsets[nr_of_nodes] = nr_of_edges;
+	_in_offsets[nr_of_nodes] = nr_of_edges;
 }
 
 template <typename Node, typename Edge>
@@ -156,7 +173,7 @@ void Graph<Node, Edge>::initIdToIndex()
 {
 	Print("Renew the index mapper.");
 
-	_id_to_index.resize(_nr_of_edges);
+	_id_to_index.resize(_out_edges.size());
 	for (uint i(0); i<_out_edges.size(); i++) {
 		_id_to_index[_out_edges[i].id] = i;
 	}
@@ -201,13 +218,13 @@ NodeID Graph<Node, Edge>::getOffId(NodeID node_id, EdgeType type)
 template <typename Node, typename Edge>
 uint Graph<Node, Edge>::getNrOfNodes() const
 {
-	return _nr_of_nodes;
+	return _nodes.size();
 }
 
 template <typename Node, typename Edge>
 uint Graph<Node, Edge>::getNrOfEdges() const
 {
-	return _nr_of_edges;
+	return _out_edges.size();
 }
 
 template <typename Node, typename Edge>
@@ -322,11 +339,5 @@ Edge const& Graph<Node, Edge>::OffEdgeIt::getNext()
 {
 	return *(_current++);
 }
-
-/*
- * CHGraph
- */
-
-typedef Graph<CHNode, CHEdge<Edge> > CHGraph;
 
 #endif

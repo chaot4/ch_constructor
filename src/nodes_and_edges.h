@@ -58,6 +58,7 @@ void Node::read(std::stringstream& ss)
 	id = node.id;
 }
 
+template<typename Node>
 struct CHNode : Node
 {
 	uint lvl;
@@ -91,6 +92,16 @@ struct Edge
 	Edge() : id(0), src(0), tgt(0), dist(0){}
 	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
 		: id(id), src(src), tgt(tgt), dist(dist){}
+
+	bool operator<(Edge const& edge) const
+	{ 
+		return src < edge.src || (src == edge.src && tgt < edge.tgt);
+	}
+
+	bool operator==(Edge const& edge) const
+	{ 
+		return src == edge.src && tgt == edge.tgt;
+	}
 
 	void read(std::stringstream& ss);
 	NodeID otherNode(EdgeType edge_type) const;
@@ -140,7 +151,10 @@ NodeID Edge::otherNode(EdgeType edge_type) const
 
 CHEdge<Edge> Edge::concat(Edge const& edge) const
 {
-	assert(tgt == edge.src);
+//	assert(tgt == edge.src);
+	if (tgt != edge.src) {
+		Debug(src << " " << tgt << " " << edge.src << " " << edge.tgt);
+	}
 	return CHEdge<Edge>(Edge(0, src, edge.tgt, dist + edge.dist), id, edge.id);
 }
 
@@ -153,7 +167,8 @@ struct EdgeSortSrc
 {
 	bool operator()(Edge const& edge1, Edge const& edge2) const
 	{
-		return edge1.src < edge2.src;
+		return edge1.src < edge2.src ||
+		       	(edge1.src == edge2.src && edge1.tgt < edge2.tgt);
 	}
 };
 
@@ -162,7 +177,8 @@ struct EdgeSortTgt
 {
 	bool operator()(Edge const& edge1, Edge const& edge2) const
 	{
-		return edge1.tgt < edge2.tgt;
+		return edge1.tgt < edge2.tgt ||
+		       	(edge1.tgt == edge2.tgt && edge1.src < edge2.src);
 	}
 };
 

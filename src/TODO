@@ -2,11 +2,10 @@ Iterator:
 	x Die node ids auf die offset array indizes setzen usw.
 
 Dynamischer Graph:
-	- Edge arrays immer nur setzen, indem durch das alte gegangen wird und die noch aktuellen Kanten gespeichert werden (Dadurch müssen die node_ids neu gesetzt werden, da sich die offsets ändern). Dann wohl am besten in vector.swap.
+	x Edge arrays immer nur setzen, indem durch das alte gegangen wird und die noch aktuellen Kanten gespeichert werden (Dadurch müssen die node_ids neu gesetzt werden, da sich die offsets ändern). Dann wohl am besten in vector.swap.
 	x Methode die die node id's auf offset indizes setzt. tgt -> out_offset, src -> in_offset. (Vllt lieber die ganze Klasse umschreiben? Oder lieber wrapper Graph?)
-	- Shortcuts alle in einem vector halten.
-	- keine Listen!
-	- dynamimschen graph testen
+	x Shortcuts alle in einem vector halten.
+	x keine Listen!
 
 ch_constructor:
 	x independent set algo testen
@@ -18,7 +17,7 @@ ch_constructor im Detail:
 	x Nur für jeden center_node wird parallelisiert mit OpenMP
 	x Das rausnehmen der Knoten genauso machen, wie schon im Pferd. ODER über die Anzahl!
 		x Die zu findenden Knoten in einen vector machen. Ist shortcut, wenn der Knoten von dem wir kommen der center_node ist.
-	- Doppelte Kanten nach jeder Runde prunen.
+	x Doppelte Kanten nach jeder Runde prunen.
 	x Shortcuts direkt einfügen mit mutex eben.
 	- Auf allen vectors immer ein reserve machen
 	- Wie machen wir das mit der edge difference?
@@ -27,12 +26,33 @@ ch_constructor im Detail:
 	x Manueller reset der Dijkstra vectors über Member var's vllt?
 
 Graph umbauen:
-	- Gleiche SCs prunen
-	- Lösche Kanten die nichtmehr drin sind
-	- Füge Kanten hinzu inkl. Shortcuts
+	x Gleiche SCs prunen
+	x Lösche Kanten die nichtmehr drin sind
+	x Füge Kanten hinzu inkl. Shortcuts
 
 Speedups:
 	x Je nach Anzahl von eingehenden oder ausgehenden Kanten aus aufzählen.
 	- Arith. Mittel und SCs speichern.
 	x Das ind. set aufbauen indem erst die Knoten mit #eingehend * #ausgehend sortiert werden. Dann vom kleinsten anfangen.
-	- Preprocessing step: Knoten mit sowieso niedriger edge-difference kicken indem einfach alle SCs für die eingefügt werden. Besonders Grad 2 Knoten können kontrahiert werden!
+	- Preprocessing step: Knoten mit sowieso niedriger edge-difference kicken indem einfach alle SCs für die eingefügt werden. Besonders Grad 2/4 Knoten (Durchgangsknoten) können kontrahiert werden!
+
+
+Fragen:
+- Was ist die Anzahl der Knoten mit Grad kleiner als 2,3,4?
+
+Zeugs:
+	- getMaxNodeID() Zeugs und damit die Array Größe setzen.
+	x is_deleted array im ch_constructor halten
+
+Umbau:
+	x Neue shortcuts sortieren
+	x Dann edges und new_shortcuts mergen in einen neuen vector
+	x Die edges die nicht reingemerged werden, weil rausgeschmissen kommen in dump vector
+
+Neu:
+	- Methode um CHGraph aufzubauen.
+	- _in_edges vector auch manuell so mergen.
+	- das Sortieren der Kanten irgendwie zentral festlegen
+	- CHDijkstra coden um zu schauen ob alle kürzesten Wege existieren.
+	- Viele, viele Dijkstras laufen lassen um zu testen.
+
