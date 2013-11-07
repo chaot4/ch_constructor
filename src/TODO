@@ -51,8 +51,12 @@ Umbau:
 
 Neu:
 	- Methode um CHGraph aufzubauen.
-	- _in_edges vector auch manuell so mergen.
+	- _in_edges vector auch manuell so mergen. (oder bringt das sowieso nix?)
 	- das Sortieren der Kanten irgendwie zentral festlegen
 	- CHDijkstra coden um zu schauen ob alle kürzesten Wege existieren.
 	- Viele, viele Dijkstras laufen lassen um zu testen.
+	- Schnellen Iterator verwenden.
+	- Asserts zentral abschaltbar machen in defs.h
+	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
+	- Die Level im CHGraph aufsetzen.
 

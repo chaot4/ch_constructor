@@ -65,7 +65,7 @@ class CHConstructor{
 		CHConstructor(CHGraph& base_graph, uint num_threads = 1);
 
 		void contract(std::list<NodeID> nodes);
-		void getCHGraph(CHGraph& ch_graph);
+		SCGraph<Node, Edge> const& getCHGraph();
 
 		friend void unit_tests::testCHConstructor();
 };
@@ -329,9 +329,12 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::getCHGraph(CHGraph& ch_graph)
+SCGraph<Node, Edge> const& CHConstructor<Node, Edge>::getCHGraph()
 {
+	Print("Building the CHGraph.");
 
+	_base_graph.buildCHGraph();
+	return _base_graph;
 }
 
 #endif

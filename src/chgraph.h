@@ -17,13 +17,14 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 		using BaseGraph::_out_edges;
 		using BaseGraph::_in_edges;
 
-		std::vector<Shortcut> edges_dump;
+		std::vector<Shortcut> _edges_dump;
 
 	public:
 		SCGraph() : BaseGraph() {}
 
 		void restructure(std::vector<bool> const& deleted,
 				std::vector<Shortcut>& new_shortcuts);
+		void buildCHGraph();
 };
 
 template <typename Node, typename Edge>
@@ -48,7 +49,7 @@ void SCGraph<Node, Edge>::restructure(std::vector<bool> const& deleted,
 				new_edge_vec.push_back(new_sc);
 			}
 			else {
-				edges_dump.push_back(new_sc);
+				_edges_dump.push_back(new_sc);
 			}
 			j++;
 		}
@@ -63,7 +64,7 @@ void SCGraph<Node, Edge>::restructure(std::vector<bool> const& deleted,
 			new_edge_vec.push_back(_out_edges[i]);
 		}
 		else {
-			edges_dump.push_back(_out_edges[i]);
+			_edges_dump.push_back(_out_edges[i]);
 		}
 	}
 
@@ -76,7 +77,7 @@ void SCGraph<Node, Edge>::restructure(std::vector<bool> const& deleted,
 			new_edge_vec.push_back(new_sc);
 		}
 		else {
-			edges_dump.push_back(new_sc);
+			_edges_dump.push_back(new_sc);
 		}
 
 		j++;
@@ -86,6 +87,22 @@ void SCGraph<Node, Edge>::restructure(std::vector<bool> const& deleted,
 
 	_out_edges.swap(new_edge_vec);
 	_in_edges.assign(_out_edges.begin(), _out_edges.end());
+	BaseGraph::template sortInEdges<EdgeSortTgt<Edge> >();
+	BaseGraph::initOffsets();
+	BaseGraph::initIdToIndex();
+
+	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
+	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), EdgeSortTgt<Edge>()));
+}
+
+template <typename Node, typename Edge>
+void SCGraph<Node, Edge>::buildCHGraph()
+{
+	_out_edges.swap(_edges_dump);
+	_in_edges.assign(_out_edges.begin(), _out_edges.end());
+	_edges_dump.clear();
+
+	BaseGraph::template sortOutEdges<EdgeSortSrc<Edge> >();
 	BaseGraph::template sortInEdges<EdgeSortTgt<Edge> >();
 	BaseGraph::initOffsets();
 	BaseGraph::initIdToIndex();
