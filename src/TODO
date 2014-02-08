@@ -55,8 +55,10 @@ Neu:
 	- das Sortieren der Kanten irgendwie zentral festlegen
 	- CHDijkstra coden um zu schauen ob alle kürzesten Wege existieren.
 	- Viele, viele Dijkstras laufen lassen um zu testen.
-	- Schnellen Iterator verwenden.
+	- Schnellen Iterator verwenden. (Was hab ich damit gemeint?)
 	- Asserts zentral abschaltbar machen in defs.h
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
 	- Die Level im CHGraph aufsetzen.
 
+Noch neuer:
+	- Testgraph erstellen inkl. Darstellung mit ipe um in Zukunft Tests laufen zu lassen, die ich auch noch manuell hinbekomme.

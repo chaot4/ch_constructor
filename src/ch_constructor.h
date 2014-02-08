@@ -21,7 +21,7 @@ namespace unit_tests
 
 namespace
 {
-	int MAX_UINT(std::numeric_limits<uint>::max());
+	uint MAX_UINT(std::numeric_limits<uint>::max());
 }
 
 template <typename Node, typename Edge>
@@ -215,8 +215,10 @@ void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
 
 			if (new_dist < _dists[t][tgt_node]) {
 
+				if (_dists[t][tgt_node] == MAX_UINT) {
+					_reset_dists[t].push_back(tgt_node);
+				}
 				_dists[t][tgt_node] = new_dist;
-				_reset_dists[t].push_back(tgt_node);
 				_pq[t].push(PQElement(tgt_node, new_dist));
 			}
 		}

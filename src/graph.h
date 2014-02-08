@@ -50,9 +50,9 @@ class Graph
 		uint getNrOfNodes() const;
 		uint getNrOfEdges() const;
 		uint getNrOfEdges(NodeID node_id, EdgeType type) const;
-		Edge const& getEdge(EdgeID edge_id);
-		Node const& getNode(NodeID node_id);
-		NodeID getOffId(NodeID node_id, EdgeType type);
+		Edge const& getEdge(EdgeID edge_id) const;
+		Node const& getNode(NodeID node_id) const;
+		NodeID getOffId(NodeID node_id, EdgeType type) const;
 
 		friend void unit_tests::testGraph();
 };
@@ -193,19 +193,19 @@ void Graph<Node, Edge>::setEdgeSrcTgtToOffset()
 }
 
 template <typename Node, typename Edge>
-Edge const& Graph<Node, Edge>::getEdge(EdgeID edge_id)
+Edge const& Graph<Node, Edge>::getEdge(EdgeID edge_id) const
 {
 	return _out_edges[_id_to_index[edge_id]];
 }
 
 template <typename Node, typename Edge>
-Node const& Graph<Node, Edge>::getNode(NodeID node_id)
+Node const& Graph<Node, Edge>::getNode(NodeID node_id) const
 {
 	return _nodes[node_id];
 }
 
 template <typename Node, typename Edge>
-NodeID Graph<Node, Edge>::getOffId(NodeID node_id, EdgeType type)
+NodeID Graph<Node, Edge>::getOffId(NodeID node_id, EdgeType type) const
 {
 	if (type == OUT) {
 		return _out_offsets[node_id];

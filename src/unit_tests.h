@@ -6,6 +6,7 @@
 #include "graph.h"
 #include "chgraph.h"
 #include "ch_constructor.h"
+#include "dijkstra.h"
 
 #include <map>
 #include <iostream>
@@ -23,6 +24,8 @@ namespace unit_tests
 		unit_tests::testNodesAndEdges();
 		unit_tests::testGraph();
 		unit_tests::testCHConstructor();
+		unit_tests::testCHDijkstra();
+		unit_tests::testDijkstra();
 	}
 }
 
@@ -181,10 +184,52 @@ void unit_tests::testCHConstructor()
 	 * Test the contraction.
 	 */
 	chc.contract(all_nodes);
+	chc.getCHGraph();
 
 	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
 	Print("====================================\n");
+}
+
+void unit_tests::testCHDijkstra()
+{
+	Print("\n============================");
+	Print("TEST: Start CHDijkstra test.");
+	Print("============================\n");
+
+	Print("\n=================================");
+	Print("TEST: CHDijkstra test successful.");
+	Print("=================================\n");
+}
+
+void unit_tests::testDijkstra()
+{
+	Print("\n============================");
+	Print("TEST: Start Dijkstra test.");
+	Print("============================\n");
+
+	Graph<Node, Edge> g;
+	g.read("../data/15kSZHK.txt");
+
+	g.sortOutEdges<EdgeSortSrc<Edge> >();
+	g.sortInEdges<EdgeSortTgt<Edge> >();
+	g.initOffsets();
+	g.initIdToIndex();
+
+	Dijkstra<Node, Edge> dij(g);
+	std::vector<EdgeID> path;
+	NodeID tgt(g.getNrOfNodes() - 1);
+	uint dist = dij.calcShopa(0, tgt, path);
+
+	Print("Dist of Dijkstra from 0 to " << tgt << ": " << dist);
+	Print("Shortest path from 0 to " << tgt << ":");
+	for (uint i(0); i<path.size(); i++) {
+		Print(path[i]);
+	}
+
+	Print("\n=================================");
+	Print("TEST: Dijkstra test successful.");
+	Print("=================================\n");
 }
 
 #endif

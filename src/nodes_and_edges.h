@@ -6,6 +6,7 @@
 #include <sstream>
 #include <vector>
 #include <cassert>
+#include <limits>
 
 namespace unit_tests
 {
@@ -14,6 +15,11 @@ namespace unit_tests
 
 typedef uint NodeID;
 typedef uint EdgeID;
+namespace c
+{
+	uint const NO_NID(std::numeric_limits<NodeID>::max());
+	uint const NO_EID(std::numeric_limits<EdgeID>::max());
+}
 
 enum EdgeType {OUT = 0, IN = 1};
 

@@ -83,7 +83,7 @@ void SCGraph<Node, Edge>::restructure(std::vector<bool> const& deleted,
 		j++;
 	}
 
-	// TODO manually merge _in_edges
+	// TODO manually merge _in_edges. Is this really better?
 
 	_out_edges.swap(new_edge_vec);
 	_in_edges.assign(_out_edges.begin(), _out_edges.end());
