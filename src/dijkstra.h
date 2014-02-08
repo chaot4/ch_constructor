@@ -75,6 +75,7 @@ uint Dijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 		std::vector<EdgeID>& path)
 {
 	_reset();
+	path.clear();
 
 	PQ pq;
 	pq.push(PQElement(src, c::NO_EID, 0));

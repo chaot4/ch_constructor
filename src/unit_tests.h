@@ -209,7 +209,7 @@ void unit_tests::testDijkstra()
 	Print("============================\n");
 
 	Graph<Node, Edge> g;
-	g.read("../data/15kSZHK.txt");
+	g.read("../data/test");
 
 	g.sortOutEdges<EdgeSortSrc<Edge> >();
 	g.sortInEdges<EdgeSortTgt<Edge> >();
@@ -222,10 +222,22 @@ void unit_tests::testDijkstra()
 	uint dist = dij.calcShopa(0, tgt, path);
 
 	Print("Dist of Dijkstra from 0 to " << tgt << ": " << dist);
+	Test(dist == 9);
+
 	Print("Shortest path from 0 to " << tgt << ":");
 	for (uint i(0); i<path.size(); i++) {
-		Print(path[i]);
+		Edge const& edge(g.getEdge(path[i]));
+		Print("EdgeID: " << edge.id << ", src: " << edge.src << ", tgt: " << edge.tgt);
 	}
+
+	Print("Test if shortest paths are the same from both sides for the 'test' graph.");
+	for (NodeID src(0); src<g.getNrOfNodes(); src++) {
+		for (NodeID tgt(src); tgt<g.getNrOfNodes(); tgt++) {
+			Test(dij.calcShopa(src, tgt, path) == dij.calcShopa(tgt, src, path));
+		}
+	}
+
+
 
 	Print("\n=================================");
 	Print("TEST: Dijkstra test successful.");
