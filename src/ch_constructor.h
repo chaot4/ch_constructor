@@ -326,7 +326,7 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 		Print("Number of new Shortcuts: " << _new_shortcuts.size());
 
 		Print("Restructuring the graph.");
-		_base_graph.restructure(_delete, _new_shortcuts);
+		_base_graph.restructure(independent_set, _delete, _new_shortcuts);
 	}
 }
 

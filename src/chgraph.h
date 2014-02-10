@@ -14,24 +14,41 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 		typedef CHNode<Node> LvlNode;
 		typedef CHEdge<Edge> Shortcut;
 		typedef Graph<LvlNode, Shortcut> BaseGraph;
+		using BaseGraph::_nodes;
 		using BaseGraph::_out_edges;
 		using BaseGraph::_in_edges;
 		using BaseGraph::_next_id;
 
 		std::vector<Shortcut> _edges_dump;
 
-	public:
-		SCGraph() : BaseGraph() {}
+		uint _next_lvl;
 
-		void restructure(std::vector<bool> const& deleted,
+	public:
+		SCGraph() : BaseGraph(), _next_lvl(0) {}
+
+		void restructure(std::vector<NodeID> const& contracted_nodes,
+				std::vector<bool> const& deleted,
 				std::vector<Shortcut>& new_shortcuts);
 		void buildCHGraph();
 };
 
 template <typename Node, typename Edge>
-void SCGraph<Node, Edge>::restructure(std::vector<bool> const& deleted,
-				std::vector<Shortcut>& new_shortcuts)
+void SCGraph<Node, Edge>::restructure(
+		std::vector<NodeID> const& contracted_nodes,
+		std::vector<bool> const& deleted,
+		std::vector<Shortcut>& new_shortcuts)
 {
+	/*
+	 * Process contracted nodes.
+	 */
+	for (uint i(0); i<contracted_nodes.size(); i++) {
+		_nodes[contracted_nodes[i]].lvl = _next_lvl;
+	}
+	_next_lvl++;
+
+	/*
+	 * Process new shortcuts.
+	 */
 	std::vector<Shortcut> new_edge_vec;
 	new_edge_vec.reserve(_out_edges.size() + new_shortcuts.size());
 

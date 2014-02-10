@@ -140,7 +140,7 @@ bool Graph<Node, Edge>::write(std::string const& filename)
 		}
 
 		for (uint i(0); i<nr_of_edges; i++) {
-			_out_edges[i].write(f);
+			_out_edges[_id_to_index[i]].write(f);
 			f << std::endl;
 		}
 
