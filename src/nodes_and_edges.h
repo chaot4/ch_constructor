@@ -3,6 +3,7 @@
 
 #include "defs.h"
 
+#include <fstream>
 #include <sstream>
 #include <vector>
 #include <cassert>
@@ -19,6 +20,7 @@ namespace c
 {
 	uint const NO_NID(std::numeric_limits<NodeID>::max());
 	uint const NO_EID(std::numeric_limits<EdgeID>::max());
+	uint const NO_DIST(std::numeric_limits<uint>::max());
 }
 
 enum EdgeType {OUT = 0, IN = 1};
@@ -52,7 +54,8 @@ struct Node
 	Node() : id(0){}
 	Node(NodeID id) : id(id){}
 
-	void read(std::stringstream& ss);
+	virtual void read(std::stringstream& ss);
+	virtual void write(std::ofstream& f);
 	bool operator<(Node const& node) const { return id < node.id; }
 };
 
@@ -64,6 +67,11 @@ void Node::read(std::stringstream& ss)
 	id = node.id;
 }
 
+void Node::write(std::ofstream& f)
+{
+	f << id << " 0 0 0 0";
+}
+
 template<typename Node>
 struct CHNode : Node
 {
@@ -71,7 +79,16 @@ struct CHNode : Node
 
 	CHNode() : Node(), lvl(0){}
 	CHNode(Node const& node, uint lvl) : Node(node), lvl(lvl){}
+
+	virtual void write(std::ofstream& f);
 };
+
+template<typename Node>
+void CHNode<Node>::write(std::ofstream& f)
+{
+	Node::write(f);
+	f << " " << lvl;
+}
 
 /*
  * Edges
@@ -95,7 +112,7 @@ struct Edge
 	NodeID tgt;
 	uint dist;
 
-	Edge() : id(0), src(0), tgt(0), dist(0){}
+	Edge() : id(c::NO_NID), src(c::NO_NID), tgt(c::NO_NID), dist(c::NO_DIST){}
 	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
 		: id(id), src(src), tgt(tgt), dist(dist){}
 
@@ -109,7 +126,8 @@ struct Edge
 		return src == edge.src && tgt == edge.tgt;
 	}
 
-	void read(std::stringstream& ss);
+	virtual void read(std::stringstream& ss);
+	virtual void write(std::ofstream& f);
 	NodeID otherNode(EdgeType edge_type) const;
 
 	CHEdge<Edge> concat(Edge const& edge) const;
@@ -133,6 +151,8 @@ struct CHEdge : Edge
 	CHEdge() : child_edge1(-1), child_edge2(-1){}
 	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2)
 		: Edge(edge), child_edge1(child_edge1), child_edge2(child_edge2){}
+
+	virtual void write(std::ofstream& f);
 };
 
 void Edge::read(std::stringstream& ss)
@@ -143,6 +163,11 @@ void Edge::read(std::stringstream& ss)
 	src = edge.src;
 	tgt = edge.tgt;
 	dist = edge.dist;
+}
+
+void Edge::write(std::ofstream& f)
+{
+	f << src << " " << tgt << " " << dist << " 0 -1";
 }
 
 NodeID Edge::otherNode(EdgeType edge_type) const
@@ -161,7 +186,14 @@ CHEdge<Edge> Edge::concat(Edge const& edge) const
 	if (tgt != edge.src) {
 		Debug(src << " " << tgt << " " << edge.src << " " << edge.tgt);
 	}
-	return CHEdge<Edge>(Edge(0, src, edge.tgt, dist + edge.dist), id, edge.id);
+	return CHEdge<Edge>(Edge(c::NO_EID, src, edge.tgt, dist + edge.dist), id, edge.id);
+}
+
+template <typename Edge>
+void CHEdge<Edge>::write(std::ofstream& f)
+{
+	Edge::write(f);
+	f << " " << child_edge1 << " " << child_edge2;
 }
 
 /*

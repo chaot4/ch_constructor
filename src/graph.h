@@ -30,13 +30,18 @@ class Graph
 		/* Maps edge id to index in the _out_edge vector. */
 		std::vector<EdgeID> _id_to_index;
 
+		EdgeID _next_id;
+
 	public:
+		Graph() : _next_id(0) {}
+
 		class EdgeIt;
 		class OffEdgeIt;
 
 		/* Read the nodes and edges from the file <filename>.
 		 * The offset vectors aren't initialized! */
 		bool read(std::string const& filename);
+		bool write(std::string const& filename);
 
 		template <class InEdgeSort>
 		void sortInEdges();
@@ -96,15 +101,48 @@ bool Graph<Node, Edge>::read(std::string const& filename)
 		_out_edges.resize(nr_of_edges);
 		_in_edges.reserve(nr_of_edges);
 
-		for (EdgeID edge_id(0); edge_id<nr_of_edges; edge_id++) {
-			Edge& edge(_out_edges[edge_id]);
-			edge.id = edge_id;
+		for (uint i(0); i<nr_of_edges; i++) {
+			Edge& edge(_out_edges[i]);
+			edge.id = _next_id++;
 			edge.read(ss);
 
 			_in_edges.push_back(edge);
 		}
 
 		Print("Read all the edges.");
+
+		f.close();
+	}
+	else {
+		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" << filename
+			<< "\'. Exiting." << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+template <typename Node, typename Edge>
+bool Graph<Node, Edge>::write(std::string const& filename)
+{
+	std::ofstream f(filename.c_str());
+
+	if (f.is_open()) {
+		uint nr_of_nodes(_nodes.size());
+		uint nr_of_edges(_out_edges.size());
+
+		f << nr_of_nodes << std::endl;
+		f << nr_of_edges << std::endl;
+
+		for (uint i(0); i<nr_of_nodes; i++) {
+			_nodes[i].write(f);
+			f << std::endl;
+		}
+
+		for (uint i(0); i<nr_of_edges; i++) {
+			_out_edges[i].write(f);
+			f << std::endl;
+		}
 
 		f.close();
 	}
@@ -173,7 +211,7 @@ void Graph<Node, Edge>::initIdToIndex()
 {
 	Print("Renew the index mapper.");
 
-	_id_to_index.resize(_out_edges.size());
+	_id_to_index.resize(_next_id);
 	for (uint i(0); i<_out_edges.size(); i++) {
 		_id_to_index[_out_edges[i].id] = i;
 	}

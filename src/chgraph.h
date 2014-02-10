@@ -16,6 +16,7 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 		typedef Graph<LvlNode, Shortcut> BaseGraph;
 		using BaseGraph::_out_edges;
 		using BaseGraph::_in_edges;
+		using BaseGraph::_next_id;
 
 		std::vector<Shortcut> _edges_dump;
 
@@ -44,7 +45,9 @@ void SCGraph<Node, Edge>::restructure(std::vector<bool> const& deleted,
 		/* edge greater */
 		while (j < new_shortcuts.size() && new_shortcuts[j] < edge) {
 
-			Shortcut const& new_sc(new_shortcuts[j]);
+			Shortcut& new_sc(new_shortcuts[j]);
+			Debug(_next_id);
+			new_sc.id = _next_id++;
 			if (!deleted[new_sc.src] && !deleted[new_sc.tgt]) {
 				new_edge_vec.push_back(new_sc);
 			}
@@ -71,19 +74,17 @@ void SCGraph<Node, Edge>::restructure(std::vector<bool> const& deleted,
 	/* Rest of new_shortcuts */
 	while (j < new_shortcuts.size()) {
 
-		Shortcut const& new_sc(new_shortcuts[j]);
-
+		Shortcut& new_sc(new_shortcuts[j]);
+		Debug(_next_id);
+		new_sc.id = _next_id++;
 		if (!deleted[new_sc.src] && !deleted[new_sc.tgt]) {
 			new_edge_vec.push_back(new_sc);
 		}
 		else {
 			_edges_dump.push_back(new_sc);
 		}
-
 		j++;
 	}
-
-	// TODO manually merge _in_edges. Is this really better?
 
 	_out_edges.swap(new_edge_vec);
 	_in_edges.assign(_out_edges.begin(), _out_edges.end());

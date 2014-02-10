@@ -138,12 +138,11 @@ void unit_tests::testCHConstructor()
 	Print("TEST: Start CHConstructor test.");
 	Print("===============================\n");
 
-	typedef CHNode<Node> LvlNode;
 	typedef CHEdge<Edge> Shortcut;
 	typedef SCGraph<Node, Edge> CHGraph;
 
 	CHGraph g;
-	g.read("../data/15kSZHK.txt");
+	g.read("../data/test");
 	g.sortOutEdges<EdgeSortSrc<Edge> >();
 	g.sortInEdges<EdgeSortTgt<Edge> >();
 	g.initOffsets();
@@ -186,6 +185,9 @@ void unit_tests::testCHConstructor()
 	chc.contract(all_nodes);
 	chc.getCHGraph();
 
+	// Export
+	g.write("../data/ch_test");
+
 	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
 	Print("====================================\n");
@@ -196,6 +198,39 @@ void unit_tests::testCHDijkstra()
 	Print("\n============================");
 	Print("TEST: Start CHDijkstra test.");
 	Print("============================\n");
+
+	typedef SCGraph<Node, Edge> CHGraph;
+
+	CHGraph g;
+	g.read("../data/test");
+	g.sortOutEdges<EdgeSortSrc<Edge> >();
+	g.sortInEdges<EdgeSortTgt<Edge> >();
+	g.initOffsets();
+	g.initIdToIndex();
+
+	CHConstructor<Node, Edge> chc(g, 2);
+
+	std::list<NodeID> all_nodes;
+	for (uint i(0); i<g.getNrOfNodes(); i++) {
+		all_nodes.push_back(i);
+	}
+
+	chc.contract(all_nodes);
+	chc.getCHGraph();
+	CHDijkstra<Node, Edge> dij(g);
+
+	std::vector<EdgeID> path;
+	NodeID tgt(g.getNrOfNodes() - 1);
+	uint dist = dij.calcShopa(0, tgt, path);
+
+	Print("Dist of Dijkstra from 0 to " << tgt << ": " << dist);
+	Test(dist == 9);
+
+	Print("Shortest path from 0 to " << tgt << ":");
+	for (uint i(0); i<path.size(); i++) {
+		Edge const& edge(g.getEdge(path[i]));
+		Print("EdgeID: " << edge.id << ", src: " << edge.src << ", tgt: " << edge.tgt);
+	}
 
 	Print("\n=================================");
 	Print("TEST: CHDijkstra test successful.");
@@ -236,8 +271,6 @@ void unit_tests::testDijkstra()
 			Test(dij.calcShopa(src, tgt, path) == dij.calcShopa(tgt, src, path));
 		}
 	}
-
-
 
 	Print("\n=================================");
 	Print("TEST: Dijkstra test successful.");
