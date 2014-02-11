@@ -34,6 +34,11 @@ class Graph
 	public:
 		Graph() : _next_id(0) {}
 
+		/* Init the graph from file 'filename' and sort
+		 * the edges according to OutEdgeSort and InEdgeSort. */
+		template <class OutEdgeSort, class InEdgeSort>
+		bool init(std::string const& filename);
+
 		class EdgeIt;
 		class OffEdgeIt;
 
@@ -64,6 +69,20 @@ class Graph
 /*
  * Graph member functions.
  */
+
+template <typename Node, typename Edge>
+template <class OutEdgeSort, class InEdgeSort>
+bool Graph<Node, Edge>::init(std::string const& filename)
+{
+	if (read(filename)) {
+		sortOutEdges<OutEdgeSort>();
+		sortInEdges<InEdgeSort>();
+		initOffsets();
+		initIdToIndex();
+		return true;
+	}
+	return false;
+}
 
 template <typename Node, typename Edge>
 bool Graph<Node, Edge>::read(std::string const& filename)

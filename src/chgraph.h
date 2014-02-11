@@ -107,13 +107,12 @@ void SCGraph<Node, Edge>::restructure(
 	}
 
 	_out_edges.swap(new_edge_vec);
+	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
+
 	_in_edges.assign(_out_edges.begin(), _out_edges.end());
 	BaseGraph::template sortInEdges<EdgeSortTgt<Edge> >();
 	BaseGraph::initOffsets();
 	BaseGraph::initIdToIndex();
-
-	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
-	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), EdgeSortTgt<Edge>()));
 }
 
 template <typename Node, typename Edge>
@@ -127,9 +126,6 @@ void SCGraph<Node, Edge>::buildCHGraph()
 	BaseGraph::template sortInEdges<EdgeSortTgt<Edge> >();
 	BaseGraph::initOffsets();
 	BaseGraph::initIdToIndex();
-
-	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
-	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), EdgeSortTgt<Edge>()));
 }
 
 template <typename Node, typename Edge>

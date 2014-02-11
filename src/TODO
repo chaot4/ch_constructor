@@ -57,13 +57,13 @@ Noch noch neuer:
 	x Level im CHDijkstra berücksichtigen
 
 Alle die noch offen sind:
-	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
 	- Auf allen vectors immer ein reserve machen
+	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
 	- Wie machen wir das mit der edge difference?
 		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
-	(- Wie kann man auf die pq verzichen? <- Bringt's wahrscheinlich nicht so sehr.)
 	- Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
 	x Asserts zentral abschaltbar machen in defs.h
+	x Init Methode für Graphen.
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
 	- das Sortieren der Kanten irgendwie zentral festlegen
 	- Graphstats berechnen: Z.B. Was ist die Anzahl der Knoten mit Grad kleiner als 2,3,4?

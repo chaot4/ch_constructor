@@ -65,12 +65,7 @@ void unit_tests::testGraph()
 	Print("=======================\n");
 
 	Graph<Node, Edge> g;
-	Test(g.read("../data/15kSZHK.txt"));
-
-	g.sortOutEdges<EdgeSortSrc<Edge> >();
-	g.sortInEdges<EdgeSortTgt<Edge> >();
-	g.initOffsets();
-	g.initIdToIndex();
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
 
 	/* Test the normal iterator. */
 	for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
@@ -144,11 +139,7 @@ void unit_tests::testCHConstructor()
 	typedef SCGraph<Node, Edge> CHGraph;
 
 	CHGraph g;
-	g.read("../data/test");
-	g.sortOutEdges<EdgeSortSrc<Edge> >();
-	g.sortInEdges<EdgeSortTgt<Edge> >();
-	g.initOffsets();
-	g.initIdToIndex();
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
 
 	CHConstructor<Node, Edge> chc(g, 2);
 
@@ -205,19 +196,13 @@ void unit_tests::testCHDijkstra()
 
 	/* Init normal graph */
 	Graph<Node,Edge> g;
-	g.read("../data/15kSZHK.txt");
-	g.sortOutEdges<EdgeSortSrc<Edge> >();
-	g.sortInEdges<EdgeSortTgt<Edge> >();
-	g.initOffsets();
-	g.initIdToIndex();
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
 
 	/* Init CH graph */
 	CHGraph chg;
-	chg.read("../data/15kSZHK.txt");
-	chg.sortOutEdges<EdgeSortSrc<Edge> >();
-	chg.sortInEdges<EdgeSortTgt<Edge> >();
-	chg.initOffsets();
-	chg.initIdToIndex();
+	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
+
+	/* Build CH */
 	CHConstructor<Node, Edge> chc(chg, 2);
 	std::list<NodeID> all_nodes;
 	for (uint i(0); i<chg.getNrOfNodes(); i++) {
@@ -226,8 +211,9 @@ void unit_tests::testCHDijkstra()
 	chc.contract(all_nodes);
 	chc.getCHGraph();
 
+	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
-	uint nr_of_dij(100000);
+	uint nr_of_dij(1000);
 	Dijkstra<Node, Edge> dij(g);
 	CHDijkstra<Node, Edge> chdij(chg);
 
@@ -253,12 +239,7 @@ void unit_tests::testDijkstra()
 	Print("============================\n");
 
 	Graph<Node, Edge> g;
-	g.read("../data/test");
-
-	g.sortOutEdges<EdgeSortSrc<Edge> >();
-	g.sortInEdges<EdgeSortTgt<Edge> >();
-	g.initOffsets();
-	g.initIdToIndex();
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
 
 	Dijkstra<Node, Edge> dij(g);
 	std::vector<EdgeID> path;
