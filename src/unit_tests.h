@@ -213,7 +213,7 @@ void unit_tests::testCHDijkstra()
 
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
-	uint nr_of_dij(1000);
+	uint nr_of_dij(100);
 	Dijkstra<Node, Edge> dij(g);
 	CHDijkstra<Node, Edge> chdij(chg);
 

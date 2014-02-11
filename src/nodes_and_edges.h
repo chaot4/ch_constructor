@@ -54,7 +54,7 @@ struct Node
 	Node(NodeID id) : id(id){}
 
 	virtual void read(std::stringstream& ss);
-	virtual void write(std::ofstream& f);
+	virtual void write(std::ofstream& f) const;
 	bool operator<(Node const& node) const { return id < node.id; }
 };
 
@@ -66,7 +66,7 @@ void Node::read(std::stringstream& ss)
 	id = node.id;
 }
 
-void Node::write(std::ofstream& f)
+void Node::write(std::ofstream& f) const
 {
 	f << id << " 0 0 0 0";
 }
@@ -79,11 +79,11 @@ struct CHNode : Node
 	CHNode() : Node(), lvl(0){}
 	CHNode(Node const& node, uint lvl) : Node(node), lvl(lvl){}
 
-	virtual void write(std::ofstream& f);
+	virtual void write(std::ofstream& f) const;
 };
 
 template<typename Node>
-void CHNode<Node>::write(std::ofstream& f)
+void CHNode<Node>::write(std::ofstream& f) const
 {
 	Node::write(f);
 	f << " " << lvl;
@@ -126,7 +126,7 @@ struct Edge
 	}
 
 	virtual void read(std::stringstream& ss);
-	virtual void write(std::ofstream& f);
+	virtual void write(std::ofstream& f) const;
 	NodeID otherNode(EdgeType edge_type) const;
 
 	CHEdge<Edge> concat(Edge const& edge) const;
@@ -151,7 +151,7 @@ struct CHEdge : Edge
 	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2)
 		: Edge(edge), child_edge1(child_edge1), child_edge2(child_edge2){}
 
-	virtual void write(std::ofstream& f);
+	virtual void write(std::ofstream& f) const;
 };
 
 void Edge::read(std::stringstream& ss)
@@ -164,7 +164,7 @@ void Edge::read(std::stringstream& ss)
 	dist = edge.dist;
 }
 
-void Edge::write(std::ofstream& f)
+void Edge::write(std::ofstream& f) const
 {
 	f << src << " " << tgt << " " << dist << " 0 -1";
 }
@@ -189,7 +189,7 @@ CHEdge<Edge> Edge::concat(Edge const& edge) const
 }
 
 template <typename Edge>
-void CHEdge<Edge>::write(std::ofstream& f)
+void CHEdge<Edge>::write(std::ofstream& f) const
 {
 	Edge::write(f);
 	f << " " << child_edge1 << " " << child_edge2;

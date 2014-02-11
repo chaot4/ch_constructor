@@ -304,7 +304,6 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 	Print("\nStarting the contraction of " << nodes.size() << " nodes.");
 
 	while (!nodes.empty()) {
-
 		Print("\nInitializing the vectors for a new round.");
 		_initVectors();
 
@@ -319,14 +318,20 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 		Print("Contracting all the nodes in the independent set.");
 		#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
 		for (uint i = 0; i < independent_set.size(); i++) {
-			_contract(independent_set[i]);
+			uint node(independent_set[i]);
+			_contract(node);
+		}
+		Print("Number of new Shortcuts: " << _new_shortcuts.size());
+
+		Print("Decide on which nodes to delete.");
+		for (uint i = 0; i < independent_set.size(); i++) {
 			_delete[independent_set[i]] = true;
 		}
 
-		Print("Number of new Shortcuts: " << _new_shortcuts.size());
-
 		Print("Restructuring the graph.");
 		_base_graph.restructure(independent_set, _delete, _new_shortcuts);
+		Print("Graph info:");
+		_base_graph.printInfo();
 	}
 }
 

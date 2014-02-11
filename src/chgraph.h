@@ -69,19 +69,18 @@ void SCGraph<Node, Edge>::restructure(
 
 			Shortcut& new_sc(new_shortcuts[j]);
 			new_sc.id = _next_id++;
-			if (!deleted[new_sc.src] && !deleted[new_sc.tgt]) {
-				new_edge_vec.push_back(new_sc);
-			}
-			else {
-				_edges_dump.push_back(new_sc);
-			}
+			new_edge_vec.push_back(new_sc);
 			j++;
+
+			assert(!deleted[new_sc.src] && !deleted[new_sc.tgt]);
 		}
 
 		/* edge equal */
 		while (j < new_shortcuts.size() && new_shortcuts[j] == edge) {
 			j++;
 		}
+
+		assert(j >= new_shortcuts.size() || edge < new_shortcuts[j]);
 
 		/* edges smaller */
 		if (!deleted[edge.src] && !deleted[edge.tgt]) {
@@ -97,13 +96,10 @@ void SCGraph<Node, Edge>::restructure(
 
 		Shortcut& new_sc(new_shortcuts[j]);
 		new_sc.id = _next_id++;
-		if (!deleted[new_sc.src] && !deleted[new_sc.tgt]) {
-			new_edge_vec.push_back(new_sc);
-		}
-		else {
-			_edges_dump.push_back(new_sc);
-		}
+		new_edge_vec.push_back(new_sc);
 		j++;
+
+		assert(!deleted[new_sc.src] && !deleted[new_sc.tgt]);
 	}
 
 	_out_edges.swap(new_edge_vec);

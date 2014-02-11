@@ -9,6 +9,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <limits>
 
 namespace unit_tests
 {
@@ -45,7 +46,8 @@ class Graph
 		/* Read the nodes and edges from the file <filename>.
 		 * The offset vectors aren't initialized! */
 		bool read(std::string const& filename);
-		bool write(std::string const& filename);
+		bool write(std::string const& filename) const;
+		void printInfo() const;
 
 		template <class InEdgeSort>
 		void sortInEdges();
@@ -79,6 +81,9 @@ bool Graph<Node, Edge>::init(std::string const& filename)
 		sortInEdges<InEdgeSort>();
 		initOffsets();
 		initIdToIndex();
+		Print("Graph info:");
+		Print("===========");
+		printInfo();
 		return true;
 	}
 	return false;
@@ -141,7 +146,7 @@ bool Graph<Node, Edge>::read(std::string const& filename)
 }
 
 template <typename Node, typename Edge>
-bool Graph<Node, Edge>::write(std::string const& filename)
+bool Graph<Node, Edge>::write(std::string const& filename) const
 {
 	std::ofstream f(filename.c_str());
 
@@ -171,6 +176,65 @@ bool Graph<Node, Edge>::write(std::string const& filename)
 	}
 
 	return true;
+}
+
+template <typename Node, typename Edge>
+void Graph<Node, Edge>::printInfo() const
+{
+	uint active_nodes(0);
+
+	double avg_out_deg(0);
+	double avg_in_deg(0);
+	double avg_deg(0);
+
+	std::vector<uint> out_deg;
+	std::vector<uint> in_deg;
+	std::vector<uint> deg;
+
+	for (NodeID i(0); i<_nodes.size(); i++) {
+		uint out(getNrOfEdges(i, OUT));
+		uint in(getNrOfEdges(i, IN));
+
+		if (out != 0 || in != 0) {
+			active_nodes++;
+
+			out_deg.push_back(getNrOfEdges(i, OUT));
+			in_deg.push_back(getNrOfEdges(i, IN));
+			deg.push_back(out + in);
+
+			avg_out_deg += out;
+			avg_in_deg += in;
+			avg_deg += out+in;
+		}
+	}
+
+	Print("#active nodes: " << active_nodes);
+	Print("#active edges: " << _out_edges.size());
+	Print("maximal edge id: " << _next_id-1);
+
+	if (active_nodes != 0) {
+		auto mm_out_deg = std::minmax_element(out_deg.begin(), out_deg.end());
+		auto mm_in_deg = std::minmax_element(in_deg.begin(), in_deg.end());
+		auto mm_deg = std::minmax_element(deg.begin(), deg.end());
+
+		avg_out_deg /= active_nodes;
+		avg_in_deg /= active_nodes;
+		avg_deg /= active_nodes;
+
+		Print("maximal out degree: " << *mm_out_deg.second);
+		Print("minimal out degree: " << *mm_out_deg.first);
+		Print("maximal in degree: " << *mm_in_deg.second);
+		Print("minimal in degree: " << *mm_in_deg.first);
+		Print("maximal degree: " << *mm_deg.second);
+		Print("minimal degree: " << *mm_deg.first);
+		Print("average out degree: " << avg_out_deg);
+		Print("average in degree: " << avg_in_deg);
+		Print("average degree: " << avg_deg);
+		Print("(only degrees of active nodes are counted)");
+	}
+	else {
+		Print("(no degree info is provided as there are no active nodes)");
+	}
 }
 
 template <typename Node, typename Edge>
