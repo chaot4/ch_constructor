@@ -10,6 +10,8 @@
 
 #include <map>
 #include <iostream>
+#include <random>
+#include <chrono>
 
 #define Test(x)\
 if (!(x)) {\
@@ -201,35 +203,42 @@ void unit_tests::testCHDijkstra()
 
 	typedef SCGraph<Node, Edge> CHGraph;
 
-	CHGraph g;
-	g.read("../data/test");
+	/* Init normal graph */
+	Graph<Node,Edge> g;
+	g.read("../data/15kSZHK.txt");
 	g.sortOutEdges<EdgeSortSrc<Edge> >();
 	g.sortInEdges<EdgeSortTgt<Edge> >();
 	g.initOffsets();
 	g.initIdToIndex();
 
-	CHConstructor<Node, Edge> chc(g, 2);
-
+	/* Init CH graph */
+	CHGraph chg;
+	chg.read("../data/15kSZHK.txt");
+	chg.sortOutEdges<EdgeSortSrc<Edge> >();
+	chg.sortInEdges<EdgeSortTgt<Edge> >();
+	chg.initOffsets();
+	chg.initIdToIndex();
+	CHConstructor<Node, Edge> chc(chg, 2);
 	std::list<NodeID> all_nodes;
-	for (uint i(0); i<g.getNrOfNodes(); i++) {
+	for (uint i(0); i<chg.getNrOfNodes(); i++) {
 		all_nodes.push_back(i);
 	}
-
 	chc.contract(all_nodes);
 	chc.getCHGraph();
-	CHDijkstra<Node, Edge> dij(g);
 
+	Print("\nStarting random Dijkstras.");
+	uint nr_of_dij(100000);
+	Dijkstra<Node, Edge> dij(g);
+	CHDijkstra<Node, Edge> chdij(chg);
+
+	std::default_random_engine gen(std::chrono::system_clock::now().time_since_epoch().count());
+	std::uniform_int_distribution<uint> dist(0,g.getNrOfNodes()-1);
+	auto rand_node = std::bind (dist, gen);
 	std::vector<EdgeID> path;
-	NodeID tgt(g.getNrOfNodes() - 1);
-	uint dist = dij.calcShopa(0, tgt, path);
-
-	Print("Dist of Dijkstra from 0 to " << tgt << ": " << dist);
-	Test(dist == 9);
-
-	Print("Shortest path from 0 to " << tgt << ":");
-	for (uint i(0); i<path.size(); i++) {
-		Edge const& edge(g.getEdge(path[i]));
-		Print("EdgeID: " << edge.id << ", src: " << edge.src << ", tgt: " << edge.tgt);
+	for (uint i(0); i<nr_of_dij; i++) {
+		NodeID src = rand_node();
+		NodeID tgt = rand_node();
+		Test(dij.calcShopa(src,tgt,path) == chdij.calcShopa(src,tgt,path));
 	}
 
 	Print("\n=================================");

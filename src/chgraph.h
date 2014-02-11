@@ -17,6 +17,7 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 		using BaseGraph::_nodes;
 		using BaseGraph::_out_edges;
 		using BaseGraph::_in_edges;
+		using BaseGraph::_id_to_index;
 		using BaseGraph::_next_id;
 
 		std::vector<Shortcut> _edges_dump;
@@ -30,6 +31,8 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 				std::vector<bool> const& deleted,
 				std::vector<Shortcut>& new_shortcuts);
 		void buildCHGraph();
+
+		bool isUp(EdgeID id, EdgeType direction) const;
 };
 
 template <typename Node, typename Edge>
@@ -53,6 +56,8 @@ void SCGraph<Node, Edge>::restructure(
 	new_edge_vec.reserve(_out_edges.size() + new_shortcuts.size());
 
 	std::sort(new_shortcuts.begin(), new_shortcuts.end(), EdgeSortSrc<Shortcut>());
+	new_shortcuts.erase(std::unique(new_shortcuts.begin(),
+			new_shortcuts.end()), new_shortcuts.end());
 
 	/* Manually merge the new_shortcuts and _out_edges vector. */
 	uint j(0);
@@ -63,7 +68,6 @@ void SCGraph<Node, Edge>::restructure(
 		while (j < new_shortcuts.size() && new_shortcuts[j] < edge) {
 
 			Shortcut& new_sc(new_shortcuts[j]);
-			Debug(_next_id);
 			new_sc.id = _next_id++;
 			if (!deleted[new_sc.src] && !deleted[new_sc.tgt]) {
 				new_edge_vec.push_back(new_sc);
@@ -92,7 +96,6 @@ void SCGraph<Node, Edge>::restructure(
 	while (j < new_shortcuts.size()) {
 
 		Shortcut& new_sc(new_shortcuts[j]);
-		Debug(_next_id);
 		new_sc.id = _next_id++;
 		if (!deleted[new_sc.src] && !deleted[new_sc.tgt]) {
 			new_edge_vec.push_back(new_sc);
@@ -127,6 +130,22 @@ void SCGraph<Node, Edge>::buildCHGraph()
 
 	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
 	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), EdgeSortTgt<Edge>()));
+}
+
+template <typename Node, typename Edge>
+bool SCGraph<Node, Edge>::isUp(EdgeID id, EdgeType direction) const
+{
+	Edge const& edge(_out_edges[_id_to_index[id]]);
+	uint src_lvl = _nodes[edge.src].lvl;
+	uint tgt_lvl = _nodes[edge.tgt].lvl;
+
+	if (src_lvl > tgt_lvl) {
+		return direction;
+	}
+	else if (src_lvl < tgt_lvl) {
+		return !direction;
+	}
+	return false;
 }
 
 #endif

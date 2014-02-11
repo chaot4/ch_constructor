@@ -5,8 +5,8 @@
 
 int main()
 {
-	unit_tests::testCHConstructor();
-//	unit_tests::testCHDijkstra();
+//	unit_tests::testCHConstructor();
+	unit_tests::testCHDijkstra();
 
 	return 0;
 }

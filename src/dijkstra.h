@@ -262,20 +262,24 @@ void CHDijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 {
 	EdgeType dir(top.direction);
 	typename SCGraph<Node,Edge>::EdgeIt edge_it(_g, top.node, dir);
+	// TODO When edges are sorted accordingly: loop while
+	// edge is up.
 	while (edge_it.hasNext()) {
 
 		Edge const& edge(edge_it.getNext());
-		NodeID other_node(edge.otherNode(dir));
-		uint new_dist(top.dist + edge.dist);
+		if (_g.isUp(edge.id, dir)) {
+			NodeID other_node(edge.otherNode(dir));
+			uint new_dist(top.dist + edge.dist);
 
-		if (new_dist < _dists[dir][other_node]) {
+			if (new_dist < _dists[dir][other_node]) {
 
-			if (_dists[dir][other_node] == c::NO_DIST) {
-				_reset_dists[dir].push_back(other_node);
+				if (_dists[dir][other_node] == c::NO_DIST) {
+					_reset_dists[dir].push_back(other_node);
+				}
+				_dists[dir][other_node] = new_dist;
+
+				pq.push(PQElement(other_node, edge.id, dir, new_dist));
 			}
-			_dists[dir][other_node] = new_dist;
-
-			pq.push(PQElement(other_node, edge.id, dir, new_dist));
 		}
 	}
 }

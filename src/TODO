@@ -41,7 +41,7 @@ Fragen:
 - Was ist die Anzahl der Knoten mit Grad kleiner als 2,3,4?
 
 Zeugs:
-	- getMaxNodeID() Zeugs und damit die Array Größe setzen.
+	x getMaxNodeID() Zeugs und damit die Array Größe setzen.
 	x is_deleted array im ch_constructor halten
 
 Umbau:
@@ -50,16 +50,20 @@ Umbau:
 	x Die edges die nicht reingemerged werden, weil rausgeschmissen kommen in dump vector
 
 Neu:
-	- Methode um CHGraph aufzubauen.
-	- _in_edges vector auch manuell so mergen. (oder bringt das sowieso nix?)
+	x Methode um CHGraph aufzubauen.
+	x _in_edges vector auch manuell so mergen. (oder bringt das sowieso nix?)
 	- das Sortieren der Kanten irgendwie zentral festlegen
-	- CHDijkstra coden um zu schauen ob alle kürzesten Wege existieren.
-	- Viele, viele Dijkstras laufen lassen um zu testen.
-	- Schnellen Iterator verwenden. (Was hab ich damit gemeint?)
+	x CHDijkstra coden um zu schauen ob alle kürzesten Wege existieren.
+	x Viele, viele Dijkstras laufen lassen um zu testen.
+	- Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
 	- Asserts zentral abschaltbar machen in defs.h
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
-	- Die Level im CHGraph aufsetzen.
+	x Die Level im CHGraph aufsetzen.
 
 Noch neuer:
-	- Testgraph erstellen inkl. Darstellung mit ipe um in Zukunft Tests laufen zu lassen, die ich auch noch manuell hinbekomme.
+	x Testgraph erstellen inkl. Darstellung mit ipe um in Zukunft Tests laufen zu lassen, die ich auch noch manuell hinbekomme.
 	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
+
+Noch noch neuer:
+	x Doppelte SCs einer Runde löschen
+	x Level im CHDijkstra berücksichtigen
