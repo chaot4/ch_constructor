@@ -9,7 +9,6 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <cassert>
 
 namespace unit_tests
 {
@@ -179,6 +178,8 @@ template <typename Node, typename Edge>
 void Graph<Node, Edge>::initOffsets()
 {
 	Print("Init the offsets.");
+	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
+	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), EdgeSortTgt<Edge>()));
 
 	uint nr_of_nodes(_nodes.size());
 	uint nr_of_edges(_out_edges.size());

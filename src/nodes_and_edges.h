@@ -6,7 +6,6 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <cassert>
 #include <limits>
 
 namespace unit_tests

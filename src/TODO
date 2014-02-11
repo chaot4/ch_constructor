@@ -19,10 +19,6 @@ ch_constructor im Detail:
 		x Die zu findenden Knoten in einen vector machen. Ist shortcut, wenn der Knoten von dem wir kommen der center_node ist.
 	x Doppelte Kanten nach jeder Runde prunen.
 	x Shortcuts direkt einfügen mit mutex eben.
-	- Auf allen vectors immer ein reserve machen
-	- Wie machen wir das mit der edge difference?
-		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
-	(- Wie kann man auf die pq verzichen? <- Bringt's wahrscheinlich nicht so sehr.)
 	x Manueller reset der Dijkstra vectors über Member var's vllt?
 
 Graph umbauen:
@@ -32,13 +28,10 @@ Graph umbauen:
 
 Speedups:
 	x Je nach Anzahl von eingehenden oder ausgehenden Kanten aus aufzählen.
-	- Arith. Mittel und SCs speichern.
 	x Das ind. set aufbauen indem erst die Knoten mit #eingehend * #ausgehend sortiert werden. Dann vom kleinsten anfangen.
-	- Preprocessing step: Knoten mit sowieso niedriger edge-difference kicken indem einfach alle SCs für die eingefügt werden. Besonders Grad 2/4 Knoten (Durchgangsknoten) können kontrahiert werden!
 
 
 Fragen:
-- Was ist die Anzahl der Knoten mit Grad kleiner als 2,3,4?
 
 Zeugs:
 	x getMaxNodeID() Zeugs und damit die Array Größe setzen.
@@ -52,18 +45,27 @@ Umbau:
 Neu:
 	x Methode um CHGraph aufzubauen.
 	x _in_edges vector auch manuell so mergen. (oder bringt das sowieso nix?)
-	- das Sortieren der Kanten irgendwie zentral festlegen
 	x CHDijkstra coden um zu schauen ob alle kürzesten Wege existieren.
 	x Viele, viele Dijkstras laufen lassen um zu testen.
-	- Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
-	- Asserts zentral abschaltbar machen in defs.h
-	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
 	x Die Level im CHGraph aufsetzen.
 
 Noch neuer:
 	x Testgraph erstellen inkl. Darstellung mit ipe um in Zukunft Tests laufen zu lassen, die ich auch noch manuell hinbekomme.
-	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
 
 Noch noch neuer:
 	x Doppelte SCs einer Runde löschen
 	x Level im CHDijkstra berücksichtigen
+
+Alle die noch offen sind:
+	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
+	- Auf allen vectors immer ein reserve machen
+	- Wie machen wir das mit der edge difference?
+		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
+	(- Wie kann man auf die pq verzichen? <- Bringt's wahrscheinlich nicht so sehr.)
+	- Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
+	x Asserts zentral abschaltbar machen in defs.h
+	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
+	- das Sortieren der Kanten irgendwie zentral festlegen
+	- Graphstats berechnen: Z.B. Was ist die Anzahl der Knoten mit Grad kleiner als 2,3,4?
+	- Arith. Mittel und SCs speichern.
+	- Preprocessing step: Knoten mit sowieso niedriger edge-difference kicken indem einfach alle SCs für die eingefügt werden. Besonders Grad 2/4 Knoten (Durchgangsknoten) können kontrahiert werden!

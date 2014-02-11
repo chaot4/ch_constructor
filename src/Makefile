@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -Wall -g -std=c++11 -fopenmp -O3
+CPPFLAGS = -Wall -g -std=c++11 -fopenmp
 LFLAGS = -fopenmp
 BIN = main
 OBJ = 

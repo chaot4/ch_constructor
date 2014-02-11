@@ -3,6 +3,8 @@
 
 // #define NDEBUG
 
+#include <cassert>
+
 #ifdef NDEBUG
 #define Debug(x)
 #else
