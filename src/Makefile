@@ -1,23 +1,28 @@
-CC = g++
-CPPFLAGS = -Wall -g -std=c++11 -fopenmp
-LFLAGS = -fopenmp
+# set -O2 if not overwritten by env/make argument
+CPPFLAGS ?= -O2 -g
+LDFLAGS ?= -g
+
+# add necessary flags
+override LDLIBS += -lstdc++
+override CXXFLAGS += -std=c++11
+override CPPFLAGS += -Wall -fopenmp
+override LDFLAGS += -Wl,--no-undefined -fopenmp
+
 BIN = main
-OBJ = 
 SRCS = $(wildcard **/*.cpp) $(wildcard **/*.h) $(wildcard *.cpp) $(wildcard *.h)
 DEPENDFILE = .depend
 
 all: $(BIN)
 
-$(BIN): $(OBJ) main.o
-	$(CC) $(CPPFLAGS) $(LFLAGS) $(OBJ) main.cpp -o $(BIN)
+main: main.o
 
 dep: $(DEPENDFILE)
 
 $(DEPENDFILE): $(SRCS)
-	$(CC) -MM $(CPPFLAGS) $^ > $(DEPENDFILE)
+	$(CXX) -MM $(CPPFLAGS) $(CXXFLAGS) $^ > $(DEPENDFILE)
 
 -include $(DEPENDFILE)
 
 .PHONY: clean
 clean:
-	rm -rf $(OBJ) $(BIN) main.o
+	rm -rf $(BIN) main.o

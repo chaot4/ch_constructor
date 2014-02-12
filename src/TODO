@@ -73,3 +73,76 @@ Nächste Schritte:
 	x Wie machen wir das mit der edge difference?
 		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
 	x Arith. Mittel und SCs speichern.
+
+Stefan:
+Makefile: (siehe paste)
+  - s/LFLAGS/LDFLAGS/ ?
+  - CC = g++ ? wirklich nötig? s/CC/CXX/
+    .c files per default: $(CC) $(CPPFLAGS) $(CFLAGS) -c
+    .cpp (.cc,.C) files: $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c
+  - $(BIN) hängt von main.o ab, aber kompiliert main.cpp nochmal
+  - ist der sinn von $(BIN) *ein* binary zu benennen, oder potentiell mehrere?
+    für mehrere ist $(BIN): $(OBJ) main.o nich so ne super regel :)
+  - ein leeres OBJ zu verwenden ist overengineering...
+
+
+- keine (inline) "header" implementierungen, wenn nich aufgrund von template absolutig nötig:
+- nicht alle methoden gehören zu einem objekt (Edge::concat wäre global besser)
+  x.swap(y) -> swap(x, y)
+- evtl. alles in einen namespace - kostet wenig aufwand
+- peformance: insbesondere bei längeren schleifen lohnt es vielleicht,
+  die größe des vectors in ne lokale variable zu packen.
+- evtl. eigene "assert_always" definieren; assert() ist ja nur für debugging da,
+  manchmal kann man kleine checks aber auch im "release" aktiv haben
+
+nodes_and_edges.h:
+- Parser_* klingt eher nach "private". Vllt. Detailed_* für ne public api.
+- Parser/Serializer würde ich in n extra file packen.
+  Z.bsp:
+  Detailed_Node statt Parser_Node
+  parser.h mit:
+    readDetailedNode()
+    readNode()
+    readCHNode() ?
+    write...
+  Alternativ funktionen um Detailed_Node in andere Nodes zu konvertieren und zurück,
+  darauf den serializer aufbauen.
+
+  Die serialisierung ist nicht eine eigenschaft des objekts, sondern eines "formats";
+  als ausnahme vllt. ne "debug" toString() methode oder so.
+
+  (virtual write/read sieht jedenfalls komisch aus in kombination mit templates.)
+
+- Node/Edge: "<" sind mit sehr spezieller semantik.
+  du hast ja schon separate comparator klassen, nimm die
+  "==" auf Edge kann man vermutlich lassen - (src,tgt) sollte unique sein.
+
+- ist vererbung wirklich nötig? vermutlich hilfreich, wenn nicht:
+    template<typename Node> struct CHNode { uint lvl; Node inner; }
+    template<typename Edge> struct CHEdge { int child_edge_id[2]; Edge inner; }
+  oder tatsächlich den inhalt kopieren.
+  (man würde ja auch nicht ernsthaft vec3 von vec2 ableiten, das führt nur zu blöden
+  fehlern, wo ein vec3 als vec2 verwendet wird, weils das typsystem erlaubt)
+
+graph.h:
+  - std::vector<T> mapped (u)int auf T, nicht andersrum:
+    /* Maps edge id to index in the _out_edge vector. */
+    std::vector<EdgeID> _id_to_index;
+  - _next_id ist irgendwie "hässlich":
+     a) _id_to_index.resize(_next_id); gehört in init(), _next_id nur als lokale variable.
+     b) alternativ _next_id wenigstens in "edge_count" umbenennen
+  - merge "public" api für sort*Edges, initOffsets, initIdToIndex:
+    protected: void update();
+    evtl. InEdgeSort/OutEdgeSort als class template parameter - gibts nen guten grund warum sich das ändern darf? oder nicht sowieso immer das gleiche ist (nach id?)
+    da die klasse auf vererbung ausgelegt ist, sollte update() auch nicht public sein.
+  - buildCHGraph:
+    _in_edges.assign(_out_edges.begin(), _out_edges.end());
+    _in_edges = _out_edges?
+  - isUp:
+    EdgeType implicit nach bool casten? oO
+    evtl. return false durch nen assert() oder abort() ersetzen, solle ja nie vorkommen, oder?
+
+
+chgraph.h:
+- namen: SCGraph ?? das file heißt "chgraph", verwendet in ch_constructor.h mit typedef auf CHGraph...
+- api docu: restructure() ? buildCHGraph() ?
