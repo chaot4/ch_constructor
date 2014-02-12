@@ -341,7 +341,7 @@ CHConstructor<Node, Edge>::CHConstructor(CHGraph& base_graph, uint num_threads)
 		_dists[i].reserve(nr_of_nodes);
 		_reset_dists[i].reserve(nr_of_nodes);
 	}
-	_new_shortcuts.reserve(nr_of_nodes);
+	_new_shortcuts.reserve(_base_graph.getNrOfEdges());
 	_delete.reserve(nr_of_nodes);
 }
 
