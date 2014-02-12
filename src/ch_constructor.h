@@ -43,7 +43,9 @@ class CHConstructor{
 		void _resetThreadData();
 
 		std::vector<Shortcut> _new_shortcuts;
-		std::vector<bool> _delete;
+		std::vector<int> _edge_diffs;
+		std::vector<NodeID> _delete;
+		std::vector<bool> _to_delete;
 		std::mutex _new_shortcuts_mutex;
 
 		std::vector<PQ> _pq;
@@ -52,15 +54,18 @@ class CHConstructor{
 
 		void _initVectors();
 		void _contract(NodeID center_node);
-		void _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
+		uint _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
 				EdgeType direction);
 		void _handleNextPQElement(EdgeType direction);
 		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
 				EdgeType direction);
 
-		void _extractIndependentSet(std::list<NodeID>& nodes,
+		void _calcIndependentSet(std::list<NodeID>& nodes,
 				std::vector<NodeID>& independent_set);
 		void _markNeighbours(NodeID node, std::vector<bool>& marked);
+
+		void _chooseDeleteNodes(std::vector<NodeID> const& independent_set);
+		void _deleteNodes(std::list<NodeID>& nodes);
 	public:
 		CHConstructor(CHGraph& base_graph, uint num_threads = 1);
 
@@ -131,7 +136,8 @@ template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::_initVectors()
 {
 	_new_shortcuts.clear();
-	_delete.assign(_base_graph.getNrOfNodes(), false);
+	_delete.clear();
+	_to_delete.assign(_base_graph.getNrOfNodes(), false);
 
 	for (uint i(0); i<_num_threads; i++) {
 		_pq[i] = PQ();
@@ -152,15 +158,19 @@ void CHConstructor<Node, Edge>::_contract(NodeID node)
 		search_direction = IN;
 	}
 
+	uint nr_new_edges(0);
 	typename CHGraph::EdgeIt edge_it(_base_graph, node, !search_direction);
 	while (edge_it.hasNext()) {
 		_resetThreadData();
-		_calcShortcuts(edge_it.getNext(), node, search_direction);
+		nr_new_edges += _calcShortcuts(edge_it.getNext(), node, search_direction);
 	}
+
+	uint edge_diff(nr_new_edges - _base_graph.getNrOfEdges(node));
+	_edge_diffs[node] = edge_diff;
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeID center_node,
+uint CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeID center_node,
 		EdgeType direction)
 {
 	uint t(_myThreadNum());
@@ -183,6 +193,7 @@ void CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeI
 	_dists[t][start_node] = 0;
 	_reset_dists[t].push_back(start_node);
 
+	uint nr_new_edges(0);
 	for (uint i(0); i<end_nodes.size(); i++) {
 
 		while (_dists[t][end_nodes[i]] > _pq[t].top().dist) {
@@ -192,8 +203,11 @@ void CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeI
 		uint center_node_dist(start_edge.dist + end_edges[i]->dist);
 		if (_dists[t][end_nodes[i]] == center_node_dist) {
 			_createShortcut(start_edge, *end_edges[i], direction);
+			nr_new_edges++;
 		}
 	}
+
+	return nr_new_edges;
 }
 
 template <typename Node, typename Edge>
@@ -234,6 +248,8 @@ void CHConstructor<Node, Edge>::_createShortcut(Shortcut const& edge1, Shortcut 
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	if (direction == OUT) {
 		_new_shortcuts.push_back(edge1.concat(edge2));
+		assert(edge1.tgt == edge2.src);
+		assert(_new_shortcuts.back().center_node == edge1.tgt);
 	}
 	else {
 		_new_shortcuts.push_back(edge2.concat(edge1));
@@ -241,23 +257,17 @@ void CHConstructor<Node, Edge>::_createShortcut(Shortcut const& edge1, Shortcut 
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_extractIndependentSet(std::list<NodeID>& nodes,
+void CHConstructor<Node, Edge>::_calcIndependentSet(std::list<NodeID>& nodes,
 		std::vector<NodeID>& independent_set)
 {
 	std::vector<bool> marked(_base_graph.getNrOfNodes(), false);
 	independent_set.reserve(nodes.size());
 
-	auto it(nodes.begin());
-	while (it != nodes.end()) {
+	for (auto it(nodes.begin()); it != nodes.end(); it++) {
 		if (!marked[*it]) {
 			marked[*it] = true;
 			_markNeighbours(*it, marked);
-			
 			independent_set.push_back(*it);
-			it = nodes.erase(it);
-		}
-		else {
-			it++;
 		}
 	}
 }
@@ -274,33 +284,70 @@ void CHConstructor<Node, Edge>::_markNeighbours(NodeID node, std::vector<bool>& 
 	}
 }
 
+template <typename Node, typename Edge>
+void CHConstructor<Node, Edge>::_chooseDeleteNodes(std::vector<NodeID> const& independent_set)
+{
+	double edge_diff_mean(0);
+	for (uint i(0); i<independent_set.size(); i++) {
+		edge_diff_mean += _edge_diffs[independent_set[i]];
+	}
+	edge_diff_mean /= independent_set.size();
+
+	assert(_delete.empty());
+	for (uint i(0); i<independent_set.size(); i++) {
+		NodeID node(independent_set[i]);
+		if (_edge_diffs[node] <= edge_diff_mean) {
+			_delete.push_back(node);
+			_to_delete[node] = true;
+		}
+	}
+}
+
+template <typename Node, typename Edge>
+void CHConstructor<Node, Edge>::_deleteNodes(std::list<NodeID>& nodes)
+{
+	auto it(nodes.begin());
+	while (it != nodes.end()) {
+		if (_to_delete[*it]) {
+			it = nodes.erase(it);
+		}
+		else {
+			it++;
+		}
+	}
+}
+
 /*
  * public
  */
 
 template <typename Node, typename Edge>
-CHConstructor<Node, Edge>::CHConstructor(CHGraph& base_graph,
-		uint num_threads)
+CHConstructor<Node, Edge>::CHConstructor(CHGraph& base_graph, uint num_threads)
 		:_base_graph(base_graph), _num_threads(num_threads)
 {
 	if (!_num_threads) {
 		_num_threads = 1;
 	}
 
+	uint nr_of_nodes(_base_graph.getNrOfNodes());
+
 	_pq.resize(_num_threads);
 	_dists.resize(_num_threads);
 	_reset_dists.resize(_num_threads);
+	_edge_diffs.resize(nr_of_nodes);
+	_to_delete.resize(nr_of_nodes);
+
+	for (uint i(0); i<_num_threads; i++) {
+		_dists[i].reserve(nr_of_nodes);
+		_reset_dists[i].reserve(nr_of_nodes);
+	}
+	_new_shortcuts.reserve(nr_of_nodes);
+	_delete.reserve(nr_of_nodes);
 }
 
 template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 {
-	for (uint i(0); i<_num_threads; i++) {
-		_new_shortcuts.reserve(_base_graph.getNrOfEdges());
-		_dists[i].reserve(_base_graph.getNrOfNodes());
-		_reset_dists[i].reserve(_base_graph.getNrOfNodes());
-	}
-
 	Print("\nStarting the contraction of " << nodes.size() << " nodes.");
 
 	while (!nodes.empty()) {
@@ -312,7 +359,7 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 
 		Print("Constructing the independent set.");
 		std::vector<NodeID> independent_set;
-		_extractIndependentSet(nodes, independent_set);
+		_calcIndependentSet(nodes, independent_set);
 		Print("The independent set has size " << independent_set.size() << ".");
 
 		Print("Contracting all the nodes in the independent set.");
@@ -323,13 +370,15 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 		}
 		Print("Number of new Shortcuts: " << _new_shortcuts.size());
 
-		Print("Decide on which nodes to delete.");
-		for (uint i = 0; i < independent_set.size(); i++) {
-			_delete[independent_set[i]] = true;
-		}
+		Print("Delete the nodes with low edge difference.");
+		_chooseDeleteNodes(independent_set);
+		_deleteNodes(nodes);
+		Print("Deleted " << _delete.size() << " nodes.");
+		Debug(nodes.size() << " remaining.");
 
 		Print("Restructuring the graph.");
-		_base_graph.restructure(independent_set, _delete, _new_shortcuts);
+		_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
+
 		Print("Graph info:");
 		_base_graph.printInfo();
 	}

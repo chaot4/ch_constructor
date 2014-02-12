@@ -43,15 +43,15 @@ void unit_tests::testNodesAndEdges()
 	CHNode<Node> node0(Node(0), 0);
 	CHNode<Node> node1(Node(1), 1);
 	CHNode<Node> node2(Node(2), 2);
-	CHNode<Node> node3(Node(3), 3);
 
 	MetricEdge edge0(Edge(0, node0.id, node1.id, 42), 23);
-	MetricEdge edge1(Edge(1, node2.id, node3.id, 24), 32);
+	MetricEdge edge1(Edge(1, node1.id, node2.id, 24), 32);
 	CHEdge ch_edge(MetricEdge(
-				Edge(2, node0.id, node3.id, 66), 55), edge0.id, edge1.id);
+			Edge(2, node0.id, node2.id, 66), 55),
+			node1.id, edge0.id, edge1.id);
 
 	Test(edge0.otherNode(IN) == 0);
-	Test(ch_edge.otherNode(OUT) == 3);
+	Test(ch_edge.otherNode(OUT) == 2);
 
 	Print("\n======================================");
 	Print("TEST: Nodes and edges test successful.");
@@ -156,7 +156,7 @@ void unit_tests::testCHConstructor()
 	std::vector<NodeID> independent_set;
 	std::vector<bool> is_in_ind_set(g.getNrOfNodes(), false);
 
-	chc._extractIndependentSet(remaining_nodes, independent_set);
+	chc._calcIndependentSet(remaining_nodes, independent_set);
 	Print("Size of the independent set of all nodes: " << independent_set.size());
 
 	for (auto it(independent_set.begin()); it != independent_set.end(); it++) {

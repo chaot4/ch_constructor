@@ -27,8 +27,8 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 	public:
 		SCGraph() : BaseGraph(), _next_lvl(0) {}
 
-		void restructure(std::vector<NodeID> const& contracted_nodes,
-				std::vector<bool> const& deleted,
+		void restructure(std::vector<NodeID> const& deleted,
+				std::vector<bool> const& to_delete,
 				std::vector<Shortcut>& new_shortcuts);
 		void buildCHGraph();
 
@@ -37,15 +37,16 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 
 template <typename Node, typename Edge>
 void SCGraph<Node, Edge>::restructure(
-		std::vector<NodeID> const& contracted_nodes,
-		std::vector<bool> const& deleted,
+		std::vector<NodeID> const& deleted,
+		std::vector<bool> const& to_delete,
 		std::vector<Shortcut>& new_shortcuts)
 {
 	/*
 	 * Process contracted nodes.
 	 */
-	for (uint i(0); i<contracted_nodes.size(); i++) {
-		_nodes[contracted_nodes[i]].lvl = _next_lvl;
+	for (uint i(0); i<deleted.size(); i++) {
+		_nodes[deleted[i]].lvl = _next_lvl;
+		assert(to_delete[deleted[i]]);
 	}
 	_next_lvl++;
 
@@ -68,11 +69,12 @@ void SCGraph<Node, Edge>::restructure(
 		while (j < new_shortcuts.size() && new_shortcuts[j] < edge) {
 
 			Shortcut& new_sc(new_shortcuts[j]);
-			new_sc.id = _next_id++;
-			new_edge_vec.push_back(new_sc);
+			if (to_delete[new_sc.center_node]) {
+				new_sc.id = _next_id++;
+				new_edge_vec.push_back(new_sc);
+				assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
+			}
 			j++;
-
-			assert(!deleted[new_sc.src] && !deleted[new_sc.tgt]);
 		}
 
 		/* edge equal */
@@ -83,7 +85,7 @@ void SCGraph<Node, Edge>::restructure(
 		assert(j >= new_shortcuts.size() || edge < new_shortcuts[j]);
 
 		/* edges smaller */
-		if (!deleted[edge.src] && !deleted[edge.tgt]) {
+		if (!to_delete[edge.src] && !to_delete[edge.tgt]) {
 			new_edge_vec.push_back(_out_edges[i]);
 		}
 		else {
@@ -95,11 +97,12 @@ void SCGraph<Node, Edge>::restructure(
 	while (j < new_shortcuts.size()) {
 
 		Shortcut& new_sc(new_shortcuts[j]);
-		new_sc.id = _next_id++;
-		new_edge_vec.push_back(new_sc);
+		if (to_delete[new_sc.center_node]) {
+			new_sc.id = _next_id++;
+			new_edge_vec.push_back(new_sc);
+			assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
+		}
 		j++;
-
-		assert(!deleted[new_sc.src] && !deleted[new_sc.tgt]);
 	}
 
 	_out_edges.swap(new_edge_vec);

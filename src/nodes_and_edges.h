@@ -146,10 +146,13 @@ struct CHEdge : Edge
 {
 	int child_edge1;
 	int child_edge2;
+	NodeID center_node;
 
-	CHEdge() : child_edge1(-1), child_edge2(-1){}
-	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2)
-		: Edge(edge), child_edge1(child_edge1), child_edge2(child_edge2){}
+	CHEdge() : child_edge1(-1), child_edge2(-1), center_node(c::NO_NID){}
+	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2,
+			NodeID center_node)
+		: Edge(edge), child_edge1(child_edge1),
+		child_edge2(child_edge2), center_node(center_node){}
 
 	virtual void write(std::ofstream& f) const;
 };
@@ -181,11 +184,8 @@ NodeID Edge::otherNode(EdgeType edge_type) const
 
 CHEdge<Edge> Edge::concat(Edge const& edge) const
 {
-//	assert(tgt == edge.src);
-	if (tgt != edge.src) {
-		Debug(src << " " << tgt << " " << edge.src << " " << edge.tgt);
-	}
-	return CHEdge<Edge>(Edge(c::NO_EID, src, edge.tgt, dist + edge.dist), id, edge.id);
+	assert(tgt == edge.src);
+	return CHEdge<Edge>(Edge(c::NO_EID, src, edge.tgt, dist + edge.dist), id, edge.id, tgt);
 }
 
 template <typename Edge>

@@ -67,8 +67,9 @@ Alle die noch offen sind:
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
 	- das Sortieren der Kanten irgendwie zentral festlegen
 	- Preprocessing step: Knoten mit sowieso niedriger edge-difference kicken indem einfach alle SCs für die eingefügt werden. Besonders Grad 2/4 Knoten (Durchgangsknoten) können kontrahiert werden!
+	- Auf cmake umstellen oder so.
 
 Nächste Schritte:
-	- Wie machen wir das mit der edge difference?
+	x Wie machen wir das mit der edge difference?
 		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
-	- Arith. Mittel und SCs speichern.
+	x Arith. Mittel und SCs speichern.

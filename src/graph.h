@@ -60,6 +60,7 @@ class Graph
 
 		uint getNrOfNodes() const;
 		uint getNrOfEdges() const;
+		uint getNrOfEdges(NodeID node_id) const;
 		uint getNrOfEdges(NodeID node_id, EdgeType type) const;
 		Edge const& getEdge(EdgeID edge_id) const;
 		Node const& getNode(NodeID node_id) const;
@@ -347,6 +348,12 @@ template <typename Node, typename Edge>
 uint Graph<Node, Edge>::getNrOfEdges() const
 {
 	return _out_edges.size();
+}
+
+template <typename Node, typename Edge>
+uint Graph<Node, Edge>::getNrOfEdges(NodeID node_id) const
+{
+	return getNrOfEdges(node_id, OUT) + getNrOfEdges(node_id, IN);
 }
 
 template <typename Node, typename Edge>
