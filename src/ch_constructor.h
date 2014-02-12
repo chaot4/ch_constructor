@@ -292,6 +292,7 @@ void CHConstructor<Node, Edge>::_chooseDeleteNodes(std::vector<NodeID> const& in
 		edge_diff_mean += _edge_diffs[independent_set[i]];
 	}
 	edge_diff_mean /= independent_set.size();
+	Print("The average edge difference is " << edge_diff_mean << ".");
 
 	assert(_delete.empty());
 	for (uint i(0); i<independent_set.size(); i++) {
@@ -350,8 +351,10 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 {
 	Print("\nStarting the contraction of " << nodes.size() << " nodes.");
 
+	uint round(1);
 	while (!nodes.empty()) {
-		Print("\nInitializing the vectors for a new round.");
+		Print("\nStarting round " << round);
+		Print("Initializing the vectors for a new round.");
 		_initVectors();
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
@@ -368,19 +371,20 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
 			uint node(independent_set[i]);
 			_contract(node);
 		}
-		Print("Number of new Shortcuts: " << _new_shortcuts.size());
+		Print("Number of possible new Shortcuts: " << _new_shortcuts.size());
 
 		Print("Delete the nodes with low edge difference.");
 		_chooseDeleteNodes(independent_set);
 		_deleteNodes(nodes);
 		Print("Deleted " << _delete.size() << " nodes.");
-		Debug(nodes.size() << " remaining.");
 
 		Print("Restructuring the graph.");
 		_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
 
 		Print("Graph info:");
 		_base_graph.printInfo();
+
+		round++;
 	}
 }
 
