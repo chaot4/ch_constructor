@@ -185,7 +185,6 @@ void CHConstructor<Node, Edge>::_quickContract(NodeID node)
 		while (out_it.hasNext()) {
 			Shortcut const& out_edge(out_it.getNext());
 			if (in_edge.src != out_edge.tgt) {
-				Debug("New shortcut shall be created: " << in_edge.src << " " << out_edge.tgt << " " << in_edge.dist + out_edge.dist);
 				_createShortcut(in_edge, out_edge);
 			}
 		}
@@ -408,7 +407,7 @@ void CHConstructor<Node, Edge>::quick_contract(std::list<NodeID>& nodes, uint ma
 
 			_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
 
-			_base_graph.printInfo();
+			_base_graph.printInfo(nodes);
 
 			round++;
 		}
@@ -454,7 +453,7 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID>& nodes)
 		_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
 
 		Print("Graph info:");
-		_base_graph.printInfo();
+		_base_graph.printInfo(nodes);
 
 		round++;
 	}

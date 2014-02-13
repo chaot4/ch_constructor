@@ -5,6 +5,7 @@
 #include "nodes_and_edges.h"
 
 #include <vector>
+#include <list>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -48,6 +49,7 @@ class Graph
 		bool read(std::string const& filename);
 		bool write(std::string const& filename) const;
 		void printInfo() const;
+		void printInfo(std::list<NodeID> const& nodes) const;
 
 		template <class InEdgeSort>
 		void sortInEdges();
@@ -182,6 +184,17 @@ bool Graph<Node, Edge>::write(std::string const& filename) const
 template <typename Node, typename Edge>
 void Graph<Node, Edge>::printInfo() const
 {
+	std::list<NodeID> nodes;
+	for (uint i(0); i<_nodes.size(); i++) {
+		nodes.push_back(i);
+	}
+
+	printInfo(nodes);
+}
+
+template <typename Node, typename Edge>
+void Graph<Node, Edge>::printInfo(std::list<NodeID> const& nodes) const
+{
 	uint active_nodes(0);
 
 	double avg_out_deg(0);
@@ -192,15 +205,15 @@ void Graph<Node, Edge>::printInfo() const
 	std::vector<uint> in_deg;
 	std::vector<uint> deg;
 
-	for (NodeID i(0); i<_nodes.size(); i++) {
-		uint out(getNrOfEdges(i, OUT));
-		uint in(getNrOfEdges(i, IN));
+	for (auto it(nodes.begin()); it != nodes.end(); it++) {
+		uint out(getNrOfEdges(*it, OUT));
+		uint in(getNrOfEdges(*it, IN));
 
 		if (out != 0 || in != 0) {
 			active_nodes++;
 
-			out_deg.push_back(getNrOfEdges(i, OUT));
-			in_deg.push_back(getNrOfEdges(i, IN));
+			out_deg.push_back(getNrOfEdges(*it, OUT));
+			in_deg.push_back(getNrOfEdges(*it, IN));
 			deg.push_back(out + in);
 
 			avg_out_deg += out;
@@ -209,8 +222,9 @@ void Graph<Node, Edge>::printInfo() const
 		}
 	}
 
+	Print("#nodes: " << nodes.size());
 	Print("#active nodes: " << active_nodes);
-	Print("#active edges: " << _out_edges.size());
+	Print("#edges: " << _out_edges.size());
 	Print("maximal edge id: " << _next_id-1);
 
 	if (active_nodes != 0) {

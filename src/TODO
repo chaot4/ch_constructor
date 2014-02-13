@@ -77,7 +77,7 @@ Nächste Schritte:
 Was noch:
 	- Bug in quick contraction fixen. (gleiche edges)
 	- quick contraction: das ind set nur mit nodes aus letzter runde bauen. Alle die größeren Grad als max_degree haben dann kicken.
-	- graph info für ein bestimmtes set of nodes ausgeben.
+	x graph info für ein bestimmtes set of nodes ausgeben.
 
 Stefan:
 Makefile: (siehe paste)
