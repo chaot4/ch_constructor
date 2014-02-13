@@ -388,25 +388,34 @@ void CHConstructor<Node, Edge>::quick_contract(std::list<NodeID>& nodes, uint ma
 	uint round(1);
 	while (nodes_left) {
 		Print("\nStarting round " << round);
+		Print("Initializing the vectors for a new round.");
 		_initVectors(true);
 
+		Print("Sorting the remaining " << nodes.size() << " nodes.");
 		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
 
+		Print("Constructing the independent set.");
 		std::vector<NodeID> independent_set;
 		_calcIndependentSet(nodes, independent_set, max_degree);
+		Print("The independent set has size " << independent_set.size() << ".");
 
 		if (!independent_set.empty()) {
+			Print("Quick-contracting all the nodes in the independent set.");
 			#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
 			for (uint i = 0; i < independent_set.size(); i++) {
 				uint node(independent_set[i]);
 				_quickContract(node);
 			}
+			Print("Number of possible new Shortcuts: " << _new_shortcuts.size());
 
 			_chooseAllForDelete(independent_set);
 			_deleteNodes(nodes);
+			Print("Deleted " << _delete.size() << " nodes.");
 
+			Print("Restructuring the graph.");
 			_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
 
+			Print("Graph info:");
 			_base_graph.printInfo(nodes);
 
 			round++;
