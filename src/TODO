@@ -74,6 +74,11 @@ Nächste Schritte:
 		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
 	x Arith. Mittel und SCs speichern.
 
+Was noch:
+	- Bug in quick contraction fixen. (gleiche edges)
+	- quick contraction: das ind set nur mit nodes aus letzter runde bauen. Alle die größeren Grad als max_degree haben dann kicken.
+	- graph info für ein bestimmtes set of nodes ausgeben.
+
 Stefan:
 Makefile: (siehe paste)
   - s/LFLAGS/LDFLAGS/ ?
