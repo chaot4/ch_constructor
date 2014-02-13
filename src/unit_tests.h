@@ -196,24 +196,28 @@ void unit_tests::testCHDijkstra()
 
 	/* Init normal graph */
 	Graph<Node,Edge> g;
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
 
 	/* Init CH graph */
 	CHGraph chg;
-	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
+	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
 
 	/* Build CH */
-	CHConstructor<Node, Edge> chc(chg, 2);
+	CHConstructor<Node, Edge> chc(chg, 1);
 	std::list<NodeID> all_nodes;
 	for (uint i(0); i<chg.getNrOfNodes(); i++) {
 		all_nodes.push_back(i);
 	}
+	chc.quick_contract(all_nodes, 4);
 	chc.contract(all_nodes);
 	chc.getCHGraph();
 
+	// Export
+	chg.write("../data/ch_test");
+
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
-	uint nr_of_dij(100);
+	uint nr_of_dij(10000);
 	Dijkstra<Node, Edge> dij(g);
 	CHDijkstra<Node, Edge> chdij(chg);
 
@@ -224,6 +228,7 @@ void unit_tests::testCHDijkstra()
 	for (uint i(0); i<nr_of_dij; i++) {
 		NodeID src = rand_node();
 		NodeID tgt = rand_node();
+		Debug("From " << src << " to " << tgt << ".");
 		Test(dij.calcShopa(src,tgt,path) == chdij.calcShopa(src,tgt,path));
 	}
 

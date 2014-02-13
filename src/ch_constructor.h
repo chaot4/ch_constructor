@@ -52,24 +52,28 @@ class CHConstructor{
 		std::vector< std::vector<uint> > _dists;
 		std::vector< std::vector<uint> > _reset_dists;
 
-		void _initVectors();
-		void _contract(NodeID center_node);
+		void _initVectors(bool quick_version = false);
+		void _contract(NodeID node);
+		void _quickContract(NodeID node);
 		uint _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
 				EdgeType direction);
 		void _handleNextPQElement(EdgeType direction);
 		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
-				EdgeType direction);
+				EdgeType direction = OUT);
 
 		void _calcIndependentSet(std::list<NodeID>& nodes,
-				std::vector<NodeID>& independent_set);
+				std::vector<NodeID>& independent_set,
+				uint max_degree = MAX_UINT);
 		void _markNeighbours(NodeID node, std::vector<bool>& marked);
 
 		void _chooseDeleteNodes(std::vector<NodeID> const& independent_set);
+		void _chooseAllForDelete(std::vector<NodeID> const& independent_set);
 		void _deleteNodes(std::list<NodeID>& nodes);
 	public:
 		CHConstructor(CHGraph& base_graph, uint num_threads = 1);
 
-		void contract(std::list<NodeID> nodes);
+		void quick_contract(std::list<NodeID>& nodes, uint max_degree);
+		void contract(std::list<NodeID>& nodes);
 		SCGraph<Node, Edge> const& getCHGraph();
 
 		friend void unit_tests::testCHConstructor();
@@ -133,16 +137,18 @@ void CHConstructor<Node, Edge>::_resetThreadData()
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_initVectors()
+void CHConstructor<Node, Edge>::_initVectors(bool quick_version)
 {
 	_new_shortcuts.clear();
 	_delete.clear();
 	_to_delete.assign(_base_graph.getNrOfNodes(), false);
 
-	for (uint i(0); i<_num_threads; i++) {
-		_pq[i] = PQ();
-		_dists[i].assign(_base_graph.getNrOfNodes(), MAX_UINT);
-		_reset_dists[i].clear();
+	if (!quick_version) {
+		for (uint i(0); i<_num_threads; i++) {
+			_pq[i] = PQ();
+			_dists[i].assign(_base_graph.getNrOfNodes(), MAX_UINT);
+			_reset_dists[i].clear();
+		}
 	}
 }
 
@@ -167,6 +173,23 @@ void CHConstructor<Node, Edge>::_contract(NodeID node)
 
 	uint edge_diff(nr_new_edges - _base_graph.getNrOfEdges(node));
 	_edge_diffs[node] = edge_diff;
+}
+
+template <typename Node, typename Edge>
+void CHConstructor<Node, Edge>::_quickContract(NodeID node)
+{
+	typename CHGraph::EdgeIt in_it(_base_graph, node, IN);
+	while (in_it.hasNext()) {
+		Shortcut const& in_edge(in_it.getNext());
+		typename CHGraph::EdgeIt out_it(_base_graph, node, OUT);
+		while (out_it.hasNext()) {
+			Shortcut const& out_edge(out_it.getNext());
+			if (in_edge.src != out_edge.tgt) {
+				Debug("New shortcut shall be created: " << in_edge.src << " " << out_edge.tgt << " " << in_edge.dist + out_edge.dist);
+				_createShortcut(in_edge, out_edge);
+			}
+		}
+	}
 }
 
 template <typename Node, typename Edge>
@@ -258,13 +281,13 @@ void CHConstructor<Node, Edge>::_createShortcut(Shortcut const& edge1, Shortcut 
 
 template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::_calcIndependentSet(std::list<NodeID>& nodes,
-		std::vector<NodeID>& independent_set)
+		std::vector<NodeID>& independent_set, uint max_degree)
 {
 	std::vector<bool> marked(_base_graph.getNrOfNodes(), false);
 	independent_set.reserve(nodes.size());
 
 	for (auto it(nodes.begin()); it != nodes.end(); it++) {
-		if (!marked[*it]) {
+		if (!marked[*it] && max_degree >= _base_graph.getNrOfEdges(*it)) {
 			marked[*it] = true;
 			_markNeighbours(*it, marked);
 			independent_set.push_back(*it);
@@ -301,6 +324,17 @@ void CHConstructor<Node, Edge>::_chooseDeleteNodes(std::vector<NodeID> const& in
 			_delete.push_back(node);
 			_to_delete[node] = true;
 		}
+	}
+}
+
+template <typename Node, typename Edge>
+void CHConstructor<Node, Edge>::_chooseAllForDelete(std::vector<NodeID> const& independent_set)
+{
+	assert(_delete.empty());
+	for (uint i(0); i<independent_set.size(); i++) {
+		NodeID node(independent_set[i]);
+		_delete.push_back(node);
+		_to_delete[node] = true;
 	}
 }
 
@@ -347,7 +381,45 @@ CHConstructor<Node, Edge>::CHConstructor(CHGraph& base_graph, uint num_threads)
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::contract(std::list<NodeID> nodes)
+void CHConstructor<Node, Edge>::quick_contract(std::list<NodeID>& nodes, uint max_degree)
+{
+	Print("\nStarting the quick_contraction of nodes with degree smaller than " << max_degree << ".");
+
+	bool nodes_left(true);
+	uint round(1);
+	while (nodes_left) {
+		Print("\nStarting round " << round);
+		_initVectors(true);
+
+		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
+
+		std::vector<NodeID> independent_set;
+		_calcIndependentSet(nodes, independent_set, max_degree);
+
+		if (!independent_set.empty()) {
+			#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
+			for (uint i = 0; i < independent_set.size(); i++) {
+				uint node(independent_set[i]);
+				_quickContract(node);
+			}
+
+			_chooseAllForDelete(independent_set);
+			_deleteNodes(nodes);
+
+			_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
+
+			_base_graph.printInfo();
+
+			round++;
+		}
+		else {
+			nodes_left = false;
+		}
+	}
+}
+
+template <typename Node, typename Edge>
+void CHConstructor<Node, Edge>::contract(std::list<NodeID>& nodes)
 {
 	Print("\nStarting the contraction of " << nodes.size() << " nodes.");
 

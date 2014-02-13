@@ -57,6 +57,7 @@ void SCGraph<Node, Edge>::restructure(
 	new_edge_vec.reserve(_out_edges.size() + new_shortcuts.size());
 
 	std::sort(new_shortcuts.begin(), new_shortcuts.end(), EdgeSortSrc<Shortcut>());
+	// TODO Delete the duplicates with longer dist. (or keep them both and the take the shortest one afterwards).
 	new_shortcuts.erase(std::unique(new_shortcuts.begin(),
 			new_shortcuts.end()), new_shortcuts.end());
 
