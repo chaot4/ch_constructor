@@ -24,6 +24,9 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 
 		uint _next_lvl;
 
+		void _addNewEdge(Shortcut& new_edge,
+				std::vector<Shortcut>& new_edge_vec);
+		void _addDumpEdge(Shortcut& new_edge);
 	public:
 		SCGraph() : BaseGraph(), _next_lvl(0) {}
 
@@ -57,9 +60,6 @@ void SCGraph<Node, Edge>::restructure(
 	new_edge_vec.reserve(_out_edges.size() + new_shortcuts.size());
 
 	std::sort(new_shortcuts.begin(), new_shortcuts.end(), EdgeSortSrc<Shortcut>());
-	// TODO Delete the duplicates with longer dist. (or keep them both and the take the shortest one afterwards).
-	new_shortcuts.erase(std::unique(new_shortcuts.begin(),
-			new_shortcuts.end()), new_shortcuts.end());
 
 	/* Manually merge the new_shortcuts and _out_edges vector. */
 	uint j(0);
@@ -71,8 +71,7 @@ void SCGraph<Node, Edge>::restructure(
 
 			Shortcut& new_sc(new_shortcuts[j]);
 			if (to_delete[new_sc.center_node]) {
-				new_sc.id = _next_id++;
-				new_edge_vec.push_back(new_sc);
+				_addNewEdge(new_sc, new_edge_vec);
 				assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
 			}
 			j++;
@@ -80,6 +79,11 @@ void SCGraph<Node, Edge>::restructure(
 
 		/* edge equal */
 		while (j < new_shortcuts.size() && new_shortcuts[j] == edge) {
+			Shortcut& new_sc(new_shortcuts[j]);
+			if (edge.dist >= new_sc.dist && to_delete[new_sc.center_node]) {
+				_addNewEdge(new_sc, new_edge_vec);
+				assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
+			}
 			j++;
 		}
 
@@ -87,10 +91,10 @@ void SCGraph<Node, Edge>::restructure(
 
 		/* edges smaller */
 		if (!to_delete[edge.src] && !to_delete[edge.tgt]) {
-			new_edge_vec.push_back(_out_edges[i]);
+			_addNewEdge(_out_edges[i], new_edge_vec);
 		}
 		else {
-			_edges_dump.push_back(_out_edges[i]);
+			_addDumpEdge(_out_edges[i]);
 		}
 	}
 
@@ -99,20 +103,56 @@ void SCGraph<Node, Edge>::restructure(
 
 		Shortcut& new_sc(new_shortcuts[j]);
 		if (to_delete[new_sc.center_node]) {
-			new_sc.id = _next_id++;
-			new_edge_vec.push_back(new_sc);
+			_addNewEdge(new_sc, new_edge_vec);
 			assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
 		}
 		j++;
 	}
 
+	/*
+	 * Build new graph structures.
+	 */
 	_out_edges.swap(new_edge_vec);
 	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
 
 	_in_edges.assign(_out_edges.begin(), _out_edges.end());
 	BaseGraph::template sortInEdges<EdgeSortTgt<Edge> >();
 	BaseGraph::initOffsets();
-	BaseGraph::initIdToIndex();
+}
+
+template <typename Node, typename Edge>
+void SCGraph<Node, Edge>::_addNewEdge(Shortcut& new_edge,
+		std::vector<Shortcut>& new_edge_vec)
+{
+	Edge& last_edge(new_edge_vec.back());
+	if (!new_edge_vec.empty() && new_edge == last_edge) {
+		if (new_edge.dist < last_edge.dist) {
+			if (new_edge.id == c::NO_EID) {
+				new_edge.id = _next_id++;
+			}
+			last_edge = new_edge;
+		}
+	}
+	else {
+		if (new_edge.id == c::NO_EID) {
+			new_edge.id = _next_id++;
+		}
+		new_edge_vec.push_back(new_edge);
+	}
+}
+
+template <typename Node, typename Edge>
+void SCGraph<Node, Edge>::_addDumpEdge(Shortcut& new_edge)
+{
+	Edge& last_edge(_edges_dump.back());
+	if (!_edges_dump.empty() && new_edge == last_edge) {
+		if (new_edge.dist < last_edge.dist) {
+			last_edge = new_edge;
+		}
+	}
+	else {
+		_edges_dump.push_back(new_edge);
+	}
 }
 
 template <typename Node, typename Edge>

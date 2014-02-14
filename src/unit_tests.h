@@ -203,12 +203,12 @@ void unit_tests::testCHDijkstra()
 	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
 
 	/* Build CH */
-	CHConstructor<Node, Edge> chc(chg, 1);
+	CHConstructor<Node, Edge> chc(chg, 2);
 	std::list<NodeID> all_nodes;
 	for (uint i(0); i<chg.getNrOfNodes(); i++) {
 		all_nodes.push_back(i);
 	}
-	chc.quick_contract(all_nodes, 4, 2);
+	chc.quick_contract(all_nodes, 4, 5);
 	chc.contract(all_nodes);
 	chc.getCHGraph();
 
@@ -217,7 +217,7 @@ void unit_tests::testCHDijkstra()
 
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
-	uint nr_of_dij(10);
+	uint nr_of_dij(10000);
 	Dijkstra<Node, Edge> dij(g);
 	CHDijkstra<Node, Edge> chdij(chg);
 
