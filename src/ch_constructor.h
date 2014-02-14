@@ -72,7 +72,8 @@ class CHConstructor{
 	public:
 		CHConstructor(CHGraph& base_graph, uint num_threads = 1);
 
-		void quick_contract(std::list<NodeID>& nodes, uint max_degree);
+		void quick_contract(std::list<NodeID>& nodes, uint max_degree,
+				uint max_rounds);
 		void contract(std::list<NodeID>& nodes);
 		SCGraph<Node, Edge> const& getCHGraph();
 
@@ -380,13 +381,13 @@ CHConstructor<Node, Edge>::CHConstructor(CHGraph& base_graph, uint num_threads)
 }
 
 template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::quick_contract(std::list<NodeID>& nodes, uint max_degree)
+void CHConstructor<Node, Edge>::quick_contract(std::list<NodeID>& nodes, uint max_degree, uint max_rounds)
 {
 	Print("\nStarting the quick_contraction of nodes with degree smaller than " << max_degree << ".");
 
 	bool nodes_left(true);
 	uint round(1);
-	while (nodes_left) {
+	while (nodes_left && round <= max_rounds) {
 		Print("\nStarting round " << round);
 		Print("Initializing the vectors for a new round.");
 		_initVectors(true);
