@@ -196,11 +196,11 @@ void unit_tests::testCHDijkstra()
 
 	/* Init normal graph */
 	Graph<Node,Edge> g;
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
 
 	/* Init CH graph */
 	CHGraph chg;
-	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
+	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
 
 	/* Build CH */
 	CHConstructor<Node, Edge> chc(chg, 2);
@@ -213,7 +213,7 @@ void unit_tests::testCHDijkstra()
 	chc.getCHGraph();
 
 	// Export
-	chg.write("../data/ch_test");
+	chg.write("../data/ch_15kSZHK.txt");
 
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
