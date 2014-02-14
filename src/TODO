@@ -61,41 +61,38 @@ Alle die noch offen sind:
 	x Asserts zentral abschaltbar machen in defs.h
 	x Init Methode für Graphen.
 	x vector<bool> Bug beheben.
+	x Preprocessing step: Knoten mit sowieso niedriger edge-difference kicken indem einfach alle SCs für die eingefügt werden. Besonders Grad 2/4 Knoten (Durchgangsknoten) können kontrahiert werden!
+	x Wie machen wir das mit der edge difference?
+		x Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
+	x Arith. Mittel und SCs speichern.
+	x Bug in quick contraction fixen. (gleiche edges)
+	x graph info für ein bestimmtes set of nodes ausgeben.
+
+Was noch:
+	- Auf cmake umstellen oder so.
 	- Auf allen vectors immer ein reserve machen
 	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
 	- Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
 	- das Sortieren der Kanten irgendwie zentral festlegen
-	- Preprocessing step: Knoten mit sowieso niedriger edge-difference kicken indem einfach alle SCs für die eingefügt werden. Besonders Grad 2/4 Knoten (Durchgangsknoten) können kontrahiert werden!
-	- Auf cmake umstellen oder so.
-
-Nächste Schritte:
-	x Wie machen wir das mit der edge difference?
-		- Alle speichern aber eben davor vector reserve oder so machen. So macht's Stefan.
-	x Arith. Mittel und SCs speichern.
-
-Was noch:
-	- Bug in quick contraction fixen. (gleiche edges)
-	- quick contraction: das ind set nur mit nodes aus letzter runde bauen. Alle die größeren Grad als max_degree haben dann kicken.
-	x graph info für ein bestimmtes set of nodes ausgeben.
 
 Stefan:
 Makefile: (siehe paste)
-  - s/LFLAGS/LDFLAGS/ ?
-  - CC = g++ ? wirklich nötig? s/CC/CXX/
+  x s/LFLAGS/LDFLAGS/ ?
+  x CC = g++ ? wirklich nötig? s/CC/CXX/
     .c files per default: $(CC) $(CPPFLAGS) $(CFLAGS) -c
     .cpp (.cc,.C) files: $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c
-  - $(BIN) hängt von main.o ab, aber kompiliert main.cpp nochmal
-  - ist der sinn von $(BIN) *ein* binary zu benennen, oder potentiell mehrere?
+  x $(BIN) hängt von main.o ab, aber kompiliert main.cpp nochmal
+  x ist der sinn von $(BIN) *ein* binary zu benennen, oder potentiell mehrere?
     für mehrere ist $(BIN): $(OBJ) main.o nich so ne super regel :)
-  - ein leeres OBJ zu verwenden ist overengineering...
+  x ein leeres OBJ zu verwenden ist overengineering...
 
 
 - keine (inline) "header" implementierungen, wenn nich aufgrund von template absolutig nötig:
-- nicht alle methoden gehören zu einem objekt (Edge::concat wäre global besser)
+x nicht alle methoden gehören zu einem objekt (Edge::concat wäre global besser)
   x.swap(y) -> swap(x, y)
-- evtl. alles in einen namespace - kostet wenig aufwand
-- peformance: insbesondere bei längeren schleifen lohnt es vielleicht,
+x evtl. alles in einen namespace - kostet wenig aufwand
+x peformance: insbesondere bei längeren schleifen lohnt es vielleicht,
   die größe des vectors in ne lokale variable zu packen.
 - evtl. eigene "assert_always" definieren; assert() ist ja nur für debugging da,
   manchmal kann man kleine checks aber auch im "release" aktiv haben

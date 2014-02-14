@@ -7,6 +7,9 @@
 #include <vector>
 #include <algorithm>
 
+namespace chc
+{
+
 template <typename Node, typename Edge>
 class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 {
@@ -182,6 +185,8 @@ bool SCGraph<Node, Edge>::isUp(EdgeID id, EdgeType direction) const
 		return !direction;
 	}
 	return false;
+}
+
 }
 
 #endif

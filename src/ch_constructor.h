@@ -14,6 +14,9 @@
 #include <mutex>
 #include <omp.h>
 
+namespace chc
+{
+
 namespace unit_tests
 {
 	void testCHConstructor();
@@ -131,7 +134,7 @@ void CHConstructor<Node, Edge>::_resetThreadData()
 
 	_pq[t] = PQ();
 
-	for (uint i(0); i<_reset_dists[t].size(); i++) {
+	for (uint i(0), size(_reset_dists[t].size()); i<size; i++) {
 		_dists[t][_reset_dists[t][i]] = MAX_UINT;
 	}
 	_reset_dists[t].clear();
@@ -217,7 +220,7 @@ uint CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeI
 	_reset_dists[t].push_back(start_node);
 
 	uint nr_new_edges(0);
-	for (uint i(0); i<end_nodes.size(); i++) {
+	for (uint i(0), size(end_nodes.size()); i<size; i++) {
 
 		while (_dists[t][end_nodes[i]] > _pq[t].top().dist) {
 			_handleNextPQElement(direction);
@@ -270,12 +273,12 @@ void CHConstructor<Node, Edge>::_createShortcut(Shortcut const& edge1, Shortcut 
 {
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	if (direction == OUT) {
-		_new_shortcuts.push_back(edge1.concat(edge2));
+		_new_shortcuts.push_back(Edge::concat(edge1,edge2));
 		assert(edge1.tgt == edge2.src);
 		assert(_new_shortcuts.back().center_node == edge1.tgt);
 	}
 	else {
-		_new_shortcuts.push_back(edge2.concat(edge1));
+		_new_shortcuts.push_back(Edge::concat(edge2,edge1));
 	}
 }
 
@@ -286,7 +289,7 @@ void CHConstructor<Node, Edge>::_calcIndependentSet(std::list<NodeID>& nodes,
 	std::vector<bool> marked(_base_graph.getNrOfNodes(), false);
 	independent_set.reserve(nodes.size());
 
-	for (auto it(nodes.begin()); it != nodes.end(); it++) {
+	for (auto it(nodes.begin()), end(nodes.end()); it != end; it++) {
 		if (!marked[*it] && max_degree >= _base_graph.getNrOfEdges(*it)) {
 			marked[*it] = true;
 			_markNeighbours(*it, marked);
@@ -311,14 +314,14 @@ template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::_chooseDeleteNodes(std::vector<NodeID> const& independent_set)
 {
 	double edge_diff_mean(0);
-	for (uint i(0); i<independent_set.size(); i++) {
+	for (uint i(0), size(independent_set.size()); i<size; i++) {
 		edge_diff_mean += _edge_diffs[independent_set[i]];
 	}
 	edge_diff_mean /= independent_set.size();
 	Print("The average edge difference is " << edge_diff_mean << ".");
 
 	assert(_delete.empty());
-	for (uint i(0); i<independent_set.size(); i++) {
+	for (uint i(0), size(independent_set.size()); i<size; i++) {
 		NodeID node(independent_set[i]);
 		if (_edge_diffs[node] <= edge_diff_mean) {
 			_delete.push_back(node);
@@ -331,7 +334,7 @@ template <typename Node, typename Edge>
 void CHConstructor<Node, Edge>::_chooseAllForDelete(std::vector<NodeID> const& independent_set)
 {
 	assert(_delete.empty());
-	for (uint i(0); i<independent_set.size(); i++) {
+	for (uint i(0), size(independent_set.size()); i<size; i++) {
 		NodeID node(independent_set[i]);
 		_delete.push_back(node);
 		_to_delete[node] = true;
@@ -402,8 +405,9 @@ void CHConstructor<Node, Edge>::quick_contract(std::list<NodeID>& nodes, uint ma
 
 		if (!independent_set.empty()) {
 			Print("Quick-contracting all the nodes in the independent set.");
+			uint size(independent_set.size());
 			#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
-			for (uint i = 0; i < independent_set.size(); i++) {
+			for (uint i = 0; i < size; i++) {
 				uint node(independent_set[i]);
 				_quickContract(node);
 			}
@@ -447,8 +451,9 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID>& nodes)
 		Print("The independent set has size " << independent_set.size() << ".");
 
 		Print("Contracting all the nodes in the independent set.");
+		uint size(independent_set.size());
 		#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
-		for (uint i = 0; i < independent_set.size(); i++) {
+		for (uint i = 0; i < size; i++) {
 			uint node(independent_set[i]);
 			_contract(node);
 		}
@@ -476,6 +481,8 @@ SCGraph<Node, Edge> const& CHConstructor<Node, Edge>::getCHGraph()
 
 	_base_graph.buildCHGraph();
 	return _base_graph;
+}
+
 }
 
 #endif

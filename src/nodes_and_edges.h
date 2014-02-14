@@ -8,6 +8,9 @@
 #include <vector>
 #include <limits>
 
+namespace chc
+{
+
 namespace unit_tests
 {
 	void testNodesAndEdges();
@@ -129,7 +132,7 @@ struct Edge
 	virtual void write(std::ofstream& f) const;
 	NodeID otherNode(EdgeType edge_type) const;
 
-	CHEdge<Edge> concat(Edge const& edge) const;
+	static CHEdge<Edge> concat(Edge const& edge1, Edge const& edge2);
 };
 
 template <typename Edge>
@@ -182,10 +185,11 @@ NodeID Edge::otherNode(EdgeType edge_type) const
 	}
 }
 
-CHEdge<Edge> Edge::concat(Edge const& edge) const
+CHEdge<Edge> Edge::concat(Edge const& edge1, Edge const& edge2)
 {
-	assert(tgt == edge.src);
-	return CHEdge<Edge>(Edge(c::NO_EID, src, edge.tgt, dist + edge.dist), id, edge.id, tgt);
+	assert(edge1.tgt == edge2.src);
+	return CHEdge<Edge>(Edge(c::NO_EID, edge1.src, edge2.tgt,
+			edge1.dist + edge2.dist), edge1.id, edge2.id, edge1.tgt);
 }
 
 template <typename Edge>
@@ -218,5 +222,7 @@ struct EdgeSortTgt
 		       	(edge1.tgt == edge2.tgt && edge1.src < edge2.src);
 	}
 };
+
+}
 
 #endif

@@ -8,6 +8,9 @@
 #include <limits>
 #include <queue>
 
+namespace chc
+{
+
 namespace unit_tests
 {
 	void testCHDijkstra();
@@ -132,7 +135,7 @@ void Dijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 template <typename Node, typename Edge>
 void Dijkstra<Node,Edge>::_reset()
 {
-	for (uint i=0; i<_reset_dists.size(); i++) {
+	for (uint i(0), size(_reset_dists.size()); i<size; i++) {
 		_dists[_reset_dists[i]] = c::NO_DIST;
 	}
 
@@ -288,13 +291,15 @@ template <typename Node, typename Edge>
 void CHDijkstra<Node,Edge>::_reset()
 {
 	for(uint i=0; i<2; i++) {
-		for (uint j=0; j<_reset_dists[i].size(); j++) {
+		for (uint j(0), size(_reset_dists[i].size()); j<size; j++) {
 			_dists[i][_reset_dists[i][j]] = c::NO_DIST;
 		}
 	}
 
 	_reset_dists[0].clear();
 	_reset_dists[1].clear();
+}
+
 }
 
 #endif

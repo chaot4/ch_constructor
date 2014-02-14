@@ -12,6 +12,9 @@
 #include <algorithm>
 #include <limits>
 
+namespace chc
+{
+
 namespace unit_tests
 {
 	void testGraph();
@@ -185,7 +188,7 @@ template <typename Node, typename Edge>
 void Graph<Node, Edge>::printInfo() const
 {
 	std::list<NodeID> nodes;
-	for (uint i(0); i<_nodes.size(); i++) {
+	for (uint i(0), size(_nodes.size()); i<size; i++) {
 		nodes.push_back(i);
 	}
 
@@ -205,7 +208,7 @@ void Graph<Node, Edge>::printInfo(std::list<NodeID> const& nodes) const
 	std::vector<uint> in_deg;
 	std::vector<uint> deg;
 
-	for (auto it(nodes.begin()); it != nodes.end(); it++) {
+	for (auto it(nodes.begin()), end(nodes.end()); it != end; it++) {
 		uint out(getNrOfEdges(*it, OUT));
 		uint in(getNrOfEdges(*it, IN));
 
@@ -311,7 +314,7 @@ void Graph<Node, Edge>::initIdToIndex()
 	Print("Renew the index mapper.");
 
 	_id_to_index.resize(_next_id);
-	for (uint i(0); i<_out_edges.size(); i++) {
+	for (uint i(0), size(_out_edges.size()); i<size; i++) {
 		_id_to_index[_out_edges[i].id] = i;
 	}
 }
@@ -321,7 +324,7 @@ void Graph<Node, Edge>::setEdgeSrcTgtToOffset()
 {
 	assert(_in_edges.size() == _out_edges.size());
 
-	for (uint i(0); i<_in_edges.size(); i++) {
+	for (uint i(0), size(_in_edges.size()); i<size; i++) {
 		_in_edges[i].src = _in_offsets[_in_edges[i].src];
 		_in_edges[i].tgt = _out_offsets[_in_edges[i].tgt];
 		_out_edges[i].src = _in_offsets[_out_edges[i].src];
@@ -481,6 +484,8 @@ template <typename Node, typename Edge>
 Edge const& Graph<Node, Edge>::OffEdgeIt::getNext()
 {
 	return *(_current++);
+}
+
 }
 
 #endif

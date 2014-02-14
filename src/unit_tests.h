@@ -1,7 +1,6 @@
 #ifndef _UNIT_TESTS_H
 #define _UNIT_TESTS_H
 
-
 #include "nodes_and_edges.h"
 #include "graph.h"
 #include "chgraph.h"
@@ -12,6 +11,9 @@
 #include <iostream>
 #include <random>
 #include <chrono>
+
+namespace chc
+{
 
 #define Test(x)\
 if (!(x)) {\
@@ -270,6 +272,8 @@ void unit_tests::testDijkstra()
 	Print("\n=================================");
 	Print("TEST: Dijkstra test successful.");
 	Print("=================================\n");
+}
+
 }
 
 #endif

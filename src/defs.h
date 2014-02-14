@@ -1,14 +1,17 @@
 #ifndef _DEFS_H
 #define _DEFS_H
 
-// #define NDEBUG
-
 #include <cassert>
+#include <iostream>
+
+namespace chc
+{
+
+// #define NDEBUG
 
 #ifdef NDEBUG
 #define Debug(x)
 #else
-#include <iostream>
 #define Debug(x) std::cout << x << std::endl
 #endif
 
@@ -17,10 +20,11 @@
 #ifdef NVERBOSE
 #define Print(x)
 #else
-#include <iostream>
 #define Print(x) std::cout << x << std::endl
 #endif
 
 typedef unsigned int uint;
+
+}
 
 #endif
