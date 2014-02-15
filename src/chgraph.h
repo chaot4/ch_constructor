@@ -162,7 +162,7 @@ template <typename Node, typename Edge>
 void SCGraph<Node, Edge>::buildCHGraph()
 {
 	_out_edges.swap(_edges_dump);
-	_in_edges.assign(_out_edges.begin(), _out_edges.end());
+	_in_edges = _out_edges;
 	_edges_dump.clear();
 
 	BaseGraph::template sortOutEdges<EdgeSortSrc<Edge> >();
@@ -179,11 +179,13 @@ bool SCGraph<Node, Edge>::isUp(EdgeID id, EdgeType direction) const
 	uint tgt_lvl = _nodes[edge.tgt].lvl;
 
 	if (src_lvl > tgt_lvl) {
-		return direction;
+		return direction == IN ? true : false;
 	}
 	else if (src_lvl < tgt_lvl) {
-		return !direction;
+		return direction == OUT ? true : false;
 	}
+
+	assert(src_lvl == tgt_lvl);
 	return false;
 }
 

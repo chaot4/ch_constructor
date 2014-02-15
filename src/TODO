@@ -75,6 +75,7 @@ Was noch:
 	- Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
 	- das Sortieren der Kanten irgendwie zentral festlegen
+	x child_edge auf NO_EID umstellen.
 
 Stefan:
 Makefile: (siehe paste)
@@ -127,7 +128,7 @@ nodes_and_edges.h:
   fehlern, wo ein vec3 als vec2 verwendet wird, weils das typsystem erlaubt)
 
 graph.h:
-  - std::vector<T> mapped (u)int auf T, nicht andersrum:
+  x std::vector<T> mapped (u)int auf T, nicht andersrum:
     /* Maps edge id to index in the _out_edge vector. */
     std::vector<EdgeID> _id_to_index;
   - _next_id ist irgendwie "hässlich":
@@ -137,10 +138,10 @@ graph.h:
     protected: void update();
     evtl. InEdgeSort/OutEdgeSort als class template parameter - gibts nen guten grund warum sich das ändern darf? oder nicht sowieso immer das gleiche ist (nach id?)
     da die klasse auf vererbung ausgelegt ist, sollte update() auch nicht public sein.
-  - buildCHGraph:
+  x buildCHGraph:
     _in_edges.assign(_out_edges.begin(), _out_edges.end());
     _in_edges = _out_edges?
-  - isUp:
+  x isUp:
     EdgeType implicit nach bool casten? oO
     evtl. return false durch nen assert() oder abort() ersetzen, solle ja nie vorkommen, oder?
 

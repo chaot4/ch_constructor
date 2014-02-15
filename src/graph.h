@@ -32,7 +32,7 @@ class Graph
 		std::vector<Edge> _in_edges;
 
 		/* Maps edge id to index in the _out_edge vector. */
-		std::vector<EdgeID> _id_to_index;
+		std::vector<uint> _id_to_index;
 
 		EdgeID _next_id;
 

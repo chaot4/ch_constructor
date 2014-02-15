@@ -23,6 +23,7 @@ namespace c
 	uint const NO_NID(std::numeric_limits<NodeID>::max());
 	uint const NO_EID(std::numeric_limits<EdgeID>::max());
 	uint const NO_DIST(std::numeric_limits<uint>::max());
+	uint const NO_LVL(std::numeric_limits<uint>::max());
 }
 
 enum EdgeType {OUT = 0, IN = 1};
@@ -53,7 +54,7 @@ struct Node
 {
 	NodeID id;
 
-	Node() : id(0){}
+	Node() : id(c::NO_NID){}
 	Node(NodeID id) : id(id){}
 
 	virtual void read(std::stringstream& ss);
@@ -79,7 +80,7 @@ struct CHNode : Node
 {
 	uint lvl;
 
-	CHNode() : Node(), lvl(0){}
+	CHNode() : Node(), lvl(c::NO_LVL){}
 	CHNode(Node const& node, uint lvl) : Node(node), lvl(lvl){}
 
 	virtual void write(std::ofstream& f) const;
@@ -147,11 +148,12 @@ struct MetricEdge : Edge
 template <typename Edge>
 struct CHEdge : Edge
 {
-	int child_edge1;
-	int child_edge2;
+	EdgeID child_edge1;
+	EdgeID child_edge2;
 	NodeID center_node;
 
-	CHEdge() : child_edge1(-1), child_edge2(-1), center_node(c::NO_NID){}
+	CHEdge() : child_edge1(c::NO_EID), child_edge2(c::NO_EID),
+			center_node(c::NO_NID){}
 	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2,
 			NodeID center_node)
 		: Edge(edge), child_edge1(child_edge1),
