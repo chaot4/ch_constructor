@@ -29,31 +29,8 @@ namespace c
 enum EdgeType {OUT = 0, IN = 1};
 EdgeType operator!(EdgeType type);
 
-/* 
- * Parser Nodes 
- */
-
-struct Format1Node
-{
-	NodeID id;
-	uint osm_id;
-	double lat;
-	double lon;
-	int elev;
-};
-
-/* 
- * Parser Edges
- */
-
-struct Format1Edge
-{
-	NodeID src;
-	NodeID tgt;
-	uint dist;
-	uint type;
-	int speed;
-};
+struct Format1Node;
+struct Format1Edge;
 
 /*
  * Nodes
@@ -70,11 +47,6 @@ struct Node
 	bool operator<(Node const& node) const;
 };
 
-//void Node::write(std::ofstream& f) const
-//{
-//	f << id << " 0 0 0 0";
-//}
-
 template<typename Node>
 struct CHNode : Node
 {
@@ -87,13 +59,6 @@ struct CHNode : Node
 	CHNode(Format1Node const& node)
 		: Node(node), lvl(c::NO_LVL) {}
 };
-
-//template<typename Node>
-//void CHNode<Node>::write(std::ofstream& f) const
-//{
-//	Node::write(f);
-//	f << " " << lvl;
-//}
 
 /*
  * Edges
@@ -146,18 +111,6 @@ struct CHEdge : Edge
 		center_node(c::NO_NID) {}
 };
 
-//void Edge::write(std::ofstream& f) const
-//{
-//	f << src << " " << tgt << " " << dist << " 0 -1";
-//}
-
-//template <typename Edge>
-//void CHEdge<Edge>::write(std::ofstream& f) const
-//{
-//	Edge::write(f);
-//	f << " " << child_edge1 << " " << child_edge2;
-//}
-
 /*
  * EdgeSort
  */
@@ -180,6 +133,38 @@ struct EdgeSortTgt
 		return edge1.tgt < edge2.tgt ||
 		       	(edge1.tgt == edge2.tgt && edge1.src < edge2.src);
 	}
+};
+
+/* 
+ * Parser Nodes 
+ */
+
+struct Format1Node
+{
+	NodeID id;
+	uint osm_id;
+	double lat;
+	double lon;
+	int elev;
+
+	Format1Node() {}
+	Format1Node(Node const& node);
+};
+
+/* 
+ * Parser Edges
+ */
+
+struct Format1Edge
+{
+	NodeID src;
+	NodeID tgt;
+	uint dist;
+	uint type;
+	int speed;
+
+	Format1Edge() {}
+	Format1Edge(Edge const& edge);
 };
 
 }

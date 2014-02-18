@@ -17,33 +17,45 @@ class Parser
 {
 	private:
 		/* read Nodes */
-		static bool readFormat1Node(Format1Node& node, std::stringstream& ss);
+		static Format1Node readFormat1Node(std::stringstream& ss);
 		static bool writeFormat1Node(Format1Node const& node, std::ofstream& os);
 
 		/* read Edges */
-		static bool readFormat1Edge(Format1Edge& edge, std::stringstream& ss);
+		static Format1Edge readFormat1Edge(std::stringstream& ss);
 		static bool writeFormat1Edge(Format1Edge const& edge, std::ofstream& os);
 
 	public:
-		/* Nodes and edges for a graph */
-		struct Data;
+		/* Nodes and edges of a graph */
+		struct InData;
+		struct OutData;
 
 		/* read Graphfiles */
-		static bool readSTD(Data& data, std::string const& filename);
-//		static bool writeSTD(Data const& data, std::string const& filename);
+		static bool readSTD(InData& data, std::string const& filename);
+		static bool writeSTD(OutData data, std::string const& filename);
 
 };
 
 template <typename Node, typename Edge>
-struct Parser<Node,Edge>::Data
+struct Parser<Node,Edge>::InData
 {
 	std::vector<Node> nodes;
 	std::vector<Edge> edges;
 };
 
+template <typename Node, typename Edge>
+struct Parser<Node,Edge>::OutData
+{
+	std::vector<Node> const& nodes;
+	std::vector<Edge> const& edges;
+
+	OutData(std::vector<Node> const& nodes,
+			std::vector<Edge> const& edges)
+		: nodes(nodes), edges(edges) {}
+};
+
 /* Graphfiles */
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::readSTD(Data& data,std::string const& filename)
+bool Parser<Node,Edge>::readSTD(InData& data,std::string const& filename)
 {
 	std::ifstream f(filename.c_str());
 
@@ -68,7 +80,7 @@ bool Parser<Node,Edge>::readSTD(Data& data,std::string const& filename)
 		data.nodes.resize(nr_of_nodes);
 		for (uint i(0); i<nr_of_nodes; i++){
 			Format1Node parser_node;
-			readFormat1Node(parser_node, ss);
+			parser_node = readFormat1Node(ss);
 			data.nodes[i] = Node(parser_node);
 		}
 		std::sort(data.nodes.begin(), data.nodes.end());
@@ -80,7 +92,7 @@ bool Parser<Node,Edge>::readSTD(Data& data,std::string const& filename)
 
 		for (uint i(0); i<nr_of_edges; i++) {
 			Format1Edge parser_edge;
-			readFormat1Edge(parser_edge, ss);
+			parser_edge = readFormat1Edge(ss);
 			data.edges[i] = Edge(parser_edge, i);
 		}
 
@@ -97,66 +109,69 @@ bool Parser<Node,Edge>::readSTD(Data& data,std::string const& filename)
 	return true;
 }
 
-//template <typename Node, typename Edge>
-//bool Parser<Node,Edge>::writeSTD(Data const& data, std::string const& filename)
-//{
-//	std::ofstream f(filename.c_str());
-//
-//	if (f.is_open()) {
-//		uint nr_of_nodes(data.nodes.size());
-//		uint nr_of_edges(data.edges.size());
-//
-//		f << nr_of_nodes << std::endl;
-//		f << nr_of_edges << std::endl;
-//
-//		for (uint i(0); i<nr_of_nodes; i++) {
-//			data.nodes[i].write(f);
-//			f << std::endl;
-//		}
-//
-//		for (uint i(0); i<nr_of_edges; i++) {
-//			data.edges[i].write(f);
-//			f << std::endl;
-//		}
-//
-//		f.close();
-//	}
-//	else {
-//		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" << filename
-//			<< "\'. Exiting." << std::endl;
-//		return false;
-//	}
-//
-//	return true;
-//}
+template <typename Node, typename Edge>
+bool Parser<Node,Edge>::writeSTD(OutData data, std::string const& filename)
+{
+	std::ofstream f(filename.c_str());
+
+	if (f.is_open()) {
+		uint nr_of_nodes(data.nodes.size());
+		uint nr_of_edges(data.edges.size());
+
+		f << nr_of_nodes << std::endl;
+		f << nr_of_edges << std::endl;
+
+		for (uint i(0); i<nr_of_nodes; i++) {
+			Format1Node parser_node(data.nodes[i]);
+			writeFormat1Node(parser_node, f);
+		}
+
+		for (uint i(0); i<nr_of_edges; i++) {
+			Format1Edge parser_edge(data.edges[i]);
+			writeFormat1Edge(parser_edge, f);
+		}
+
+		f.close();
+	}
+	else {
+		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" << filename
+			<< "\'. Exiting." << std::endl;
+		return false;
+	}
+
+	return true;
+}
 
 
 /* Nodes */
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::readFormat1Node(Format1Node& node, std::stringstream& ss)
+Format1Node Parser<Node,Edge>::readFormat1Node(std::stringstream& ss)
 {
+	Format1Node node;
 	ss >> node.id >> node.osm_id >> node.lat >> node.lon >> node.elev;
-	return true;
+	return node;
 }
 template <typename Node, typename Edge>
 bool Parser<Node,Edge>::writeFormat1Node(Format1Node const& node, std::ofstream& os)
 {
-
-	os << node.id << node.osm_id << node.lat << node.lon << node.elev;
+	os << node.id << " " << node.osm_id << " " << node.lat << " " <<
+		node.lon << " " << node.elev << std::endl;
 	return true;
 }
 
 /* Edges */
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::readFormat1Edge(Format1Edge& edge, std::stringstream& ss)
+Format1Edge Parser<Node,Edge>::readFormat1Edge(std::stringstream& ss)
 {
+	Format1Edge edge;
 	ss >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
-	return true;
+	return edge;
 }
 template <typename Node, typename Edge>
 bool Parser<Node,Edge>::writeFormat1Edge(Format1Edge const& edge, std::ofstream& os)
 {
-	os << edge.src << edge.tgt << edge.dist << edge.type << edge.speed;
+	os << edge.src << " " << edge.tgt << " " << edge.dist << " " <<
+		edge.type << " " << edge.speed << std::endl;
 	return true;
 }
 

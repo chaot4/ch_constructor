@@ -68,7 +68,7 @@ void unit_tests::testGraph()
 	Print("=======================\n");
 	
 	Graph<Node, Edge> g;
-	Parser<Node,Edge>::Data data;
+	Parser<Node,Edge>::InData data;
 	Parser<Node,Edge>::readSTD(data, "../data/15kSZHK.txt");
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
@@ -145,7 +145,7 @@ void unit_tests::testCHConstructor()
 	typedef SCGraph<Node, Edge> CHGraph;
 
 	CHGraph g;
-	Parser<LvlNode,Shortcut>::Data data;
+	Parser<LvlNode,Shortcut>::InData data;
 	Parser<LvlNode,Shortcut>::readSTD(data, "../data/test");
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
@@ -187,7 +187,7 @@ void unit_tests::testCHConstructor()
 	chc.getCHGraph();
 
 	// Export
-//	Parser::writeSTD(g.getData(), "../data/ch_test");
+	Parser<LvlNode,Shortcut>::writeSTD(g.getData(), "../data/ch_test");
 
 	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
@@ -206,13 +206,13 @@ void unit_tests::testCHDijkstra()
 
 	/* Init normal graph */
 	Graph<Node, Edge> g;
-	Parser<Node,Edge>::Data g_data;
+	Parser<Node,Edge>::InData g_data;
 	Parser<Node,Edge>::readSTD(g_data, "../data/15kSZHK.txt");
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(g_data);
 
 	/* Init CH graph */
 	CHGraph chg;
-	Parser<LvlNode,Shortcut>::Data chg_data;
+	Parser<LvlNode,Shortcut>::InData chg_data;
 	Parser<LvlNode,Shortcut>::readSTD(chg_data, "../data/15kSZHK.txt");
 	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(chg_data);
 
@@ -227,7 +227,7 @@ void unit_tests::testCHDijkstra()
 	chc.getCHGraph();
 
 	// Export
-//	Parser::writeSTD(chg.getData(), "../data/ch_15kSZHK.txt");
+	Parser<LvlNode,Shortcut>::writeSTD(chg.getData(), "../data/ch_15kSZHK.txt");
 
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
@@ -258,7 +258,7 @@ void unit_tests::testDijkstra()
 	Print("============================\n");
 
 	Graph<Node, Edge> g;
-	Parser<Node,Edge>::Data data;
+	Parser<Node,Edge>::InData data;
 	Parser<Node,Edge>::readSTD(data, "../data/test");
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
