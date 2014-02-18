@@ -69,13 +69,8 @@ Alle die noch offen sind:
 	x graph info für ein bestimmtes set of nodes ausgeben.
 
 Was noch:
-	- Format des Graphs übergebbar machen.
-	- Auf cmake umstellen oder so.
-	- Auf allen vectors immer ein reserve machen
-	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
-	- Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
-	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen
-	- das Sortieren der Kanten irgendwie zentral festlegen
+	x Format des Graphs übergebbar machen.
+	x Auf allen vectors immer ein reserve machen
 	x child_edge auf NO_EID umstellen.
 
 Stefan:
@@ -152,3 +147,18 @@ graph.h:
 chgraph.h:
 - namen: SCGraph ?? das file heißt "chgraph", verwendet in ch_constructor.h mit typedef auf CHGraph...
 - api docu: restructure() ? buildCHGraph() ?
+
+
+
+TODOs bis ich dann mal 'ne erste feste Version rausgeben kann:
+	- Auf cmake umstellen oder so.
+	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
+	- vllt. Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
+	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen nach der Kontraktion und im CHDijkstra verwenden.
+	- das Sortieren der Kanten irgendwie zentral festlegen. Template Parameter? Vllt den CHGraph zu einem reinen Kontraktionsgraphen machen und dann zu 'nem CHGraphen konvertieren am Schluss?
+	- Parser aufräumen.
+	- ReadWrite für FMI und FMI_CH.
+	- Ne gute main schreiben mit Parametern und so. Am besten auch, dass man daraus gleich die Tests aufrufen kann, wenn man einen machen will. -> Ordner test_data oder so dafür haben.
+	- Kurzdoku. Eben nur eine Zeile comment, was die public Funktion macht. Am besten auch das private Zeugs, damit ich's auch wieder verstehe.
+	- Stefans TODOs noch abarbeiten.
+	- Schlussputz.
