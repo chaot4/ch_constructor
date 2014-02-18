@@ -29,8 +29,13 @@ namespace c
 enum EdgeType {OUT = 0, IN = 1};
 EdgeType operator!(EdgeType type);
 
-struct Format1Node;
-struct Format1Edge;
+/* Parser nodes predef */
+struct STDNode;
+struct SIMPLENode;
+
+/* Parser edges predef */
+struct STDEdge;
+struct SIMPLEEdge;
 
 /*
  * Nodes
@@ -42,7 +47,8 @@ struct Node
 
 	Node();
 	Node(NodeID id);
-	Node (Format1Node const& node);
+	Node (STDNode const& node);
+	Node (SIMPLENode const& node, NodeID id);
 
 	bool operator<(Node const& node) const;
 };
@@ -56,8 +62,10 @@ struct CHNode : Node
 		: Node(), lvl(c::NO_LVL){}
 	CHNode(Node const& node, uint lvl)
 		: Node(node), lvl(lvl){}
-	CHNode(Format1Node const& node)
+	CHNode(STDNode const& node)
 		: Node(node), lvl(c::NO_LVL) {}
+	CHNode(SIMPLENode const& node, NodeID id)
+		: Node(node, id), lvl(c::NO_LVL) {}
 };
 
 /*
@@ -76,7 +84,8 @@ struct Edge
 
 	Edge();
 	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist);
-	Edge(Format1Edge const& edge, EdgeID id);
+	Edge(STDEdge const& edge, EdgeID id);
+	Edge(SIMPLEEdge const& edge, EdgeID id);
 
 	bool operator<(Edge const& edge) const;
 	bool operator==(Edge const& edge) const;
@@ -106,9 +115,12 @@ struct CHEdge : Edge
 	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2, NodeID center_node)
 		: Edge(edge), child_edge1(child_edge1),
 		child_edge2(child_edge2), center_node(center_node){}
-	CHEdge(Format1Edge const& edge, EdgeID id)
-		: Edge(edge, id), child_edge1(c::NO_EID), child_edge2(c::NO_EID),
-		center_node(c::NO_NID) {}
+	CHEdge(STDEdge const& edge, EdgeID id)
+		: Edge(edge, id), child_edge1(c::NO_EID),
+		child_edge2(c::NO_EID), center_node(c::NO_NID) {}
+	CHEdge(SIMPLEEdge const& edge, EdgeID id)
+		: Edge(edge, id), child_edge1(c::NO_EID),
+		child_edge2(c::NO_EID), center_node(c::NO_NID) {}
 };
 
 /*
@@ -139,7 +151,7 @@ struct EdgeSortTgt
  * Parser Nodes 
  */
 
-struct Format1Node
+struct STDNode
 {
 	NodeID id;
 	uint osm_id;
@@ -147,15 +159,25 @@ struct Format1Node
 	double lon;
 	int elev;
 
-	Format1Node() {}
-	Format1Node(Node const& node);
+	STDNode() {}
+	STDNode(Node const& node);
+};
+
+struct SIMPLENode
+{
+	double lat;
+	double lon;
+	int elev;
+
+	SIMPLENode() {}
+	SIMPLENode(Node const& node);
 };
 
 /* 
  * Parser Edges
  */
 
-struct Format1Edge
+struct STDEdge
 {
 	NodeID src;
 	NodeID tgt;
@@ -163,8 +185,18 @@ struct Format1Edge
 	uint type;
 	int speed;
 
-	Format1Edge() {}
-	Format1Edge(Edge const& edge);
+	STDEdge() {}
+	STDEdge(Edge const& edge);
+};
+
+struct SIMPLEEdge
+{
+	NodeID src;
+	NodeID tgt;
+	uint dist;
+
+	SIMPLEEdge() {}
+	SIMPLEEdge(Edge const& node);
 };
 
 }

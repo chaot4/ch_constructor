@@ -47,7 +47,7 @@ void unit_tests::testGraph()
 	
 	Graph<Node, Edge> g;
 	Parser<Node,Edge>::InData data;
-	Parser<Node,Edge>::readSTD(data, "../data/15kSZHK.txt");
+	Parser<Node,Edge>::read(data, "../data/15kSZHK.txt", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	/* Test the normal iterator. */
@@ -124,7 +124,7 @@ void unit_tests::testCHConstructor()
 
 	CHGraph g;
 	Parser<LvlNode,Shortcut>::InData data;
-	Parser<LvlNode,Shortcut>::readSTD(data, "../data/test");
+	Parser<LvlNode,Shortcut>::read(data, "../data/test", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	CHConstructor<Node, Edge> chc(g, 2);
@@ -165,7 +165,7 @@ void unit_tests::testCHConstructor()
 	chc.getCHGraph();
 
 	// Export
-	Parser<LvlNode,Shortcut>::writeSTD(g.getData(), "../data/ch_test");
+	Parser<LvlNode,Shortcut>::write(g.getData(), "../data/ch_test", STD);
 
 	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
@@ -185,13 +185,13 @@ void unit_tests::testCHDijkstra()
 	/* Init normal graph */
 	Graph<Node, Edge> g;
 	Parser<Node,Edge>::InData g_data;
-	Parser<Node,Edge>::readSTD(g_data, "../data/15kSZHK.txt");
+	Parser<Node,Edge>::read(g_data, "../data/15kSZHK.txt", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(g_data);
 
 	/* Init CH graph */
 	CHGraph chg;
 	Parser<LvlNode,Shortcut>::InData chg_data;
-	Parser<LvlNode,Shortcut>::readSTD(chg_data, "../data/15kSZHK.txt");
+	Parser<LvlNode,Shortcut>::read(chg_data, "../data/15kSZHK.txt", STD);
 	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(chg_data);
 
 	/* Build CH */
@@ -205,7 +205,8 @@ void unit_tests::testCHDijkstra()
 	chc.getCHGraph();
 
 	// Export
-	Parser<LvlNode,Shortcut>::writeSTD(chg.getData(), "../data/ch_15kSZHK.txt");
+	Parser<LvlNode,Shortcut>::write(chg.getData(),
+			"../data/ch_15kSZHK.txt", STD);
 
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
@@ -237,7 +238,7 @@ void unit_tests::testDijkstra()
 
 	Graph<Node, Edge> g;
 	Parser<Node,Edge>::InData data;
-	Parser<Node,Edge>::readSTD(data, "../data/test");
+	Parser<Node,Edge>::read(data, "../data/test", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	Dijkstra<Node, Edge> dij(g);

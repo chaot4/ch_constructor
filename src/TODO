@@ -69,6 +69,7 @@ Alle die noch offen sind:
 	x graph info für ein bestimmtes set of nodes ausgeben.
 
 Was noch:
+	- Format des Graphs übergebbar machen.
 	- Auf cmake umstellen oder so.
 	- Auf allen vectors immer ein reserve machen
 	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
