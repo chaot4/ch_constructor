@@ -89,7 +89,7 @@ Makefile: (siehe paste)
   x ein leeres OBJ zu verwenden ist overengineering...
 
 
-- keine (inline) "header" implementierungen, wenn nich aufgrund von template absolutig nötig:
+x keine (inline) "header" implementierungen, wenn nich aufgrund von template absolutig nötig:
 x nicht alle methoden gehören zu einem objekt (Edge::concat wäre global besser)
   x.swap(y) -> swap(x, y)
 x evtl. alles in einen namespace - kostet wenig aufwand

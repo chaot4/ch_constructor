@@ -14,8 +14,8 @@ DEPENDFILE = .depend
 
 all: $(BIN)
 
-main: main.o nodes_and_edges.o
-	$(CC) $(LDFLAGS) -o main main.o nodes_and_edges.o $(LDLIBS)
+main: main.o nodes_and_edges.o unit_tests.o
+	$(CC) $(LDFLAGS) -o main main.o nodes_and_edges.o unit_tests.o $(LDLIBS)
 
 main.o: nodes_and_edges.o
 
