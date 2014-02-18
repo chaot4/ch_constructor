@@ -161,14 +161,13 @@ void SCGraph<Node, Edge>::_addDumpEdge(Shortcut& new_edge)
 template <typename Node, typename Edge>
 void SCGraph<Node, Edge>::buildCHGraph()
 {
+	assert(_out_edges.empty() && _in_edges.empty());
+
 	_out_edges.swap(_edges_dump);
 	_in_edges = _out_edges;
 	_edges_dump.clear();
 
-	BaseGraph::template sortOutEdges<EdgeSortSrc<Edge> >();
-	BaseGraph::template sortInEdges<EdgeSortTgt<Edge> >();
-	BaseGraph::initOffsets();
-	BaseGraph::initIdToIndex();
+	BaseGraph::template update<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >();
 }
 
 template <typename Node, typename Edge>

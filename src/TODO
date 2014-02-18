@@ -95,8 +95,9 @@ x nicht alle methoden gehören zu einem objekt (Edge::concat wäre global besser
 x evtl. alles in einen namespace - kostet wenig aufwand
 x peformance: insbesondere bei längeren schleifen lohnt es vielleicht,
   die größe des vectors in ne lokale variable zu packen.
-- evtl. eigene "assert_always" definieren; assert() ist ja nur für debugging da,
-  manchmal kann man kleine checks aber auch im "release" aktiv haben
+x evtl. eigene "assert_always" definieren; assert() ist ja nur für debugging da,
+x manchmal kann man kleine checks aber auch im "release" aktiv haben.
+	Antwort: Asserts können ruhig auch bei "release" drin bleiben.
 
 nodes_and_edges.h:
 x Parser_* klingt eher nach "private". Vllt. Detailed_* für ne public api.
@@ -134,10 +135,11 @@ graph.h:
   - _next_id ist irgendwie "hässlich":
      a) _id_to_index.resize(_next_id); gehört in init(), _next_id nur als lokale variable.
      b) alternativ _next_id wenigstens in "edge_count" umbenennen
-  - merge "public" api für sort*Edges, initOffsets, initIdToIndex:
+  x merge "public" api für sort*Edges, initOffsets, initIdToIndex:
     protected: void update();
     evtl. InEdgeSort/OutEdgeSort als class template parameter - gibts nen guten grund warum sich das ändern darf? oder nicht sowieso immer das gleiche ist (nach id?)
     da die klasse auf vererbung ausgelegt ist, sollte update() auch nicht public sein.
+	Antwort: Ja, Knoten müssen anders sortiert sein während und nach der Kontraktion so wie ich das mache.
   x buildCHGraph:
     _in_edges.assign(_out_edges.begin(), _out_edges.end());
     _in_edges = _out_edges?

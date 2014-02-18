@@ -101,8 +101,8 @@ bool Parser<Node,Edge>::readSTD(InData& data,std::string const& filename)
 		f.close();
 	}
 	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" << filename
-			<< "\'. Exiting." << std::endl;
+		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+			filename << "\'. Exiting." << std::endl;
 		return false;
 	}
 
@@ -118,6 +118,9 @@ bool Parser<Node,Edge>::writeSTD(OutData data, std::string const& filename)
 		uint nr_of_nodes(data.nodes.size());
 		uint nr_of_edges(data.edges.size());
 
+		Print("Exporting " << nr_of_nodes << " nodes and "
+				<< nr_of_edges << " edges to " << filename);
+
 		f << nr_of_nodes << std::endl;
 		f << nr_of_edges << std::endl;
 
@@ -126,16 +129,20 @@ bool Parser<Node,Edge>::writeSTD(OutData data, std::string const& filename)
 			writeFormat1Node(parser_node, f);
 		}
 
+		Print("Exported all nodes.");
+
 		for (uint i(0); i<nr_of_edges; i++) {
 			Format1Edge parser_edge(data.edges[i]);
 			writeFormat1Edge(parser_edge, f);
 		}
 
+		Print("Exported all edges.");
+
 		f.close();
 	}
 	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" << filename
-			<< "\'. Exiting." << std::endl;
+		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+			filename << "\'. Exiting." << std::endl;
 		return false;
 	}
 

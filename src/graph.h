@@ -37,6 +37,18 @@ class Graph
 
 		EdgeID _next_id;
 
+		template <class InEdgeSort>
+		void sortInEdges();
+		template <class OutEdgeSort>
+		void sortOutEdges();
+
+		void initOffsets();
+		void initIdToIndex();
+		void setEdgeSrcTgtToOffset();
+
+		template <class OutEdgeSort, class InEdgeSort>
+		void update();
+
 	public:
 		Graph() : _next_id(0) {}
 
@@ -52,15 +64,6 @@ class Graph
 		 * The offset vectors aren't initialized! */
 		void printInfo() const;
 		void printInfo(std::list<NodeID> const& nodes) const;
-
-		template <class InEdgeSort>
-		void sortInEdges();
-		template <class OutEdgeSort>
-		void sortOutEdges();
-
-		void initOffsets();
-		void initIdToIndex();
-		void setEdgeSrcTgtToOffset();
 
 		uint getNrOfNodes() const;
 		uint getNrOfEdges() const;
@@ -230,6 +233,16 @@ void Graph<Node, Edge>::initIdToIndex()
 	for (uint i(0), size(_out_edges.size()); i<size; i++) {
 		_id_to_index[_out_edges[i].id] = i;
 	}
+}
+
+template <typename Node, typename Edge>
+template <class OutEdgeSort, class InEdgeSort>
+void Graph<Node, Edge>::update()
+{
+	sortOutEdges<OutEdgeSort>();
+	sortInEdges<InEdgeSort>();
+	initOffsets();
+	initIdToIndex();
 }
 
 template <typename Node, typename Edge>
