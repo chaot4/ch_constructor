@@ -27,22 +27,14 @@ namespace c
 }
 
 enum EdgeType {OUT = 0, IN = 1};
+EdgeType operator!(EdgeType type);
 
-EdgeType operator!(EdgeType type)
-{
-	if (type == IN) {
-		return OUT;
-	}
-	else {
-		return IN;
-	}
-}
-
-/*
- * Nodes
+/* 
+ * Parser Nodes 
  */
 
-struct Parser_Node{
+struct Format1Node
+{
 	NodeID id;
 	uint osm_id;
 	double lat;
@@ -50,48 +42,58 @@ struct Parser_Node{
 	int elev;
 };
 
+/* 
+ * Parser Edges
+ */
+
+struct Format1Edge
+{
+	NodeID src;
+	NodeID tgt;
+	uint dist;
+	uint type;
+	int speed;
+};
+
+/*
+ * Nodes
+ */
+
 struct Node
 {
 	NodeID id;
 
-	Node() : id(c::NO_NID){}
-	Node(NodeID id) : id(id){}
+	Node();
+	Node(NodeID id);
+	Node (Format1Node const& node);
 
-	virtual void read(std::stringstream& ss);
-	virtual void write(std::ofstream& f) const;
-	bool operator<(Node const& node) const { return id < node.id; }
+	bool operator<(Node const& node) const;
 };
 
-void Node::read(std::stringstream& ss)
-{
-	Parser_Node node;
-	ss >> node.id >> node.osm_id >> node.lat >> node.lon >> node.elev;
-
-	id = node.id;
-}
-
-void Node::write(std::ofstream& f) const
-{
-	f << id << " 0 0 0 0";
-}
+//void Node::write(std::ofstream& f) const
+//{
+//	f << id << " 0 0 0 0";
+//}
 
 template<typename Node>
 struct CHNode : Node
 {
 	uint lvl;
 
-	CHNode() : Node(), lvl(c::NO_LVL){}
-	CHNode(Node const& node, uint lvl) : Node(node), lvl(lvl){}
-
-	virtual void write(std::ofstream& f) const;
+	CHNode()
+		: Node(), lvl(c::NO_LVL){}
+	CHNode(Node const& node, uint lvl)
+		: Node(node), lvl(lvl){}
+	CHNode(Format1Node const& node)
+		: Node(node), lvl(c::NO_LVL) {}
 };
 
-template<typename Node>
-void CHNode<Node>::write(std::ofstream& f) const
-{
-	Node::write(f);
-	f << " " << lvl;
-}
+//template<typename Node>
+//void CHNode<Node>::write(std::ofstream& f) const
+//{
+//	Node::write(f);
+//	f << " " << lvl;
+//}
 
 /*
  * Edges
@@ -100,14 +102,6 @@ void CHNode<Node>::write(std::ofstream& f) const
 template <typename Edge>
 struct CHEdge;
 
-struct Parser_Edge{
-	NodeID src;
-	NodeID tgt;
-	uint dist;
-	uint type;
-	int speed;
-};
-
 struct Edge
 {
 	EdgeID id;
@@ -115,24 +109,14 @@ struct Edge
 	NodeID tgt;
 	uint dist;
 
-	Edge() : id(c::NO_NID), src(c::NO_NID), tgt(c::NO_NID), dist(c::NO_DIST){}
-	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
-		: id(id), src(src), tgt(tgt), dist(dist){}
+	Edge();
+	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist);
+	Edge(Format1Edge const& edge, EdgeID id);
 
-	bool operator<(Edge const& edge) const
-	{ 
-		return src < edge.src || (src == edge.src && tgt < edge.tgt);
-	}
+	bool operator<(Edge const& edge) const;
+	bool operator==(Edge const& edge) const;
 
-	bool operator==(Edge const& edge) const
-	{ 
-		return src == edge.src && tgt == edge.tgt;
-	}
-
-	virtual void read(std::stringstream& ss);
-	virtual void write(std::ofstream& f) const;
 	NodeID otherNode(EdgeType edge_type) const;
-
 	static CHEdge<Edge> concat(Edge const& edge1, Edge const& edge2);
 };
 
@@ -154,52 +138,25 @@ struct CHEdge : Edge
 
 	CHEdge() : child_edge1(c::NO_EID), child_edge2(c::NO_EID),
 			center_node(c::NO_NID){}
-	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2,
-			NodeID center_node)
+	CHEdge(Edge const& edge, EdgeID child_edge1, EdgeID child_edge2, NodeID center_node)
 		: Edge(edge), child_edge1(child_edge1),
 		child_edge2(child_edge2), center_node(center_node){}
-
-	virtual void write(std::ofstream& f) const;
+	CHEdge(Format1Edge const& edge, EdgeID id)
+		: Edge(edge, id), child_edge1(c::NO_EID), child_edge2(c::NO_EID),
+		center_node(c::NO_NID) {}
 };
 
-void Edge::read(std::stringstream& ss)
-{
-	Parser_Edge edge;
-	ss >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
+//void Edge::write(std::ofstream& f) const
+//{
+//	f << src << " " << tgt << " " << dist << " 0 -1";
+//}
 
-	src = edge.src;
-	tgt = edge.tgt;
-	dist = edge.dist;
-}
-
-void Edge::write(std::ofstream& f) const
-{
-	f << src << " " << tgt << " " << dist << " 0 -1";
-}
-
-NodeID Edge::otherNode(EdgeType edge_type) const
-{
-	if (edge_type == OUT) {
-		return tgt;
-	}
-	else {
-		return src;
-	}
-}
-
-CHEdge<Edge> Edge::concat(Edge const& edge1, Edge const& edge2)
-{
-	assert(edge1.tgt == edge2.src);
-	return CHEdge<Edge>(Edge(c::NO_EID, edge1.src, edge2.tgt,
-			edge1.dist + edge2.dist), edge1.id, edge2.id, edge1.tgt);
-}
-
-template <typename Edge>
-void CHEdge<Edge>::write(std::ofstream& f) const
-{
-	Edge::write(f);
-	f << " " << child_edge1 << " " << child_edge2;
-}
+//template <typename Edge>
+//void CHEdge<Edge>::write(std::ofstream& f) const
+//{
+//	Edge::write(f);
+//	f << " " << child_edge1 << " " << child_edge2;
+//}
 
 /*
  * EdgeSort

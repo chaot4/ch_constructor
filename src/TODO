@@ -99,8 +99,8 @@ x peformance: insbesondere bei längeren schleifen lohnt es vielleicht,
   manchmal kann man kleine checks aber auch im "release" aktiv haben
 
 nodes_and_edges.h:
-- Parser_* klingt eher nach "private". Vllt. Detailed_* für ne public api.
-- Parser/Serializer würde ich in n extra file packen.
+x Parser_* klingt eher nach "private". Vllt. Detailed_* für ne public api.
+x Parser/Serializer würde ich in n extra file packen.
   Z.bsp:
   Detailed_Node statt Parser_Node
   parser.h mit:
@@ -120,7 +120,7 @@ nodes_and_edges.h:
   du hast ja schon separate comparator klassen, nimm die
   "==" auf Edge kann man vermutlich lassen - (src,tgt) sollte unique sein.
 
-- ist vererbung wirklich nötig? vermutlich hilfreich, wenn nicht:
+x ist vererbung wirklich nötig? vermutlich hilfreich, wenn nicht:
     template<typename Node> struct CHNode { uint lvl; Node inner; }
     template<typename Edge> struct CHEdge { int child_edge_id[2]; Edge inner; }
   oder tatsächlich den inhalt kopieren.

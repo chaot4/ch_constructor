@@ -3,6 +3,7 @@
 
 #include "defs.h"
 #include "nodes_and_edges.h"
+#include "parser.h"
 
 #include <vector>
 #include <list>
@@ -42,15 +43,13 @@ class Graph
 		/* Init the graph from file 'filename' and sort
 		 * the edges according to OutEdgeSort and InEdgeSort. */
 		template <class OutEdgeSort, class InEdgeSort>
-		bool init(std::string const& filename);
+		void init(typename Parser<Node,Edge>::Data& data);
 
 		class EdgeIt;
 		class OffEdgeIt;
 
 		/* Read the nodes and edges from the file <filename>.
 		 * The offset vectors aren't initialized! */
-		bool read(std::string const& filename);
-		bool write(std::string const& filename) const;
 		void printInfo() const;
 		void printInfo(std::list<NodeID> const& nodes) const;
 
@@ -70,6 +69,7 @@ class Graph
 		Edge const& getEdge(EdgeID edge_id) const;
 		Node const& getNode(NodeID node_id) const;
 		NodeID getOffId(NodeID node_id, EdgeType type) const;
+		typename Parser<Node,Edge>::Data const& getData() const;
 
 		friend void unit_tests::testGraph();
 };
@@ -80,108 +80,21 @@ class Graph
 
 template <typename Node, typename Edge>
 template <class OutEdgeSort, class InEdgeSort>
-bool Graph<Node, Edge>::init(std::string const& filename)
+void Graph<Node, Edge>::init(typename Parser<Node,Edge>::Data& data)
 {
-	if (read(filename)) {
-		sortOutEdges<OutEdgeSort>();
-		sortInEdges<InEdgeSort>();
-		initOffsets();
-		initIdToIndex();
-		Print("Graph info:");
-		Print("===========");
-		printInfo();
-		return true;
-	}
-	return false;
-}
+	_nodes.swap(data.nodes);
+	_out_edges.swap(data.edges);
+	_in_edges = _out_edges;
+	_next_id = _out_edges.size();
 
-template <typename Node, typename Edge>
-bool Graph<Node, Edge>::read(std::string const& filename)
-{
-	std::ifstream f(filename.c_str());
+	sortOutEdges<OutEdgeSort>();
+	sortInEdges<InEdgeSort>();
+	initOffsets();
+	initIdToIndex();
 
-	if (f.is_open()) {
-		uint nr_of_nodes(_nodes.size());
-		uint nr_of_edges(_out_edges.size());
-		std::string file;
-
-		/* Read the file into RAM */
-		f.seekg(0, std::ios::end);
-		file.reserve(f.tellg());
-		f.seekg(0, std::ios::beg);
-		file.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-
-		std::stringstream ss(file);
-
-		ss >> nr_of_nodes >> nr_of_edges;
-		Print("Number of nodes: " << nr_of_nodes);
-		Print("Number of edges: " << nr_of_edges);
-
-		/* Read the nodes. */
-		_nodes.resize(nr_of_nodes);
-		for (uint i(0); i<nr_of_nodes; i++){
-			_nodes[i].read(ss);
-		}
-		std::sort(_nodes.begin(), _nodes.end());
-
-		Print("Read all the nodes.");
-
-		/* Read the edges into _out_edges and _in_edges. */
-		_out_edges.resize(nr_of_edges);
-		_in_edges.reserve(nr_of_edges);
-
-		for (uint i(0); i<nr_of_edges; i++) {
-			Edge& edge(_out_edges[i]);
-			edge.id = _next_id++;
-			edge.read(ss);
-
-			_in_edges.push_back(edge);
-		}
-
-		Print("Read all the edges.");
-
-		f.close();
-	}
-	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" << filename
-			<< "\'. Exiting." << std::endl;
-		return false;
-	}
-
-	return true;
-}
-
-template <typename Node, typename Edge>
-bool Graph<Node, Edge>::write(std::string const& filename) const
-{
-	std::ofstream f(filename.c_str());
-
-	if (f.is_open()) {
-		uint nr_of_nodes(_nodes.size());
-		uint nr_of_edges(_out_edges.size());
-
-		f << nr_of_nodes << std::endl;
-		f << nr_of_edges << std::endl;
-
-		for (uint i(0); i<nr_of_nodes; i++) {
-			_nodes[i].write(f);
-			f << std::endl;
-		}
-
-		for (uint i(0); i<nr_of_edges; i++) {
-			_out_edges[_id_to_index[i]].write(f);
-			f << std::endl;
-		}
-
-		f.close();
-	}
-	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" << filename
-			<< "\'. Exiting." << std::endl;
-		return false;
-	}
-
-	return true;
+	Print("Graph info:");
+	Print("===========");
+	printInfo();
 }
 
 template <typename Node, typename Edge>

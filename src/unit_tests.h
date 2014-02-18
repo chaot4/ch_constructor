@@ -3,6 +3,7 @@
 
 #include "nodes_and_edges.h"
 #include "graph.h"
+#include "parser.h"
 #include "chgraph.h"
 #include "ch_constructor.h"
 #include "dijkstra.h"
@@ -65,9 +66,11 @@ void unit_tests::testGraph()
 	Print("\n=======================");
 	Print("TEST: Start Graph test.");
 	Print("=======================\n");
-
+	
 	Graph<Node, Edge> g;
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
+	Parser<Node,Edge>::Data data;
+	Parser<Node,Edge>::readSTD(data, "../data/15kSZHK.txt");
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	/* Test the normal iterator. */
 	for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
@@ -137,11 +140,14 @@ void unit_tests::testCHConstructor()
 	Print("TEST: Start CHConstructor test.");
 	Print("===============================\n");
 
+	typedef CHNode<Node> LvlNode;
 	typedef CHEdge<Edge> Shortcut;
 	typedef SCGraph<Node, Edge> CHGraph;
 
 	CHGraph g;
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
+	Parser<LvlNode,Shortcut>::Data data;
+	Parser<LvlNode,Shortcut>::readSTD(data, "../data/test");
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	CHConstructor<Node, Edge> chc(g, 2);
 
@@ -181,7 +187,7 @@ void unit_tests::testCHConstructor()
 	chc.getCHGraph();
 
 	// Export
-	g.write("../data/ch_test");
+//	Parser::writeSTD(g.getData(), "../data/ch_test");
 
 	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
@@ -194,15 +200,21 @@ void unit_tests::testCHDijkstra()
 	Print("TEST: Start CHDijkstra test.");
 	Print("============================\n");
 
+	typedef CHNode<Node> LvlNode;
+	typedef CHEdge<Edge> Shortcut;
 	typedef SCGraph<Node, Edge> CHGraph;
 
 	/* Init normal graph */
-	Graph<Node,Edge> g;
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
+	Graph<Node, Edge> g;
+	Parser<Node,Edge>::Data g_data;
+	Parser<Node,Edge>::readSTD(g_data, "../data/15kSZHK.txt");
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(g_data);
 
 	/* Init CH graph */
 	CHGraph chg;
-	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/15kSZHK.txt");
+	Parser<LvlNode,Shortcut>::Data chg_data;
+	Parser<LvlNode,Shortcut>::readSTD(chg_data, "../data/15kSZHK.txt");
+	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(chg_data);
 
 	/* Build CH */
 	CHConstructor<Node, Edge> chc(chg, 2);
@@ -215,11 +227,11 @@ void unit_tests::testCHDijkstra()
 	chc.getCHGraph();
 
 	// Export
-	chg.write("../data/ch_15kSZHK.txt");
+//	Parser::writeSTD(chg.getData(), "../data/ch_15kSZHK.txt");
 
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
-	uint nr_of_dij(10000);
+	uint nr_of_dij(10);
 	Dijkstra<Node, Edge> dij(g);
 	CHDijkstra<Node, Edge> chdij(chg);
 
@@ -246,7 +258,9 @@ void unit_tests::testDijkstra()
 	Print("============================\n");
 
 	Graph<Node, Edge> g;
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >("../data/test");
+	Parser<Node,Edge>::Data data;
+	Parser<Node,Edge>::readSTD(data, "../data/test");
+	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	Dijkstra<Node, Edge> dij(g);
 	std::vector<EdgeID> path;

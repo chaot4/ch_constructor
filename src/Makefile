@@ -14,7 +14,10 @@ DEPENDFILE = .depend
 
 all: $(BIN)
 
-main: main.o
+main: main.o nodes_and_edges.o
+	$(CC) $(LDFLAGS) -o main main.o nodes_and_edges.o $(LDLIBS)
+
+main.o: nodes_and_edges.o
 
 dep: $(DEPENDFILE)
 
@@ -25,4 +28,4 @@ $(DEPENDFILE): $(SRCS)
 
 .PHONY: clean
 clean:
-	rm -rf $(BIN) main.o
+	rm -rf $(BIN) main.o nodes_and_edges.o .depend
