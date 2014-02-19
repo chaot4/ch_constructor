@@ -150,15 +150,18 @@ chgraph.h:
 
 
 
-TODOs bis ich dann mal 'ne erste feste Version rausgeben kann:
+TODOs bis ich dann mal 'ne fertige Version habe:
 	- Auf cmake umstellen oder so.
 	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
 	- vllt. Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen nach der Kontraktion und im CHDijkstra verwenden.
 	- das Sortieren der Kanten irgendwie zentral festlegen. Template Parameter? Vllt den CHGraph zu einem reinen Kontraktionsgraphen machen und dann zu 'nem CHGraphen konvertieren am Schluss?
 	- Parser aufräumen.
-	- ReadWrite für FMI und FMI_CH.
-	- Ne gute main schreiben mit Parametern und so. Am besten auch, dass man daraus gleich die Tests aufrufen kann, wenn man einen machen will. -> Ordner test_data oder so dafür haben.
 	- Kurzdoku. Eben nur eine Zeile comment, was die public Funktion macht. Am besten auch das private Zeugs, damit ich's auch wieder verstehe.
 	- Stefans TODOs noch abarbeiten.
+	- Tests so schreiben, dass graphen bestimmt werden können.
 	- Schlussputz.
+
+TODOs, damit auch andere das Projekt benutzen können:
+	- ReadWrite für FMI und FMI_CH.
+	x Ne gute main schreiben mit Parametern und so. Am besten auch, dass man daraus gleich die Tests aufrufen kann, wenn man einen machen will.

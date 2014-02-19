@@ -10,14 +10,15 @@ override LDFLAGS += -Wl,--no-undefined -fopenmp
 
 BIN = main
 SRCS = $(wildcard **/*.cpp) $(wildcard **/*.h) $(wildcard *.cpp) $(wildcard *.h)
+OBJ = nodes_and_edges.o unit_tests.o parser.o
 DEPENDFILE = .depend
 
 all: $(BIN)
 
-main: main.o nodes_and_edges.o unit_tests.o
-	$(CC) $(LDFLAGS) -o main main.o nodes_and_edges.o unit_tests.o $(LDLIBS)
+main: main.o
+	$(CC) $(LDFLAGS) -o main main.o $(OBJ) $(LDLIBS)
 
-main.o: nodes_and_edges.o
+main.o: $(OBJ)
 
 dep: $(DEPENDFILE)
 

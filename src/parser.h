@@ -8,11 +8,13 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <string>
 
 namespace chc
 {
 
 enum FileFormat { STD = 0, SIMPLE = 1, FMI = 2 };
+FileFormat toFileFormat(std::string const& format);
 
 template <typename Node, typename Edge>
 class Parser
@@ -154,7 +156,7 @@ bool Parser<Node,Edge>::readSTD(InData& data,std::string const& filename)
 	else {
 		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
 			filename << "\'. Exiting." << std::endl;
-		return false;
+		exit(1);
 	}
 
 	return true;
@@ -194,7 +196,7 @@ bool Parser<Node,Edge>::writeSTD(OutData data, std::string const& filename)
 	else {
 		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
 			filename << "\'. Exiting." << std::endl;
-		return false;
+		exit(1);
 	}
 
 	return true;
