@@ -13,7 +13,7 @@
 namespace chc
 {
 
-enum FileFormat { STD = 0, SIMPLE = 1, FMI = 2 };
+enum FileFormat { STD, SIMPLE, FMI, FMI_CH };
 FileFormat toFileFormat(std::string const& format);
 
 template <typename Node, typename Edge>
@@ -43,7 +43,7 @@ class Parser
 		static bool readSIMPLE(InData& data, std::string const& filename);
 		static bool writeSIMPLE(OutData data, std::string const& filename);
 		static bool readFMI(InData& data, std::string const& filename);
-		static bool writeFMI(OutData data, std::string const& filename);
+		static bool writeFMI_CH(OutData data, std::string const& filename);
 
 	public:
 		static bool read(InData& data, std::string const& filename,
@@ -97,8 +97,8 @@ bool Parser<Node,Edge>::write(OutData data, std::string const& filename,
 			return writeSTD(data, filename);
 		case SIMPLE:
 			return writeSIMPLE(data, filename);
-		case FMI:
-			return writeFMI(data, filename);
+		case FMI_CH:
+			return writeFMI_CH(data, filename);
 		default:
 			std::cerr << "Unknown fileformat: " << format
 				<< std::endl;
@@ -305,7 +305,7 @@ bool Parser<Node,Edge>::readFMI(InData& data, std::string const& filename)
 }
 
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::writeFMI(OutData data, std::string const& filename)
+bool Parser<Node,Edge>::writeFMI_CH(OutData data, std::string const& filename)
 {
 	// TODO
 	return false;

@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 	std::string infile("");
 	FileFormat informat(FMI);
 	std::string outfile("ch_out.graph");
-	FileFormat outformat(FMI);
+	FileFormat outformat(FMI_CH);
 	uint nr_of_threads(1);
 
 	/*
