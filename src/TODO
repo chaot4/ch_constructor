@@ -151,7 +151,6 @@ chgraph.h:
 
 
 TODOs bis ich dann mal 'ne fertige Version habe:
-	- Auf cmake umstellen oder so.
 	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
 	- vllt. Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen nach der Kontraktion und im CHDijkstra verwenden.
@@ -164,4 +163,5 @@ TODOs bis ich dann mal 'ne fertige Version habe:
 
 TODOs, damit auch andere das Projekt benutzen können:
 	- ReadWrite für FMI und FMI_CH.
+	x Auf cmake umstellen oder so.
 	x Ne gute main schreiben mit Parametern und so. Am besten auch, dass man daraus gleich die Tests aufrufen kann, wenn man einen machen will.

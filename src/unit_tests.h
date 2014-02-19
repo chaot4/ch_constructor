@@ -19,7 +19,7 @@ namespace chc
 #define Test(x)\
 if (!(x)) {\
 	std::cout << "TEST_FAILED: " << #x << std::endl;\
-	return;\
+	exit(1);\
 }\
 
 namespace unit_tests
