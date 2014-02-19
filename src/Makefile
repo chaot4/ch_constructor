@@ -8,16 +8,16 @@ override CXXFLAGS += -std=c++11
 override CPPFLAGS += -Wall -fopenmp
 override LDFLAGS += -Wl,--no-undefined -fopenmp
 
-BIN = main
-SRCS = $(wildcard **/*.cpp) $(wildcard **/*.h) $(wildcard *.cpp) $(wildcard *.h)
-OBJ = nodes_and_edges.o unit_tests.o parser.o
+BIN = ch_constructor run_tests
+SRCS = $(wildcard **/*.cpp) $(wildcard *.cpp)
+OBJ = ch_constructor.o nodes_and_edges.o unit_tests.o parser.o run_tests.o
 DEPENDFILE = .depend
 
 all: $(BIN)
 
-main: main.o $(OBJ)
+ch_constructor: ch_constructor.o nodes_and_edges.o parser.o
 
-dep: $(DEPENDFILE)
+run_tests: run_tests.o nodes_and_edges.o unit_tests.o parser.o
 
 $(DEPENDFILE): $(SRCS)
 	$(CXX) -MM $(CPPFLAGS) $(CXXFLAGS) $^ > $(DEPENDFILE)
@@ -26,4 +26,4 @@ $(DEPENDFILE): $(SRCS)
 
 .PHONY: clean
 clean:
-	rm -rf $(BIN) main.o $(OBJ) .depend
+	rm -rf $(BIN) $(OBJ) .depend

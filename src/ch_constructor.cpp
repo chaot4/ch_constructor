@@ -18,7 +18,6 @@ void printHelp()
 	Print("  -f, --informat <format>    Expects infile in <format>");
 	Print("  -o, --outfile <path>       Write graph to <path>");
 	Print("  -g, --outformat <format>   Writes outfile in <format>");
-	Print("  -t, --test                 Run all the tests");
 	Print("  -p, --threads <number>     Number of threads to use in the calculations");
 }
 
@@ -28,7 +27,6 @@ int main(int argc, char* argv[])
 	 * Containers for arguments.
 	 */
 
-	bool do_tests(false);
 	std::string infile("");
 	FileFormat informat(FMI);
 	std::string outfile("ch_out.graph");
@@ -41,7 +39,6 @@ int main(int argc, char* argv[])
 
 	const struct option longopts[] = {
 		{"help",	no_argument,        0, 'h'},
-		{"test",	no_argument,        0, 't'},
 		{"infile",	required_argument,  0, 'i'},
 		{"informat",	required_argument,  0, 'f'},
 		{"outfile",     required_argument,  0, 'o'},
@@ -62,9 +59,6 @@ int main(int argc, char* argv[])
 			case 'h':
 				printHelp();
 				return 0;
-				break;
-			case 't':
-				do_tests = true;
 				break;
 			case 'i':
 				infile = optarg;
@@ -93,11 +87,6 @@ int main(int argc, char* argv[])
 		std::cerr << "No input file specified! Exiting." << std::endl;
 		Print("Use ./main --help to print the usage.");
 		return 1;
-	}
-
-	if (do_tests) {
-		unit_tests::testAll();
-		return 0;
 	}
 
 	/*
