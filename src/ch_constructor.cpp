@@ -11,14 +11,14 @@ using namespace chc;
 
 void printHelp()
 {
-	Print("Usage: ./main [ARGUMENTS]");
+	Print("Usage: ./ch_constructor [ARGUMENTS]");
 	Print("Mandatory arguments are:");
 	Print("  -i, --infile <path>        Read graph from <path>");
 	Print("Optional arguments are:");
 	Print("  -f, --informat <format>    Expects infile in <format>");
 	Print("  -o, --outfile <path>       Write graph to <path>");
 	Print("  -g, --outformat <format>   Writes outfile in <format>");
-	Print("  -p, --threads <number>     Number of threads to use in the calculations");
+	Print("  -t, --threads <number>     Number of threads to use in the calculations");
 }
 
 int main(int argc, char* argv[])
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 		{"informat",	required_argument,  0, 'f'},
 		{"outfile",     required_argument,  0, 'o'},
 		{"outformat",   required_argument,  0, 'g'},
-		{"threads",	required_argument,  0, 'p'},
+		{"threads",	required_argument,  0, 't'},
 		{0,0,0,0},
 	};
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 	int iarg(0);
 	opterr = 1;
 
-	while((iarg = getopt_long(argc, argv, "hti:f:o:g:p:", longopts, &index)) != -1) {
+	while((iarg = getopt_long(argc, argv, "hti:f:o:g:t:", longopts, &index)) != -1) {
 		ss.clear();
 
 		switch (iarg) {
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 			case 'g':
 				outformat = toFileFormat(optarg);
 				break;
-			case 'p':
+			case 't':
 				ss << optarg;
 				ss >> nr_of_threads;
 				break;
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 
 	if (infile == "") {
 		std::cerr << "No input file specified! Exiting." << std::endl;
-		Print("Use ./main --help to print the usage.");
+		Print("Use ./ch_constructor --help to print the usage.");
 		return 1;
 	}
 
