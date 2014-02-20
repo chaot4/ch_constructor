@@ -222,10 +222,9 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 			_relaxAllEdges(pq, top);
 
 			uint rest_dist = _dists[!top.direction][top.node];
-			uint total_dist = top.dist + rest_dist;
 			if (rest_dist != c::NO_DIST
-					&& total_dist < shortest_dist) {
-				shortest_dist = total_dist;
+					&& top.dist + rest_dist < shortest_dist) {
+				shortest_dist = top.dist + rest_dist;
 				center_node = top.node;
 			}
 		}
