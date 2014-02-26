@@ -16,12 +16,13 @@ namespace chc
 enum FileFormat { STD, SIMPLE, FMI, FMI_CH };
 FileFormat toFileFormat(std::string const& format);
 
-template <typename Node, typename Edge>
 class Parser
 {
 	public:
 		/* Nodes and edges of a graph */
+		template <typename Node, typename Edge>
 		struct InData;
+		template <typename Node, typename Edge>
 		struct OutData;
 
 	private:
@@ -38,29 +39,40 @@ class Parser
 		static bool writeSIMPLEEdge(SIMPLEEdge const& edge, std::ofstream& os);
 
 		/* Graphfiles */
-		static bool readSTD(InData& data, std::string const& filename);
-		static bool writeSTD(OutData data, std::string const& filename);
-		static bool readSIMPLE(InData& data, std::string const& filename);
-		static bool writeSIMPLE(OutData data, std::string const& filename);
-		static bool readFMI(InData& data, std::string const& filename);
-		static bool writeFMI_CH(OutData data, std::string const& filename);
+		template <typename Node, typename Edge>
+		static bool readSTD(InData<Node,Edge>& data, std::string const& filename);
+		template <typename Node, typename Edge>
+		static bool writeSTD(OutData<Node,Edge> data, std::string const& filename);
+		template <typename Node, typename Edge>
+		static bool readSIMPLE(InData<Node,Edge>& data, std::string const& filename);
+		template <typename Node, typename Edge>
+		static bool writeSIMPLE(OutData<Node,Edge> data, std::string const& filename);
+		template <typename Node, typename Edge>
+		static bool readFMI(InData<Node,Edge>& data, std::string const& filename);
+		template <typename Node, typename Edge>
+		static bool writeFMI_CH(OutData<Node,Edge> data, std::string const& filename);
 
 	public:
-		static bool read(InData& data, std::string const& filename,
+		template <typename Node, typename Edge>
+		static bool read(InData<Node,Edge>& data, std::string const& filename,
 				FileFormat format);
-		static bool write(OutData data, std::string const& filename,
+
+		template <typename Node, typename Edge>
+		static bool write(OutData<Node,Edge> data, std::string const& filename,
 				FileFormat format);
 };
 
+
+
 template <typename Node, typename Edge>
-struct Parser<Node,Edge>::InData
+struct Parser::InData
 {
 	std::vector<Node> nodes;
 	std::vector<Edge> edges;
 };
 
 template <typename Node, typename Edge>
-struct Parser<Node,Edge>::OutData
+struct Parser::OutData
 {
 	std::vector<Node> const& nodes;
 	std::vector<Edge> const& edges;
@@ -71,16 +83,16 @@ struct Parser<Node,Edge>::OutData
 };
 
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::read(InData& data, std::string const& filename,
+bool Parser::read(InData<Node,Edge>& data, std::string const& filename,
 		FileFormat format)
 {
 	switch (format) {
 		case STD:
-			return readSTD(data, filename);
+			return readSTD<Node,Edge>(data, filename);
 		case SIMPLE:
-			return readSIMPLE(data, filename);
+			return readSIMPLE<Node,Edge>(data, filename);
 		case FMI:
-			return readFMI(data, filename);
+			return readFMI<Node,Edge>(data, filename);
 		default:
 			std::cerr << "Unknown fileformat: " << format
 				<< std::endl;
@@ -89,16 +101,16 @@ bool Parser<Node,Edge>::read(InData& data, std::string const& filename,
 }
 
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::write(OutData data, std::string const& filename,
+bool Parser::write(OutData<Node,Edge> data, std::string const& filename,
 				FileFormat format)
 {
 	switch (format) {
 		case STD:
-			return writeSTD(data, filename);
+			return writeSTD<Node,Edge>(data, filename);
 		case SIMPLE:
-			return writeSIMPLE(data, filename);
+			return writeSIMPLE<Node,Edge>(data, filename);
 		case FMI_CH:
-			return writeFMI_CH(data, filename);
+			return writeFMI_CH<Node,Edge>(data, filename);
 		default:
 			std::cerr << "Unknown fileformat: " << format
 				<< std::endl;
@@ -108,7 +120,7 @@ bool Parser<Node,Edge>::write(OutData data, std::string const& filename,
 
 /* Graphfiles */
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::readSTD(InData& data,std::string const& filename)
+bool Parser::readSTD(InData<Node,Edge>& data,std::string const& filename)
 {
 	std::ifstream f(filename.c_str());
 
@@ -163,7 +175,7 @@ bool Parser<Node,Edge>::readSTD(InData& data,std::string const& filename)
 }
 
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::writeSTD(OutData data, std::string const& filename)
+bool Parser::writeSTD(OutData<Node,Edge> data, std::string const& filename)
 {
 	std::ofstream f(filename.c_str());
 
@@ -203,7 +215,7 @@ bool Parser<Node,Edge>::writeSTD(OutData data, std::string const& filename)
 }
 
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::readSIMPLE(InData& data,std::string const& filename)
+bool Parser::readSIMPLE(InData<Node,Edge>& data,std::string const& filename)
 {
 	std::ifstream f(filename.c_str());
 
@@ -258,7 +270,7 @@ bool Parser<Node,Edge>::readSIMPLE(InData& data,std::string const& filename)
 }
 
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::writeSIMPLE(OutData data, std::string const& filename)
+bool Parser::writeSIMPLE(OutData<Node,Edge> data, std::string const& filename)
 {
 	std::ofstream f(filename.c_str());
 
@@ -298,77 +310,17 @@ bool Parser<Node,Edge>::writeSIMPLE(OutData data, std::string const& filename)
 }
 
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::readFMI(InData& data, std::string const& filename)
+bool Parser::readFMI(InData<Node,Edge>& data, std::string const& filename)
 {
 	// TODO
 	return false;
 }
 
 template <typename Node, typename Edge>
-bool Parser<Node,Edge>::writeFMI_CH(OutData data, std::string const& filename)
+bool Parser::writeFMI_CH(OutData<Node,Edge> data, std::string const& filename)
 {
 	// TODO
 	return false;
-}
-
-/* Nodes */
-template <typename Node, typename Edge>
-STDNode Parser<Node,Edge>::readSTDNode(std::stringstream& ss)
-{
-	STDNode node;
-	ss >> node.id >> node.osm_id >> node.lat >> node.lon >> node.elev;
-	return node;
-}
-template <typename Node, typename Edge>
-bool Parser<Node,Edge>::writeSTDNode(STDNode const& node, std::ofstream& os)
-{
-	os << node.id << " " << node.osm_id << " " << node.lat << " " <<
-		node.lon << " " << node.elev << std::endl;
-	return true;
-}
-
-template <typename Node, typename Edge>
-SIMPLENode Parser<Node,Edge>::readSIMPLENode(std::stringstream& ss)
-{
-	SIMPLENode node;
-	ss >> node.lat >> node.lon >> node.elev;
-	return node;
-}
-template <typename Node, typename Edge>
-bool Parser<Node,Edge>::writeSIMPLENode(SIMPLENode const& node, std::ofstream& os)
-{
-	os << node.lat << " " << node.lon << " " << node.elev << std::endl;
-	return true;
-}
-
-/* Edges */
-template <typename Node, typename Edge>
-STDEdge Parser<Node,Edge>::readSTDEdge(std::stringstream& ss)
-{
-	STDEdge edge;
-	ss >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
-	return edge;
-}
-template <typename Node, typename Edge>
-bool Parser<Node,Edge>::writeSTDEdge(STDEdge const& edge, std::ofstream& os)
-{
-	os << edge.src << " " << edge.tgt << " " << edge.dist << " " <<
-		edge.type << " " << edge.speed << std::endl;
-	return true;
-}
-
-template <typename Node, typename Edge>
-SIMPLEEdge Parser<Node,Edge>::readSIMPLEEdge(std::stringstream& ss)
-{
-	SIMPLEEdge edge;
-	ss >> edge.src >> edge.tgt >> edge.dist;
-	return edge;
-}
-template <typename Node, typename Edge>
-bool Parser<Node,Edge>::writeSIMPLEEdge(SIMPLEEdge const& edge, std::ofstream& os)
-{
-	os << edge.src << " " << edge.tgt << " " << edge.dist << std::endl;
-	return true;
 }
 
 }

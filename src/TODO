@@ -165,3 +165,6 @@ TODOs, damit auch andere das Projekt benutzen können:
 	- ReadWrite für FMI und FMI_CH.
 	x Auf cmake umstellen oder so.
 	x Ne gute main schreiben mit Parametern und so. Am besten auch, dass man daraus gleich die Tests aufrufen kann, wenn man einen machen will.
+	x Parser von Klasse zu Funktionen machen, da man sonst für jeden Type immer auch ein Constructor zu jedem Type braucht.
+		-> Template Klasse zu Klasse gemacht, da scope so besser ist, also ohne.
+	- Convert Funktionen statt Constructors, damit alles schön im Parser ist.

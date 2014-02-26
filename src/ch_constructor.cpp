@@ -99,8 +99,8 @@ int main(int argc, char* argv[])
 
 	/* Read graph */
 	CHGraph g;
-	Parser<LvlNode,Shortcut>::InData data;
-	Parser<LvlNode,Shortcut>::read(data, infile, informat);
+	Parser::InData<LvlNode,Shortcut> data;
+	Parser::read<LvlNode,Shortcut>(data, infile, informat);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	/* Build CH */
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 	chc.getCHGraph();
 
 	/* Export */
-	Parser<LvlNode,Shortcut>::write(g.getData(), outfile, outformat);
+	Parser::write<LvlNode,Shortcut>(g.getData(), outfile, outformat);
 
 	return 0;
 }

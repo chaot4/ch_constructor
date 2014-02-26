@@ -46,8 +46,8 @@ void unit_tests::testGraph()
 	Print("=======================\n");
 	
 	Graph<Node, Edge> g;
-	Parser<Node,Edge>::InData data;
-	Parser<Node,Edge>::read(data, "../test_data/15kSZHK.txt", STD);
+	Parser::InData<Node,Edge> data;
+	Parser::read<Node,Edge>(data, "../test_data/15kSZHK.txt", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	/* Test the normal iterator. */
@@ -123,8 +123,8 @@ void unit_tests::testCHConstructor()
 	typedef SCGraph<Node, Edge> CHGraph;
 
 	CHGraph g;
-	Parser<LvlNode,Shortcut>::InData data;
-	Parser<LvlNode,Shortcut>::read(data, "../test_data/test", STD);
+	Parser::InData<LvlNode,Shortcut> data;
+	Parser::read<LvlNode,Shortcut>(data, "../test_data/test", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	CHConstructor<Node, Edge> chc(g, 2);
@@ -165,7 +165,7 @@ void unit_tests::testCHConstructor()
 	chc.getCHGraph();
 
 	// Export
-	Parser<LvlNode,Shortcut>::write(g.getData(), "../out/ch_test", STD);
+	Parser::write<LvlNode,Shortcut>(g.getData(), "../out/ch_test", STD);
 
 	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
@@ -184,14 +184,14 @@ void unit_tests::testCHDijkstra()
 
 	/* Init normal graph */
 	Graph<Node, Edge> g;
-	Parser<Node,Edge>::InData g_data;
-	Parser<Node,Edge>::read(g_data, "../test_data/15kSZHK.txt", STD);
+	Parser::InData<Node,Edge> g_data;
+	Parser::read<Node,Edge>(g_data, "../test_data/15kSZHK.txt", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(g_data);
 
 	/* Init CH graph */
 	CHGraph chg;
-	Parser<LvlNode,Shortcut>::InData chg_data;
-	Parser<LvlNode,Shortcut>::read(chg_data, "../test_data/15kSZHK.txt", STD);
+	Parser::InData<LvlNode,Shortcut> chg_data;
+	Parser::read<LvlNode,Shortcut>(chg_data, "../test_data/15kSZHK.txt", STD);
 	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(chg_data);
 
 	/* Build CH */
@@ -205,7 +205,7 @@ void unit_tests::testCHDijkstra()
 	chc.getCHGraph();
 
 	// Export
-	Parser<LvlNode,Shortcut>::write(chg.getData(),
+	Parser::write<LvlNode,Shortcut>(chg.getData(),
 			"../out/ch_15kSZHK.txt", STD);
 
 	/* Random Dijkstras */
@@ -237,8 +237,8 @@ void unit_tests::testDijkstra()
 	Print("============================\n");
 
 	Graph<Node, Edge> g;
-	Parser<Node,Edge>::InData data;
-	Parser<Node,Edge>::read(data, "../test_data/test", STD);
+	Parser::InData<Node,Edge> data;
+	Parser::read<Node,Edge>(data, "../test_data/test", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
 	Dijkstra<Node, Edge> dij(g);
