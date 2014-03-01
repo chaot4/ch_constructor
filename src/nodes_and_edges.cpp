@@ -23,12 +23,6 @@ Node::Node()
 Node::Node(NodeID id)
 	: id(id) {}
 
-Node::Node (STDNode const& node)
-	: id(node.id) {}
-
-Node::Node (SIMPLENode const& node, NodeID id)
-	: id(id) {}
-
 bool Node::operator<(Node const& node) const
 {
 	return id < node.id;
@@ -55,12 +49,6 @@ Edge::Edge()
 Edge::Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
 	: id(id), src(src), tgt(tgt), dist(dist){}
 
-Edge::Edge(STDEdge const& edge, EdgeID id)
-	: id(id), src(edge.src), tgt(edge.tgt), dist(edge.dist) {}
-
-Edge::Edge(SIMPLEEdge const& edge, EdgeID id)
-	: id(id), src(edge.src), tgt(edge.tgt), dist(edge.dist) {}
-
 bool Edge::operator<(Edge const& edge) const
 { 
 	return src < edge.src || (src == edge.src && tgt < edge.tgt);
@@ -77,25 +65,5 @@ CHEdge<Edge> Edge::concat(Edge const& edge1, Edge const& edge2)
 	return CHEdge<Edge>(Edge(c::NO_EID, edge1.src, edge2.tgt,
 			edge1.dist + edge2.dist), edge1.id, edge2.id, edge1.tgt);
 }
-
-/*
- * Parser Nodes
- */
-
-STDNode::STDNode(Node const& node)
-	: id(node.id), osm_id(0), lat(0), lon(0), elev(0) {}
-
-SIMPLENode::SIMPLENode(Node const& node)
-	: lat(0), lon(0), elev(0) {}
-
-/*
- * Parser Edges
- */
-
-STDEdge::STDEdge(Edge const& edge)
-	: src(edge.src), tgt(edge.tgt), dist(edge.dist), type(0), speed(-1) {}
-
-SIMPLEEdge::SIMPLEEdge(Edge const& edge)
-	: src(edge.src), tgt(edge.tgt), dist(edge.dist) {}
 
 }

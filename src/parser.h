@@ -19,26 +19,62 @@ FileFormat toFileFormat(std::string const& format);
 class Parser
 {
 	public:
-		/* Nodes and edges of a graph */
+		/* Data required to construct or write out graphs. */
 		template <typename Node, typename Edge>
 		struct InData;
 		template <typename Node, typename Edge>
 		struct OutData;
 
+		/* Filetype specific nodes. */
+		struct STDNode;
+		struct SIMPLENode;
+
+		/* Filetype specific edges */
+		struct STDEdge;
+		struct SIMPLEEdge;
+
 	private:
-		/* Nodes */
+		/* Node read/writes */
 		static STDNode readSTDNode(std::stringstream& ss);
 		static bool writeSTDNode(STDNode const& node, std::ofstream& os);
 		static SIMPLENode readSIMPLENode(std::stringstream& ss);
 		static bool writeSIMPLENode(SIMPLENode const& node, std::ofstream& os);
 
-		/* Edges */
+		/* Node casts */
+		static void cast(STDNode const& in_node, Node& out_node);
+		static void cast(SIMPLENode const& in_node, Node& out_node);
+		template <typename Node>
+		static void cast(STDNode const& in_node, CHNode<Node>& out_node);
+		template <typename Node>
+		static void cast(SIMPLENode const& in_node, CHNode<Node>& out_node);
+		static void cast(Node const& in_node, STDNode& out_node);
+		static void cast(Node const& in_node, SIMPLENode& out_node);
+//		template <typename Node>
+//		static void cast(CHNode<Node> const& in_node, STDNode& out_node);
+//		template <typename Node>
+//		static void cast(CHNode<Node> const& in_node, SIMPLENode& out_node);
+
+		/* Edges read/writes */
 		static STDEdge readSTDEdge(std::stringstream& ss);
 		static bool writeSTDEdge(STDEdge const& edge, std::ofstream& os);
 		static SIMPLEEdge readSIMPLEEdge(std::stringstream& ss);
 		static bool writeSIMPLEEdge(SIMPLEEdge const& edge, std::ofstream& os);
 
-		/* Graphfiles */
+		/* Edge casts */
+		static void cast(STDEdge const& in_edge, Edge& out_edge);
+		static void cast(SIMPLEEdge const& in_edge, Edge& out_edge);
+		template <typename Edge>
+		static void cast(STDEdge const& in_edge, CHEdge<Edge>& out_edge);
+		template <typename Edge>
+		static void cast(SIMPLEEdge const& in_edge, CHEdge<Edge>& out_edge);
+		static void cast(Edge const& in_edge, STDEdge& out_edge);
+		static void cast(Edge const& in_edge, SIMPLEEdge& out_edge);
+//		template <typename Edge>
+//		static void cast(CHEdge<Edge> const& in_edge, STDEdge& out_edge);
+//		template <typename Edge>
+//		static void cast(CHEdge<Edge> const& in_edge, SIMPLEEdge& out_edge);
+
+		/* Graphfile read/writes */
 		template <typename Node, typename Edge>
 		static bool readSTD(InData<Node,Edge>& data, std::string const& filename);
 		template <typename Node, typename Edge>
@@ -77,10 +113,93 @@ struct Parser::OutData
 	std::vector<Node> const& nodes;
 	std::vector<Edge> const& edges;
 
-	OutData(std::vector<Node> const& nodes,
-			std::vector<Edge> const& edges)
+	OutData(std::vector<Node> const& nodes, std::vector<Edge> const& edges)
 		: nodes(nodes), edges(edges) {}
 };
+
+struct Parser::STDNode
+{
+	NodeID id;
+	uint osm_id;
+	double lat;
+	double lon;
+	int elev;
+
+	STDNode();
+	STDNode(NodeID id, uint osm_id, double lat, double lon, int elev);
+};
+
+struct Parser::SIMPLENode
+{
+	double lat;
+	double lon;
+	int elev;
+
+	SIMPLENode();
+	SIMPLENode(double lat, double lon, int elev);
+};
+
+struct Parser::STDEdge
+{
+	NodeID src;
+	NodeID tgt;
+	uint dist;
+	uint type;
+	int speed;
+
+	STDEdge();
+	STDEdge(NodeID src, NodeID tgt, uint dist, uint type, int speed);
+};
+
+struct Parser::SIMPLEEdge
+{
+	NodeID src;
+	NodeID tgt;
+	uint dist;
+
+	SIMPLEEdge();
+	SIMPLEEdge(NodeID src, NodeID tgt, uint dist);
+};
+
+/*
+ * Node casts.
+ */
+
+template <typename Node>
+void Parser::cast(STDNode const& in_node, CHNode<Node>& out_node)
+{
+	Node node;
+	cast(in_node, node);
+	out_node = CHNode<Node>(node, c::NO_LVL);
+}
+
+template <typename Node>
+void Parser::cast(SIMPLENode const& in_node, CHNode<Node>& out_node)
+{
+	Node node;
+	cast(in_node, node);
+	out_node = CHNode<Node>(node, c::NO_LVL);
+}
+
+/*
+ * Edge casts.
+ */
+
+template <typename Edge>
+void Parser::cast(STDEdge const& in_edge, CHEdge<Edge>& out_edge)
+{
+	Edge edge;
+	cast(in_edge, edge);
+	out_edge = CHEdge<Edge>(edge, c::NO_EID, c::NO_EID, c::NO_NID);
+}
+
+template <typename Edge>
+void Parser::cast(SIMPLEEdge const& in_edge, CHEdge<Edge>& out_edge)
+{
+	Edge edge;
+	cast(in_edge, edge);
+	out_edge = CHEdge<Edge>(edge, c::NO_EID, c::NO_EID, c::NO_NID);
+}
 
 template <typename Node, typename Edge>
 bool Parser::read(InData<Node,Edge>& data, std::string const& filename,
@@ -144,9 +263,8 @@ bool Parser::readSTD(InData<Node,Edge>& data,std::string const& filename)
 		/* Read the nodes. */
 		data.nodes.resize(nr_of_nodes);
 		for (uint i(0); i<nr_of_nodes; i++){
-			STDNode parser_node;
-			parser_node = readSTDNode(ss);
-			data.nodes[i] = Node(parser_node);
+			cast(readSTDNode(ss), data.nodes[i]);
+			data.nodes[i].id = i;
 		}
 		std::sort(data.nodes.begin(), data.nodes.end());
 
@@ -156,9 +274,8 @@ bool Parser::readSTD(InData<Node,Edge>& data,std::string const& filename)
 		data.edges.resize(nr_of_edges);
 
 		for (uint i(0); i<nr_of_edges; i++) {
-			STDEdge parser_edge;
-			parser_edge = readSTDEdge(ss);
-			data.edges[i] = Edge(parser_edge, i);
+			cast(readSTDEdge(ss), data.edges[i]);
+			data.edges[i].id = i;
 		}
 
 		Print("Read all the edges.");
@@ -190,14 +307,16 @@ bool Parser::writeSTD(OutData<Node,Edge> data, std::string const& filename)
 		f << nr_of_edges << std::endl;
 
 		for (uint i(0); i<nr_of_nodes; i++) {
-			STDNode parser_node(data.nodes[i]);
+			STDNode parser_node;
+			cast(data.nodes[i], parser_node);
 			writeSTDNode(parser_node, f);
 		}
 
 		Print("Exported all nodes.");
 
 		for (uint i(0); i<nr_of_edges; i++) {
-			STDEdge parser_edge(data.edges[i]);
+			STDEdge parser_edge;
+			cast(data.edges[i], parser_edge);
 			writeSTDEdge(parser_edge, f);
 		}
 
@@ -239,9 +358,8 @@ bool Parser::readSIMPLE(InData<Node,Edge>& data,std::string const& filename)
 		/* Read the nodes. */
 		data.nodes.resize(nr_of_nodes);
 		for (uint i(0); i<nr_of_nodes; i++){
-			SIMPLENode parser_node;
-			parser_node = readSIMPLENode(ss);
-			data.nodes[i] = Node(parser_node, i);
+			cast(readSIMPLENode(ss), data.nodes[i]);
+			data.nodes[i].id = i;
 		}
 		std::sort(data.nodes.begin(), data.nodes.end());
 
@@ -251,9 +369,8 @@ bool Parser::readSIMPLE(InData<Node,Edge>& data,std::string const& filename)
 		data.edges.resize(nr_of_edges);
 
 		for (uint i(0); i<nr_of_edges; i++) {
-			SIMPLEEdge parser_edge;
-			parser_edge = readSIMPLEEdge(ss);
-			data.edges[i] = Edge(parser_edge, i);
+			cast(readSIMPLEEdge(ss), data.edges[i]);
+			data.edges[i].id = i;
 		}
 
 		Print("Read all the edges.");
@@ -285,14 +402,16 @@ bool Parser::writeSIMPLE(OutData<Node,Edge> data, std::string const& filename)
 		f << nr_of_edges << std::endl;
 
 		for (uint i(0); i<nr_of_nodes; i++) {
-			SIMPLENode parser_node(data.nodes[i]);
+			SIMPLENode parser_node;
+			cast(data.nodes[i], parser_node);
 			writeSIMPLENode(parser_node, f);
 		}
 
 		Print("Exported all nodes.");
 
 		for (uint i(0); i<nr_of_edges; i++) {
-			SIMPLEEdge parser_edge(data.edges[i]);
+			SIMPLEEdge parser_edge;
+			cast(data.edges[i], parser_edge);
 			writeSIMPLEEdge(parser_edge, f);
 		}
 
