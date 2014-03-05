@@ -155,7 +155,6 @@ TODOs bis ich dann mal 'ne fertige Version habe:
 	- vllt. Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
 	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen nach der Kontraktion und im CHDijkstra verwenden.
 	- das Sortieren der Kanten irgendwie zentral festlegen. Template Parameter? Vllt den CHGraph zu einem reinen Kontraktionsgraphen machen und dann zu 'nem CHGraphen konvertieren am Schluss?
-	- Parser aufräumen.
 	- Kurzdoku. Eben nur eine Zeile comment, was die public Funktion macht. Am besten auch das private Zeugs, damit ich's auch wieder verstehe.
 	- Stefans TODOs noch abarbeiten.
 	- Tests so schreiben, dass graphen bestimmt werden können.
@@ -167,4 +166,5 @@ TODOs, damit auch andere das Projekt benutzen können:
 	x Ne gute main schreiben mit Parametern und so. Am besten auch, dass man daraus gleich die Tests aufrufen kann, wenn man einen machen will.
 	x Parser von Klasse zu Funktionen machen, da man sonst für jeden Type immer auch ein Constructor zu jedem Type braucht.
 		-> Template Klasse zu Klasse gemacht, da scope so besser ist, also ohne.
-	- Convert Funktionen statt Constructors, damit alles schön im Parser ist.
+	x Convert Funktionen statt Constructors, damit alles schön im Parser ist.
+	x Parser aufräumen.

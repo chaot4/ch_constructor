@@ -431,14 +431,120 @@ bool Parser::writeSIMPLE(OutData<Node,Edge> data, std::string const& filename)
 template <typename Node, typename Edge>
 bool Parser::readFMI(InData<Node,Edge>& data, std::string const& filename)
 {
-	// TODO
+	std::ifstream f(filename.c_str());
+
+	if (f.is_open()) {
+		std::string file;
+
+		/* Read the file into RAM */
+		f.seekg(0, std::ios::end);
+		file.reserve(f.tellg());
+		f.seekg(0, std::ios::beg);
+		file.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+		std::stringstream ss(file);
+
+		char c;
+		ss.get(c);
+		// Note that this loop also reads the first character after
+		// all the comments are over.
+		while (c == '#') {
+			ss.ignore(1024, '\n');
+			ss.get(c);
+		}
+
+		uint nr_of_nodes;
+		uint nr_of_edges;
+		ss >> nr_of_nodes >> nr_of_edges;
+		Print("Number of nodes: " << nr_of_nodes);
+		Print("Number of edges: " << nr_of_edges);
+
+		/* Read the nodes. */
+		data.nodes.resize(nr_of_nodes);
+		for (uint i(0); i<nr_of_nodes; i++){
+			cast(readSTDNode(ss), data.nodes[i]);
+			data.nodes[i].id = i;
+		}
+		std::sort(data.nodes.begin(), data.nodes.end());
+
+		Print("Read all the nodes.");
+
+		/* Read the edges into _out_edges and _in_edges. */
+		data.edges.resize(nr_of_edges);
+
+		for (uint i(0); i<nr_of_edges; i++) {
+			cast(readSTDEdge(ss), data.edges[i]);
+			data.edges[i].id = i;
+		}
+
+		Print("Read all the edges.");
+
+		f.close();
+	}
+	else {
+		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+			filename << "\'. Exiting." << std::endl;
+		exit(1);
+	}
+
 	return false;
 }
 
 template <typename Node, typename Edge>
 bool Parser::writeFMI_CH(OutData<Node,Edge> data, std::string const& filename)
 {
-	// TODO
+	std::ofstream f(filename.c_str());
+
+	if (f.is_open()) {
+
+		/* Generate random id */
+		char id[33];
+		for(int i = 0; i < 32; i++) {
+		    sprintf(id + i, "%x", rand() % 16);
+		}
+
+		/* Write header */
+		f << "# Id : " << id << std::endl;
+		f << "# Timestamp : " << time(0) << std::endl;
+		f << "# Type: maxspeed" << std::endl;
+		f << "# Revision: 1" << std::endl;
+		f << std::endl;
+
+		/* Write graph data */
+		uint nr_of_nodes(data.nodes.size());
+		uint nr_of_edges(data.edges.size());
+
+		Print("Exporting " << nr_of_nodes << " nodes and "
+				<< nr_of_edges << " edges to " << filename);
+
+		f << nr_of_nodes << std::endl;
+		f << nr_of_edges << std::endl;
+
+		for (uint i(0); i<nr_of_nodes; i++) {
+			// TODO write FMI_CH node
+			STDNode parser_node;
+			cast(data.nodes[i], parser_node);
+			writeSTDNode(parser_node, f);
+		}
+
+		Print("Exported all nodes.");
+
+		for (uint i(0); i<nr_of_edges; i++) {
+			// TODO write FMI_CH edge
+			STDEdge parser_edge;
+			cast(data.edges[i], parser_edge);
+			writeSTDEdge(parser_edge, f);
+		}
+
+		Print("Exported all edges.");
+
+		f.close();
+	}
+	else {
+		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+			filename << "\'. Exiting." << std::endl;
+		exit(1);
+	}
+
 	return false;
 }
 
