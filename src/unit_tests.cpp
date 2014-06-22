@@ -46,7 +46,7 @@ void unit_tests::testGraph()
 	Print("=======================\n");
 	
 	Graph<Node, Edge> g;
-	Parser::InData<Node,Edge> data;
+	GraphInData<Node,Edge> data;
 	Parser::read<Node,Edge>(data, "../test_data/15kSZHK.txt", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
@@ -123,7 +123,7 @@ void unit_tests::testCHConstructor()
 	typedef SCGraph<Node, Edge> CHGraph;
 
 	CHGraph g;
-	Parser::InData<LvlNode,Shortcut> data;
+	GraphInData<LvlNode,Shortcut> data;
 	Parser::read<LvlNode,Shortcut>(data, "../test_data/test", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 
@@ -184,13 +184,13 @@ void unit_tests::testCHDijkstra()
 
 	/* Init normal graph */
 	Graph<Node, Edge> g;
-	Parser::InData<Node,Edge> g_data;
+	GraphInData<Node,Edge> g_data;
 	Parser::read<Node,Edge>(g_data, "../test_data/15kSZHK.txt", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(g_data);
 
 	/* Init CH graph */
 	CHGraph chg;
-	Parser::InData<LvlNode,Shortcut> chg_data;
+	GraphInData<LvlNode,Shortcut> chg_data;
 	Parser::read<LvlNode,Shortcut>(chg_data, "../test_data/15kSZHK.txt", STD);
 	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(chg_data);
 
@@ -237,7 +237,7 @@ void unit_tests::testDijkstra()
 	Print("============================\n");
 
 	Graph<Node, Edge> g;
-	Parser::InData<Node,Edge> data;
+	GraphInData<Node,Edge> data;
 	Parser::read<Node,Edge>(data, "../test_data/test", STD);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 

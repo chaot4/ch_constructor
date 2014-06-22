@@ -16,536 +16,376 @@ namespace chc
 enum FileFormat { STD, SIMPLE, FMI, FMI_CH };
 FileFormat toFileFormat(std::string const& format);
 
-class Parser
-{
-	public:
-		/* Data required to construct or write out graphs. */
-		template <typename Node, typename Edge>
-		struct InData;
-		template <typename Node, typename Edge>
-		struct OutData;
+namespace Parser {
+	/* Data required to construct or write out graphs. */
+	/* Node read/writes */
+	OSMNode readOSMNode(std::stringstream& ss);
+	bool writeOSMNode(OSMNode const& node, std::ofstream& os);
+	GeoNode readGeoNode(std::stringstream& ss);
+	bool writeGeoNode(GeoNode const& node, std::ofstream& os);
 
-		/* Filetype specific nodes. */
-		struct STDNode;
-		struct SIMPLENode;
+	/* Edges read/writes */
+	OSMEdge readOSMEdge(std::stringstream& ss);
+	bool writeOSMEdge(OSMEdge const& edge, std::ofstream& os);
+	Edge readEdge(std::stringstream& ss);
+	bool writeEdge(Edge const& edge, std::ofstream& os);
 
-		/* Filetype specific edges */
-		struct STDEdge;
-		struct SIMPLEEdge;
+	/* Graphfile read/writes */
+	template <typename NodeT, typename EdgeT>
+	bool readSTD(GraphInData<NodeT,EdgeT>& data, std::string const& filename);
+	template <typename NodeT, typename EdgeT>
+	bool writeSTD(GraphCHOutData<NodeT,EdgeT> data, std::string const& filename);
+	template <typename NodeT, typename EdgeT>
+	bool readSIMPLE(GraphInData<NodeT,EdgeT>& data, std::string const& filename);
+	template <typename NodeT, typename EdgeT>
+	bool writeSIMPLE(GraphCHOutData<NodeT,EdgeT> data, std::string const& filename);
+	template <typename NodeT, typename EdgeT>
+	bool readFMI(GraphInData<NodeT,EdgeT>& data, std::string const& filename);
+	template <typename NodeT, typename EdgeT>
+	bool writeFMI_CH(GraphCHOutData<NodeT,EdgeT> data, std::string const& filename);
 
-	private:
-		/* Node read/writes */
-		static STDNode readSTDNode(std::stringstream& ss);
-		static bool writeSTDNode(STDNode const& node, std::ofstream& os);
-		static SIMPLENode readSIMPLENode(std::stringstream& ss);
-		static bool writeSIMPLENode(SIMPLENode const& node, std::ofstream& os);
+	template <typename NodeT, typename EdgeT>
+	bool read(GraphInData<NodeT,EdgeT>& data, std::string const& filename,
+			FileFormat format);
 
-		/* Node casts */
-		static void cast(STDNode const& in_node, Node& out_node);
-		static void cast(SIMPLENode const& in_node, Node& out_node);
-		template <typename Node>
-		static void cast(STDNode const& in_node, CHNode<Node>& out_node);
-		template <typename Node>
-		static void cast(SIMPLENode const& in_node, CHNode<Node>& out_node);
-		static void cast(Node const& in_node, STDNode& out_node);
-		static void cast(Node const& in_node, SIMPLENode& out_node);
-//		template <typename Node>
-//		static void cast(CHNode<Node> const& in_node, STDNode& out_node);
-//		template <typename Node>
-//		static void cast(CHNode<Node> const& in_node, SIMPLENode& out_node);
+	template <typename NodeT, typename EdgeT>
+	bool write(GraphCHOutData<NodeT,EdgeT> data, std::string const& filename,
+			FileFormat format);
 
-		/* Edges read/writes */
-		static STDEdge readSTDEdge(std::stringstream& ss);
-		static bool writeSTDEdge(STDEdge const& edge, std::ofstream& os);
-		static SIMPLEEdge readSIMPLEEdge(std::stringstream& ss);
-		static bool writeSIMPLEEdge(SIMPLEEdge const& edge, std::ofstream& os);
+	template <typename NodeT, typename EdgeT>
+	bool read(GraphInData<NodeT,EdgeT>& data, std::string const& filename,
+			FileFormat format)
+	{
+		switch (format) {
+			case STD:
+				return readSTD<NodeT,EdgeT>(data, filename);
+			case SIMPLE:
+				return readSIMPLE<NodeT,EdgeT>(data, filename);
+			case FMI:
+				return readFMI<NodeT,EdgeT>(data, filename);
+			default:
+				std::cerr << "Unknown fileformat: " << format
+					<< std::endl;
+				return false;
+		}
+	}
 
-		/* Edge casts */
-		static void cast(STDEdge const& in_edge, Edge& out_edge);
-		static void cast(SIMPLEEdge const& in_edge, Edge& out_edge);
-		template <typename Edge>
-		static void cast(STDEdge const& in_edge, CHEdge<Edge>& out_edge);
-		template <typename Edge>
-		static void cast(SIMPLEEdge const& in_edge, CHEdge<Edge>& out_edge);
-		static void cast(Edge const& in_edge, STDEdge& out_edge);
-		static void cast(Edge const& in_edge, SIMPLEEdge& out_edge);
-//		template <typename Edge>
-//		static void cast(CHEdge<Edge> const& in_edge, STDEdge& out_edge);
-//		template <typename Edge>
-//		static void cast(CHEdge<Edge> const& in_edge, SIMPLEEdge& out_edge);
+	template <typename NodeT, typename EdgeT>
+	bool write(GraphCHOutData<NodeT,EdgeT> data, std::string const& filename,
+					FileFormat format)
+	{
+		switch (format) {
+			case STD:
+				return writeSTD<NodeT,EdgeT>(data, filename);
+			case SIMPLE:
+				return writeSIMPLE<NodeT,EdgeT>(data, filename);
+			case FMI_CH:
+				return writeFMI_CH<NodeT,EdgeT>(data, filename);
+			default:
+				std::cerr << "Unknown fileformat: " << format
+					<< std::endl;
+				return false;
+		}
+	}
 
-		/* Graphfile read/writes */
-		template <typename Node, typename Edge>
-		static bool readSTD(InData<Node,Edge>& data, std::string const& filename);
-		template <typename Node, typename Edge>
-		static bool writeSTD(OutData<Node,Edge> data, std::string const& filename);
-		template <typename Node, typename Edge>
-		static bool readSIMPLE(InData<Node,Edge>& data, std::string const& filename);
-		template <typename Node, typename Edge>
-		static bool writeSIMPLE(OutData<Node,Edge> data, std::string const& filename);
-		template <typename Node, typename Edge>
-		static bool readFMI(InData<Node,Edge>& data, std::string const& filename);
-		template <typename Node, typename Edge>
-		static bool writeFMI_CH(OutData<Node,Edge> data, std::string const& filename);
+	/* Graphfiles */
+	template <typename NodeT, typename EdgeT>
+	bool readSTD(GraphInData<NodeT,EdgeT>& data,std::string const& filename)
+	{
+		std::ifstream f(filename.c_str());
 
-	public:
-		template <typename Node, typename Edge>
-		static bool read(InData<Node,Edge>& data, std::string const& filename,
-				FileFormat format);
+		if (f.is_open()) {
+			std::string file;
 
-		template <typename Node, typename Edge>
-		static bool write(OutData<Node,Edge> data, std::string const& filename,
-				FileFormat format);
-};
+			/* Read the file into RAM */
+			f.seekg(0, std::ios::end);
+			file.reserve(f.tellg());
+			f.seekg(0, std::ios::beg);
+			file.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
 
+			uint nr_of_nodes;
+			uint nr_of_edges;
 
+			std::stringstream ss(file);
+			ss >> nr_of_nodes >> nr_of_edges;
+			Print("Number of nodes: " << nr_of_nodes);
+			Print("Number of edges: " << nr_of_edges);
 
-template <typename Node, typename Edge>
-struct Parser::InData
-{
-	std::vector<Node> nodes;
-	std::vector<Edge> edges;
-};
+			/* Read the nodes. */
+			data.nodes.resize(nr_of_nodes);
+			for (uint i(0); i<nr_of_nodes; i++){
+				data.nodes[i] = static_cast<NodeT>(readOSMNode(ss));
+				data.nodes[i].id = i;
+			}
+			std::sort(data.nodes.begin(), data.nodes.end());
 
-template <typename Node, typename Edge>
-struct Parser::OutData
-{
-	std::vector<Node> const& nodes;
-	std::vector<Edge> const& edges;
+			Print("Read all the nodes.");
 
-	OutData(std::vector<Node> const& nodes, std::vector<Edge> const& edges)
-		: nodes(nodes), edges(edges) {}
-};
+			/* Read the edges into _out_edges and _in_edges. */
+			data.edges.resize(nr_of_edges);
 
-struct Parser::STDNode
-{
-	NodeID id;
-	uint osm_id;
-	double lat;
-	double lon;
-	int elev;
+			for (uint i(0); i<nr_of_edges; i++) {
+				data.edges[i] = static_cast<EdgeT>(readOSMEdge(ss));
+				data.edges[i].id = i;
+			}
 
-	STDNode();
-	STDNode(NodeID id, uint osm_id, double lat, double lon, int elev);
-};
+			Print("Read all the edges.");
 
-struct Parser::SIMPLENode
-{
-	double lat;
-	double lon;
-	int elev;
+			f.close();
+		}
+		else {
+			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+				filename << "\'. Exiting." << std::endl;
+			exit(1);
+		}
 
-	SIMPLENode();
-	SIMPLENode(double lat, double lon, int elev);
-};
+		return true;
+	}
 
-struct Parser::STDEdge
-{
-	NodeID src;
-	NodeID tgt;
-	uint dist;
-	uint type;
-	int speed;
+	template <typename NodeT, typename EdgeT>
+	bool writeSTD(GraphCHOutData<NodeT,EdgeT> data, std::string const& filename)
+	{
+		std::ofstream f(filename.c_str());
 
-	STDEdge();
-	STDEdge(NodeID src, NodeID tgt, uint dist, uint type, int speed);
-};
+		if (f.is_open()) {
+			uint nr_of_nodes(data.nodes.size());
+			uint nr_of_edges(data.edges.size());
 
-struct Parser::SIMPLEEdge
-{
-	NodeID src;
-	NodeID tgt;
-	uint dist;
+			Print("Exporting " << nr_of_nodes << " nodes and "
+					<< nr_of_edges << " edges to " << filename);
 
-	SIMPLEEdge();
-	SIMPLEEdge(NodeID src, NodeID tgt, uint dist);
-};
+			f << nr_of_nodes << std::endl;
+			f << nr_of_edges << std::endl;
 
-/*
- * Node casts.
- */
+			for (uint i(0); i<nr_of_nodes; i++) {
+				writeOSMNode(static_cast<OSMNode>(data.nodes[i]), f);
+			}
 
-template <typename Node>
-void Parser::cast(STDNode const& in_node, CHNode<Node>& out_node)
-{
-	Node node;
-	cast(in_node, node);
-	out_node = CHNode<Node>(node, c::NO_LVL);
-}
+			Print("Exported all nodes.");
 
-template <typename Node>
-void Parser::cast(SIMPLENode const& in_node, CHNode<Node>& out_node)
-{
-	Node node;
-	cast(in_node, node);
-	out_node = CHNode<Node>(node, c::NO_LVL);
-}
+			for (uint i(0); i<nr_of_edges; i++) {
+				writeOSMEdge(static_cast<OSMEdge>(data.edges[i]), f);
+			}
 
-/*
- * Edge casts.
- */
+			Print("Exported all edges.");
 
-template <typename Edge>
-void Parser::cast(STDEdge const& in_edge, CHEdge<Edge>& out_edge)
-{
-	Edge edge;
-	cast(in_edge, edge);
-	out_edge = CHEdge<Edge>(edge, c::NO_EID, c::NO_EID, c::NO_NID);
-}
+			f.close();
+		}
+		else {
+			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+				filename << "\'. Exiting." << std::endl;
+			exit(1);
+		}
 
-template <typename Edge>
-void Parser::cast(SIMPLEEdge const& in_edge, CHEdge<Edge>& out_edge)
-{
-	Edge edge;
-	cast(in_edge, edge);
-	out_edge = CHEdge<Edge>(edge, c::NO_EID, c::NO_EID, c::NO_NID);
-}
+		return true;
+	}
 
-template <typename Node, typename Edge>
-bool Parser::read(InData<Node,Edge>& data, std::string const& filename,
-		FileFormat format)
-{
-	switch (format) {
-		case STD:
-			return readSTD<Node,Edge>(data, filename);
-		case SIMPLE:
-			return readSIMPLE<Node,Edge>(data, filename);
-		case FMI:
-			return readFMI<Node,Edge>(data, filename);
-		default:
-			std::cerr << "Unknown fileformat: " << format
-				<< std::endl;
+	template <typename NodeT, typename EdgeT>
+	bool readSIMPLE(GraphInData<NodeT,EdgeT>& data,std::string const& filename)
+	{
+		std::ifstream f(filename.c_str());
+
+		if (f.is_open()) {
+			std::string file;
+
+			/* Read the file into RAM */
+			f.seekg(0, std::ios::end);
+			file.reserve(f.tellg());
+			f.seekg(0, std::ios::beg);
+			file.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+
+			uint nr_of_nodes;
+			uint nr_of_edges;
+
+			std::stringstream ss(file);
+			ss >> nr_of_nodes >> nr_of_edges;
+			Print("Number of nodes: " << nr_of_nodes);
+			Print("Number of edges: " << nr_of_edges);
+
+			/* Read the nodes. */
+			data.nodes.resize(nr_of_nodes);
+			for (uint i(0); i<nr_of_nodes; i++){
+				data.nodes[i] = static_cast<NodeT>(readGeoNode(ss));
+				data.nodes[i].id = i;
+			}
+			std::sort(data.nodes.begin(), data.nodes.end());
+
+			Print("Read all the nodes.");
+
+			/* Read the edges into _out_edges and _in_edges. */
+			data.edges.resize(nr_of_edges);
+
+			for (uint i(0); i<nr_of_edges; i++) {
+				data.edges[i] = static_cast<EdgeT>(readEdge(ss));
+				data.edges[i].id = i;
+			}
+
+			Print("Read all the edges.");
+
+			f.close();
+		}
+		else {
+			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+				filename << "\'. Exiting." << std::endl;
 			return false;
-	}
-}
+		}
 
-template <typename Node, typename Edge>
-bool Parser::write(OutData<Node,Edge> data, std::string const& filename,
-				FileFormat format)
-{
-	switch (format) {
-		case STD:
-			return writeSTD<Node,Edge>(data, filename);
-		case SIMPLE:
-			return writeSIMPLE<Node,Edge>(data, filename);
-		case FMI_CH:
-			return writeFMI_CH<Node,Edge>(data, filename);
-		default:
-			std::cerr << "Unknown fileformat: " << format
-				<< std::endl;
+		return true;
+	}
+
+	template <typename NodeT, typename EdgeT>
+	bool writeSIMPLE(GraphCHOutData<NodeT,EdgeT> data, std::string const& filename)
+	{
+		std::ofstream f(filename.c_str());
+
+		if (f.is_open()) {
+			uint nr_of_nodes(data.nodes.size());
+			uint nr_of_edges(data.edges.size());
+
+			Print("Exporting " << nr_of_nodes << " nodes and "
+					<< nr_of_edges << " edges to " << filename);
+
+			f << nr_of_nodes << std::endl;
+			f << nr_of_edges << std::endl;
+
+			for (uint i(0); i<nr_of_nodes; i++) {
+				writeGeoNode(static_cast<GeoNode>(data.nodes[i]), f);
+			}
+
+			Print("Exported all nodes.");
+
+			for (uint i(0); i<nr_of_edges; i++) {
+				writeEdge(static_cast<Edge>(data.edges[i]), f);
+			}
+
+			Print("Exported all edges.");
+
+			f.close();
+		}
+		else {
+			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+				filename << "\'. Exiting." << std::endl;
 			return false;
-	}
-}
-
-/* Graphfiles */
-template <typename Node, typename Edge>
-bool Parser::readSTD(InData<Node,Edge>& data,std::string const& filename)
-{
-	std::ifstream f(filename.c_str());
-
-	if (f.is_open()) {
-		std::string file;
-
-		/* Read the file into RAM */
-		f.seekg(0, std::ios::end);
-		file.reserve(f.tellg());
-		f.seekg(0, std::ios::beg);
-		file.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-
-		uint nr_of_nodes;
-		uint nr_of_edges;
-
-		std::stringstream ss(file);
-		ss >> nr_of_nodes >> nr_of_edges;
-		Print("Number of nodes: " << nr_of_nodes);
-		Print("Number of edges: " << nr_of_edges);
-
-		/* Read the nodes. */
-		data.nodes.resize(nr_of_nodes);
-		for (uint i(0); i<nr_of_nodes; i++){
-			cast(readSTDNode(ss), data.nodes[i]);
-			data.nodes[i].id = i;
-		}
-		std::sort(data.nodes.begin(), data.nodes.end());
-
-		Print("Read all the nodes.");
-
-		/* Read the edges into _out_edges and _in_edges. */
-		data.edges.resize(nr_of_edges);
-
-		for (uint i(0); i<nr_of_edges; i++) {
-			cast(readSTDEdge(ss), data.edges[i]);
-			data.edges[i].id = i;
 		}
 
-		Print("Read all the edges.");
-
-		f.close();
-	}
-	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
-			filename << "\'. Exiting." << std::endl;
-		exit(1);
+		return true;
 	}
 
-	return true;
-}
+	template <typename NodeT, typename EdgeT>
+	bool readFMI(GraphInData<NodeT,EdgeT>& data, std::string const& filename)
+	{
+		std::ifstream f(filename.c_str());
 
-template <typename Node, typename Edge>
-bool Parser::writeSTD(OutData<Node,Edge> data, std::string const& filename)
-{
-	std::ofstream f(filename.c_str());
+		if (f.is_open()) {
+			std::string file;
 
-	if (f.is_open()) {
-		uint nr_of_nodes(data.nodes.size());
-		uint nr_of_edges(data.edges.size());
+			/* Read the file into RAM */
+			f.seekg(0, std::ios::end);
+			file.reserve(f.tellg());
+			f.seekg(0, std::ios::beg);
+			file.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+			std::stringstream ss(file);
 
-		Print("Exporting " << nr_of_nodes << " nodes and "
-				<< nr_of_edges << " edges to " << filename);
-
-		f << nr_of_nodes << std::endl;
-		f << nr_of_edges << std::endl;
-
-		for (uint i(0); i<nr_of_nodes; i++) {
-			STDNode parser_node;
-			cast(data.nodes[i], parser_node);
-			writeSTDNode(parser_node, f);
-		}
-
-		Print("Exported all nodes.");
-
-		for (uint i(0); i<nr_of_edges; i++) {
-			STDEdge parser_edge;
-			cast(data.edges[i], parser_edge);
-			writeSTDEdge(parser_edge, f);
-		}
-
-		Print("Exported all edges.");
-
-		f.close();
-	}
-	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
-			filename << "\'. Exiting." << std::endl;
-		exit(1);
-	}
-
-	return true;
-}
-
-template <typename Node, typename Edge>
-bool Parser::readSIMPLE(InData<Node,Edge>& data,std::string const& filename)
-{
-	std::ifstream f(filename.c_str());
-
-	if (f.is_open()) {
-		std::string file;
-
-		/* Read the file into RAM */
-		f.seekg(0, std::ios::end);
-		file.reserve(f.tellg());
-		f.seekg(0, std::ios::beg);
-		file.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-
-		uint nr_of_nodes;
-		uint nr_of_edges;
-
-		std::stringstream ss(file);
-		ss >> nr_of_nodes >> nr_of_edges;
-		Print("Number of nodes: " << nr_of_nodes);
-		Print("Number of edges: " << nr_of_edges);
-
-		/* Read the nodes. */
-		data.nodes.resize(nr_of_nodes);
-		for (uint i(0); i<nr_of_nodes; i++){
-			cast(readSIMPLENode(ss), data.nodes[i]);
-			data.nodes[i].id = i;
-		}
-		std::sort(data.nodes.begin(), data.nodes.end());
-
-		Print("Read all the nodes.");
-
-		/* Read the edges into _out_edges and _in_edges. */
-		data.edges.resize(nr_of_edges);
-
-		for (uint i(0); i<nr_of_edges; i++) {
-			cast(readSIMPLEEdge(ss), data.edges[i]);
-			data.edges[i].id = i;
-		}
-
-		Print("Read all the edges.");
-
-		f.close();
-	}
-	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
-			filename << "\'. Exiting." << std::endl;
-		return false;
-	}
-
-	return true;
-}
-
-template <typename Node, typename Edge>
-bool Parser::writeSIMPLE(OutData<Node,Edge> data, std::string const& filename)
-{
-	std::ofstream f(filename.c_str());
-
-	if (f.is_open()) {
-		uint nr_of_nodes(data.nodes.size());
-		uint nr_of_edges(data.edges.size());
-
-		Print("Exporting " << nr_of_nodes << " nodes and "
-				<< nr_of_edges << " edges to " << filename);
-
-		f << nr_of_nodes << std::endl;
-		f << nr_of_edges << std::endl;
-
-		for (uint i(0); i<nr_of_nodes; i++) {
-			SIMPLENode parser_node;
-			cast(data.nodes[i], parser_node);
-			writeSIMPLENode(parser_node, f);
-		}
-
-		Print("Exported all nodes.");
-
-		for (uint i(0); i<nr_of_edges; i++) {
-			SIMPLEEdge parser_edge;
-			cast(data.edges[i], parser_edge);
-			writeSIMPLEEdge(parser_edge, f);
-		}
-
-		Print("Exported all edges.");
-
-		f.close();
-	}
-	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
-			filename << "\'. Exiting." << std::endl;
-		return false;
-	}
-
-	return true;
-}
-
-template <typename Node, typename Edge>
-bool Parser::readFMI(InData<Node,Edge>& data, std::string const& filename)
-{
-	std::ifstream f(filename.c_str());
-
-	if (f.is_open()) {
-		std::string file;
-
-		/* Read the file into RAM */
-		f.seekg(0, std::ios::end);
-		file.reserve(f.tellg());
-		f.seekg(0, std::ios::beg);
-		file.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-		std::stringstream ss(file);
-
-		char c;
-		ss.get(c);
-		// Note that this loop also reads the first character after
-		// all the comments are over.
-		while (c == '#') {
-			ss.ignore(1024, '\n');
+			char c;
 			ss.get(c);
+			// Note that this loop also reads the first character after
+			// all the comments are over.
+			while (c == '#') {
+				ss.ignore(1024, '\n');
+				ss.get(c);
+			}
+
+			uint nr_of_nodes;
+			uint nr_of_edges;
+			ss >> nr_of_nodes >> nr_of_edges;
+			Print("Number of nodes: " << nr_of_nodes);
+			Print("Number of edges: " << nr_of_edges);
+
+			/* Read the nodes. */
+			data.nodes.resize(nr_of_nodes);
+			for (uint i(0); i<nr_of_nodes; i++){
+				data.nodes[i] = static_cast<NodeT>(readOSMNode(ss));
+				data.nodes[i].id = i;
+			}
+			std::sort(data.nodes.begin(), data.nodes.end());
+
+			Print("Read all the nodes.");
+
+			/* Read the edges into _out_edges and _in_edges. */
+			data.edges.resize(nr_of_edges);
+
+			for (uint i(0); i<nr_of_edges; i++) {
+				data.edges[i] = static_cast<EdgeT>(readOSMEdge(ss));
+				data.edges[i].id = i;
+			}
+
+			Print("Read all the edges.");
+
+			f.close();
+		}
+		else {
+			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+				filename << "\'. Exiting." << std::endl;
+			exit(1);
 		}
 
-		uint nr_of_nodes;
-		uint nr_of_edges;
-		ss >> nr_of_nodes >> nr_of_edges;
-		Print("Number of nodes: " << nr_of_nodes);
-		Print("Number of edges: " << nr_of_edges);
-
-		/* Read the nodes. */
-		data.nodes.resize(nr_of_nodes);
-		for (uint i(0); i<nr_of_nodes; i++){
-			cast(readSTDNode(ss), data.nodes[i]);
-			data.nodes[i].id = i;
-		}
-		std::sort(data.nodes.begin(), data.nodes.end());
-
-		Print("Read all the nodes.");
-
-		/* Read the edges into _out_edges and _in_edges. */
-		data.edges.resize(nr_of_edges);
-
-		for (uint i(0); i<nr_of_edges; i++) {
-			cast(readSTDEdge(ss), data.edges[i]);
-			data.edges[i].id = i;
-		}
-
-		Print("Read all the edges.");
-
-		f.close();
-	}
-	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
-			filename << "\'. Exiting." << std::endl;
-		exit(1);
-	}
-
-	return false;
-}
-
-template <typename Node, typename Edge>
-bool Parser::writeFMI_CH(OutData<Node,Edge> data, std::string const& filename)
-{
-	std::ofstream f(filename.c_str());
-
-	if (f.is_open()) {
-
-		/* Generate random id */
-		char id[33];
-		for(int i = 0; i < 32; i++) {
-		    sprintf(id + i, "%x", rand() % 16);
-		}
-
-		/* Write header */
-		f << "# Id : " << id << std::endl;
-		f << "# Timestamp : " << time(0) << std::endl;
-		f << "# Type: maxspeed" << std::endl;
-		f << "# Revision: 1" << std::endl;
-		f << std::endl;
-
-		/* Write graph data */
-		uint nr_of_nodes(data.nodes.size());
-		uint nr_of_edges(data.edges.size());
-
-		Print("Exporting " << nr_of_nodes << " nodes and "
-				<< nr_of_edges << " edges to " << filename);
-
-		f << nr_of_nodes << std::endl;
-		f << nr_of_edges << std::endl;
-
-		for (uint i(0); i<nr_of_nodes; i++) {
-			// TODO write FMI_CH node
-			STDNode parser_node;
-			cast(data.nodes[i], parser_node);
-			writeSTDNode(parser_node, f);
-		}
-
-		Print("Exported all nodes.");
-
-		for (uint i(0); i<nr_of_edges; i++) {
-			// TODO write FMI_CH edge
-			STDEdge parser_edge;
-			cast(data.edges[i], parser_edge);
-			writeSTDEdge(parser_edge, f);
-		}
-
-		Print("Exported all edges.");
-
-		f.close();
-	}
-	else {
-		std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
-			filename << "\'. Exiting." << std::endl;
-		exit(1);
+		return false;
 	}
 
-	return false;
+	template <typename NodeT, typename EdgeT>
+	bool writeFMI_CH(GraphCHOutData<NodeT,EdgeT> data, std::string const& filename)
+	{
+		std::ofstream f(filename.c_str());
+
+		if (f.is_open()) {
+
+			/* Generate random id */
+			char id[33];
+			for(int i = 0; i < 32; i++) {
+			    sprintf(id + i, "%x", rand() % 16);
+			}
+
+			/* Write header */
+			f << "# Id : " << id << std::endl;
+			f << "# Timestamp : " << time(0) << std::endl;
+			f << "# Type: maxspeed" << std::endl;
+			f << "# Revision: 1" << std::endl;
+			f << std::endl;
+
+			/* Write graph data */
+			uint nr_of_nodes(data.nodes.size());
+			uint nr_of_edges(data.edges.size());
+
+			Print("Exporting " << nr_of_nodes << " nodes and "
+					<< nr_of_edges << " edges to " << filename);
+
+			f << nr_of_nodes << std::endl;
+			f << nr_of_edges << std::endl;
+
+			for (uint i(0); i<nr_of_nodes; i++) {
+				// TODO write FMI_CH node
+				writeOSMNode(static_cast<OSMNode>(data.nodes[i]), f);
+			}
+
+			Print("Exported all nodes.");
+
+			for (uint i(0); i<nr_of_edges; i++) {
+				// TODO write FMI_CH edge
+				writeOSMEdge(static_cast<OSMEdge>(data.edges[i]), f);
+			}
+
+			Print("Exported all edges.");
+
+			f.close();
+		}
+		else {
+			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+				filename << "\'. Exiting." << std::endl;
+			exit(1);
+		}
+
+		return false;
+	}
 }
 
 }

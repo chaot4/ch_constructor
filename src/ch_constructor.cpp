@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 
 	/* Read graph */
 	CHGraph g;
-	Parser::InData<LvlNode,Shortcut> data;
+	GraphInData<LvlNode,Shortcut> data;
 	Parser::read<LvlNode,Shortcut>(data, infile, informat);
 	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
 

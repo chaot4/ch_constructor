@@ -24,128 +24,63 @@ FileFormat toFileFormat(std::string const& format)
 	return FMI;
 }
 
-Parser::STDNode::STDNode()
-	: id(c::NO_NID), osm_id(0), lat(0), lon(0), elev(0) {}
-Parser::STDNode::STDNode(NodeID id, uint osm_id, double lat, double lon, int elev)
-	: id(id), osm_id(osm_id), lat(lat), lon(lon), elev(elev) {}
+namespace Parser {
+	/* Nodes */
+	OSMNode readOSMNode(std::stringstream& ss)
+	{
+		OSMNode node;
+		ss >> node.id >> node.osm_id >> node.lat >> node.lon >> node.elev;
+		return node;
+	}
 
-Parser::SIMPLENode::SIMPLENode()
-	: lat(0), lon(0), elev(0) {}
-Parser::SIMPLENode::SIMPLENode(double lat, double lon, int elev)
-	: lat(lat), lon(lon), elev(elev) {}
+	bool writeOSMNode(OSMNode const& node, std::ofstream& os)
+	{
+		os << node.id << " " << node.osm_id << " " << node.lat << " " <<
+			node.lon << " " << node.elev << std::endl;
+		return true;
+	}
 
-Parser::STDEdge::STDEdge()
-	: src(c::NO_NID), tgt(c::NO_NID), dist(0), type(0), speed(-1) {}
-Parser::STDEdge::STDEdge(NodeID src, NodeID tgt, uint dist, uint type, int speed)
-	: src(src), tgt(tgt), dist(dist), type(type), speed(speed) {}
+	GeoNode readGeoNode(std::stringstream& ss)
+	{
+		GeoNode node;
+		ss >> node.lat >> node.lon >> node.elev;
+		return node;
+	}
 
-Parser::SIMPLEEdge::SIMPLEEdge()
-	: src(c::NO_NID), tgt(c::NO_NID), dist(0) {}
-Parser::SIMPLEEdge::SIMPLEEdge(NodeID src, NodeID tgt, uint dist)
-	: src(src), tgt(tgt), dist(dist) {}
+	bool writeGeoNode(GeoNode const& node, std::ofstream& os)
+	{
+		os << node.lat << " " << node.lon << " " << node.elev << std::endl;
+		return true;
+	}
 
-/* 
- * Node casts
- */
+	/* Edges */
+	OSMEdge readOSMEdge(std::stringstream& ss)
+	{
+		OSMEdge edge;
+		ss >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
+		return edge;
+	}
 
-void Parser::cast(STDNode const& in_node, Node& out_node)
-{
-	out_node = Node(in_node.id);
-}
+	bool writeOSMEdge(OSMEdge const& edge, std::ofstream& os)
+	{
+		os << edge.src << " " << edge.tgt << " " << edge.dist << " " <<
+			edge.type << " " << edge.speed << std::endl;
+		return true;
+	}
 
-void Parser::cast(SIMPLENode const& in_node, Node& out_node)
-{
-	out_node = Node(c::NO_NID);
-}
+	Edge readEdge(std::stringstream& ss)
+	{
+		Edge edge;
+		ss >> edge.src >> edge.tgt >> edge.dist;
+		return edge;
+	}
 
-void Parser::cast(Node const& in_node, STDNode& out_node)
-{
-	out_node = STDNode(in_node.id, 0, 0, 0, 0);
-}
+	bool writeEdge(Edge const& edge, std::ofstream& os)
+	{
+		os << edge.src << " " << edge.tgt << " " << edge.dist << std::endl;
+		return true;
+	}
 
-void Parser::cast(Node const& in_node, SIMPLENode& out_node)
-{
-	out_node = SIMPLENode(0, 0, 0);
-}
-
-/* 
- * Edge casts
- */
-
-void Parser::cast(STDEdge const& in_edge, Edge& out_edge)
-{
-	out_edge = Edge(c::NO_EID, in_edge.src, in_edge.tgt, in_edge.dist);
-}
-
-void Parser::cast(SIMPLEEdge const& in_edge, Edge& out_edge)
-{
-	out_edge = Edge(c::NO_EID, in_edge.src, in_edge.tgt, in_edge.dist);
-}
-
-void Parser::cast(Edge const& in_edge, STDEdge& out_edge)
-{
-	out_edge = STDEdge(in_edge.src, in_edge.tgt, in_edge.dist, 0, -1);
-}
-
-void Parser::cast(Edge const& in_edge, SIMPLEEdge& out_edge)
-{
-	out_edge = SIMPLEEdge(in_edge.src, in_edge.tgt, in_edge.dist);
-}
-
-/* Nodes */
-Parser::STDNode Parser::readSTDNode(std::stringstream& ss)
-{
-	STDNode node;
-	ss >> node.id >> node.osm_id >> node.lat >> node.lon >> node.elev;
-	return node;
-}
-
-bool Parser::writeSTDNode(STDNode const& node, std::ofstream& os)
-{
-	os << node.id << " " << node.osm_id << " " << node.lat << " " <<
-		node.lon << " " << node.elev << std::endl;
-	return true;
-}
-
-Parser::SIMPLENode Parser::readSIMPLENode(std::stringstream& ss)
-{
-	SIMPLENode node;
-	ss >> node.lat >> node.lon >> node.elev;
-	return node;
-}
-
-bool Parser::writeSIMPLENode(SIMPLENode const& node, std::ofstream& os)
-{
-	os << node.lat << " " << node.lon << " " << node.elev << std::endl;
-	return true;
-}
-
-/* Edges */
-Parser::STDEdge Parser::readSTDEdge(std::stringstream& ss)
-{
-	STDEdge edge;
-	ss >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
-	return edge;
-}
-
-bool Parser::writeSTDEdge(STDEdge const& edge, std::ofstream& os)
-{
-	os << edge.src << " " << edge.tgt << " " << edge.dist << " " <<
-		edge.type << " " << edge.speed << std::endl;
-	return true;
-}
-
-Parser::SIMPLEEdge Parser::readSIMPLEEdge(std::stringstream& ss)
-{
-	SIMPLEEdge edge;
-	ss >> edge.src >> edge.tgt >> edge.dist;
-	return edge;
-}
-
-bool Parser::writeSIMPLEEdge(SIMPLEEdge const& edge, std::ofstream& os)
-{
-	os << edge.src << " " << edge.tgt << " " << edge.dist << std::endl;
-	return true;
 }
 
 }
