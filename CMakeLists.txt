@@ -38,7 +38,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER_FLAGS} 
 # as they are compiled with the same options anyway
 add_library(common OBJECT
 	src/nodes_and_edges.cpp
-	src/parser.cpp
+	src/file_formats.cpp
 )
 
 add_executable(ch_constructor

@@ -3,7 +3,7 @@
 
 #include "nodes_and_edges.h"
 #include "graph.h"
-#include "parser.h"
+#include "file_formats.h"
 #include "chgraph.h"
 #include "ch_constructor.h"
 #include "dijkstra.h"

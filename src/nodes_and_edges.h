@@ -39,6 +39,7 @@ struct GraphInData {
 template <typename NodeT, typename EdgeT>
 struct GraphCHOutData {
 	std::vector<NodeT> const& nodes;
+	std::vector<uint> const& node_levels;
 	std::vector<EdgeT> const& edges;
 };
 
@@ -46,6 +47,39 @@ struct GraphCHOutData {
 /*
  * Nodes
  */
+
+template<typename NodeT>
+struct CHNode : NodeT
+{
+	typedef NodeT base_node_type;
+
+	uint lvl = c::NO_LVL;
+
+	explicit CHNode() { }
+	explicit CHNode(NodeT const& node) : NodeT(node) { } 
+	explicit CHNode(NodeT const& node, uint lvl) : NodeT(node), lvl(lvl){}
+};
+
+template<typename NodeT>
+inline CHNode<NodeT> makeCHNode(NodeT const& node, uint lvl) {
+	return CHNode<NodeT>(node, lvl);
+}
+
+template <typename NodeT>
+struct _MakeCHNode
+{
+	typedef CHNode<NodeT> type;
+};
+
+template <typename NodeT>
+struct _MakeCHNode<CHNode<NodeT>>
+{
+	typedef CHNode<NodeT> type;
+};
+
+template <typename NodeT>
+using MakeCHNode = typename _MakeCHNode<typename std::remove_reference<NodeT>::type>::type;
+/* remove possible CHNode<> with: typename MakeCHNode<T>::base_node_type */
 
 struct Node
 {
@@ -57,105 +91,138 @@ struct Node
 	bool operator<(Node const& node) const { return id < node.id; }
 };
 
-template<typename NodeT>
-struct CHNode : NodeT
+struct GeoNode
 {
-	uint lvl = c::NO_LVL;
+	NodeID id = c::NO_NID;
+	double lat = 0;
+	double lon = 0;
+	int elev = 0;
 
-	explicit CHNode() { }
-	explicit CHNode(NodeT const& node) : NodeT(node) { } 
-	explicit CHNode(NodeT const& node, uint lvl) : NodeT(node), lvl(lvl){}
+	explicit GeoNode() { }
+	explicit GeoNode(NodeID id, double lat, double lon, int elev)
+		: id(id), lat(lat), lon(lon), elev(elev) { }
+
+	explicit operator Node() const
+	{
+		return Node(id);
+	}
+
+	bool operator<(GeoNode const& other) const { return id < other.id; }
+};
+
+struct OSMNode
+{
+	NodeID id = c::NO_NID;
+	uint osm_id = std::numeric_limits<uint>::max();
+	double lat = 0;
+	double lon = 0;
+	int elev = 0;
+
+	explicit operator Node() const
+	{
+		return Node(id);
+	}
+
+	operator GeoNode() const
+	{
+		return GeoNode(id, lat, lon, elev);
+	}
+
+	bool operator<(OSMNode const& other) const { return id < other.id; }
 };
 
 /*
  * Edges
  */
 
-template <typename Edge>
-struct CHEdge;
+template <typename EdgeT>
+struct CHEdge : EdgeT
+{
+	typedef EdgeT base_edge_type;
+
+	EdgeID child_edge1 = c::NO_EID;
+	EdgeID child_edge2 = c::NO_EID;
+	NodeID center_node = c::NO_NID;
+
+	CHEdge() { }
+	CHEdge(EdgeT const& edge): EdgeT(edge) { }
+	CHEdge(EdgeT const& edge, EdgeID child_edge1, EdgeID child_edge2, NodeID center_node)
+		: EdgeT(edge), child_edge1(child_edge1),
+		child_edge2(child_edge2), center_node(center_node){}
+};
+
+template <typename EdgeT>
+struct _MakeCHEdge
+{
+	typedef CHEdge<EdgeT> type;
+};
+
+template <typename EdgeT>
+struct _MakeCHEdge<CHEdge<EdgeT>>
+{
+	typedef CHEdge<EdgeT> type;
+};
+
+template <typename EdgeT>
+using MakeCHEdge = typename _MakeCHEdge<typename std::remove_reference<EdgeT>::type>::type;
+/* remove possible CHEdge<> with: typename MakeCHEdge<T>::base_edge_type */
 
 struct Edge
 {
-	EdgeID id = c::NO_NID;
+	EdgeID id = c::NO_EID;
 	NodeID src = c::NO_NID;
 	NodeID tgt = c::NO_NID;
 	uint dist = c::NO_DIST;
 
-	explicit  Edge() { }
-	explicit  Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
+	Edge() { }
+	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
 		: id(id), src(src), tgt(tgt), dist(dist) { }
 
 	bool operator<(Edge const& edge) const
 	{
 		return src < edge.src || (src == edge.src && tgt < edge.tgt);
 	}
-
-	bool operator==(Edge const& edge) const {
-		return src == edge.src && tgt == edge.tgt;
-	}
-
-	NodeID otherNode(EdgeType edge_type) const;
-	static CHEdge<Edge> concat(Edge const& edge1, Edge const& edge2);
 };
+CHEdge<Edge> concat(Edge const& edge1, Edge const& edge2);
+
+template<typename EdgeT>
+inline NodeID otherNode(EdgeT const& edge, EdgeType edge_type) {
+	switch (edge_type) {
+	case OUT:
+		return edge.tgt;
+	case IN:
+		break;
+	}
+	return edge.src;
+}
+
+template<typename EdgeT1, typename EdgeT2>
+inline bool equalEndpoints(EdgeT1 const& edge1, EdgeT2 const& edge2) {
+	return edge1.src == edge2.src && edge1.tgt == edge2.tgt;
+}
 
 template <typename EdgeT>
 struct MetricEdge : EdgeT
 {
 	uint metric = 0;
 
-	explicit MetricEdge() {}
-	explicit MetricEdge(EdgeT const& edge) : EdgeT(edge) {}
-	explicit MetricEdge(EdgeT const& edge, uint metric) : EdgeT(edge), metric(metric){}
-};
-
-template <typename EdgeT>
-struct CHEdge : EdgeT
-{
-	EdgeID child_edge1 = c::NO_EID;
-	EdgeID child_edge2 = c::NO_EID;
-	NodeID center_node = c::NO_NID;
-
-	explicit CHEdge() { }
-	explicit CHEdge(EdgeT const& edge): EdgeT(edge) { }
-	explicit CHEdge(EdgeT const& edge, EdgeID child_edge1, EdgeID child_edge2, NodeID center_node)
-		: EdgeT(edge), child_edge1(child_edge1),
-		child_edge2(child_edge2), center_node(center_node){}
-};
-
-struct OSMNode
-{
-	NodeID id = c::NO_NID;
-	uint osm_id = 0;
-	double lat = 0;
-	double lon = 0;
-	int elev = 0;
-
-	explicit OSMNode() { }
-
-	/* is this really a good idea? */
-	explicit OSMNode(Node node) : id(node.id) { }
-
-	operator Node() const
-	{
-		return Node(id);
-	}
-
-	bool operator<(OSMNode const& other) const { return id < other.id; }
+	MetricEdge() {}
+	MetricEdge(EdgeT const& edge) : EdgeT(edge) {}
+	MetricEdge(EdgeT const& edge, uint metric) : EdgeT(edge), metric(metric){}
 };
 
 struct OSMEdge
 {
-	NodeID id = c::NO_NID;
+	EdgeID id = c::NO_EID;
 	NodeID src = c::NO_NID;
 	NodeID tgt = c::NO_NID;
 	uint dist = c::NO_DIST;
 	uint type = 0;
 	int speed = -1;
 
-	explicit OSMEdge() { }
-
-	/* is this really a good idea? */
-	explicit OSMEdge(Edge edge) : id(edge.id), src(edge.src), tgt(edge.tgt), dist(edge.dist) { }
+	OSMEdge() { }
+	OSMEdge(EdgeID id, NodeID src, NodeID tgt, uint dist, uint type, int speed)
+	: id(id), src(src), tgt(tgt), dist(dist), type(type), speed(speed) { }
 
 	operator Edge() const
 	{
@@ -167,26 +234,7 @@ struct OSMEdge
 		return src < other.src || (src == other.src && tgt < other.tgt);
 	}
 };
-
-struct GeoNode
-{
-	NodeID id = c::NO_NID;
-	double lat = 0;
-	double lon = 0;
-	int elev = 0;
-
-	explicit GeoNode() { }
-
-	/* is this really a good idea? */
-	explicit GeoNode(Node node) : id(node.id) { }
-
-	operator Node() const
-	{
-		return Node(id);
-	}
-
-	bool operator<(GeoNode const& other) const { return id < other.id; }
-};
+CHEdge<OSMEdge> concat(OSMEdge const& edge1, OSMEdge const& edge2);
 
 
 /*
@@ -199,7 +247,7 @@ struct EdgeSortSrc
 	bool operator()(EdgeT const& edge1, EdgeT const& edge2) const
 	{
 		return edge1.src < edge2.src ||
-		       	(edge1.src == edge2.src && edge1.tgt < edge2.tgt);
+		       (edge1.src == edge2.src && edge1.tgt < edge2.tgt);
 	}
 };
 
@@ -209,7 +257,7 @@ struct EdgeSortTgt
 	bool operator()(EdgeT const& edge1, EdgeT const& edge2) const
 	{
 		return edge1.tgt < edge2.tgt ||
-		       	(edge1.tgt == edge2.tgt && edge1.src < edge2.src);
+		       (edge1.tgt == edge2.tgt && edge1.src < edge2.src);
 	}
 };
 

@@ -27,12 +27,12 @@ namespace
 	uint MAX_UINT(std::numeric_limits<uint>::max());
 }
 
-template <typename Node, typename Edge>
+template <typename NodeT, typename EdgeT>
 class CHConstructor{
 	private:
-		typedef CHNode<Node> LvlNode;
-		typedef CHEdge<Edge> Shortcut;
-		typedef SCGraph<Node, Edge> CHGraph;
+		// typedef CHNode<NodeT> LvlNode;
+		typedef CHEdge<EdgeT> Shortcut;
+		typedef SCGraph<NodeT, EdgeT> CHGraph;
 
 		struct CompInOutProduct;
 		struct PQElement;
@@ -78,7 +78,7 @@ class CHConstructor{
 		void quick_contract(std::list<NodeID>& nodes, uint max_degree,
 				uint max_rounds);
 		void contract(std::list<NodeID>& nodes);
-		SCGraph<Node, Edge> const& getCHGraph();
+		SCGraph<NodeT, EdgeT> const& getCHGraph();
 
 		friend void unit_tests::testCHConstructor();
 };
@@ -87,8 +87,8 @@ class CHConstructor{
  * private
  */
 
-template <typename Node, typename Edge>
-struct CHConstructor<Node, Edge>::CompInOutProduct
+template <typename NodeT, typename EdgeT>
+struct CHConstructor<NodeT, EdgeT>::CompInOutProduct
 {
 	CHGraph const& g;
 
@@ -106,8 +106,8 @@ struct CHConstructor<Node, Edge>::CompInOutProduct
 	}
 };
 
-template <typename Node, typename Edge>
-struct CHConstructor<Node, Edge>::PQElement
+template <typename NodeT, typename EdgeT>
+struct CHConstructor<NodeT, EdgeT>::PQElement
 {
 	NodeID id;
 	uint dist;
@@ -121,14 +121,14 @@ struct CHConstructor<Node, Edge>::PQElement
 	}
 };
 
-template <typename Node, typename Edge>
-uint CHConstructor<Node, Edge>::_myThreadNum()
+template <typename NodeT, typename EdgeT>
+uint CHConstructor<NodeT, EdgeT>::_myThreadNum()
 {
 	return omp_get_thread_num();
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_resetThreadData()
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_resetThreadData()
 {
 	uint t(_myThreadNum());
 
@@ -140,8 +140,8 @@ void CHConstructor<Node, Edge>::_resetThreadData()
 	_reset_dists[t].clear();
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_initVectors(bool quick_version)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_initVectors(bool quick_version)
 {
 	_new_shortcuts.clear();
 	_delete.clear();
@@ -156,8 +156,8 @@ void CHConstructor<Node, Edge>::_initVectors(bool quick_version)
 	}
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_contract(NodeID node)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 {
 	EdgeType search_direction;
 
@@ -179,8 +179,8 @@ void CHConstructor<Node, Edge>::_contract(NodeID node)
 	_edge_diffs[node] = edge_diff;
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_quickContract(NodeID node)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_quickContract(NodeID node)
 {
 	typename CHGraph::EdgeIt in_it(_base_graph, node, IN);
 	while (in_it.hasNext()) {
@@ -195,13 +195,13 @@ void CHConstructor<Node, Edge>::_quickContract(NodeID node)
 	}
 }
 
-template <typename Node, typename Edge>
-uint CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeID center_node,
+template <typename NodeT, typename EdgeT>
+uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, NodeID center_node,
 		EdgeType direction)
 {
 	uint t(_myThreadNum());
 
-	NodeID start_node(start_edge.otherNode(!direction));
+	NodeID start_node(otherNode(start_edge, !direction));
 
 	std::vector<NodeID> end_nodes;
 	std::vector<Shortcut const*> end_edges;
@@ -212,7 +212,7 @@ uint CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeI
 	while (edge_it.hasNext()) {
 		Shortcut const& edge(edge_it.getNext());
 		end_edges.push_back(&edge);
-		end_nodes.push_back(edge.otherNode(direction));
+		end_nodes.push_back(otherNode(edge, direction));
 	}
 
 	_pq[t].push(PQElement(start_node, 0));
@@ -236,8 +236,8 @@ uint CHConstructor<Node, Edge>::_calcShortcuts(Shortcut const& start_edge, NodeI
 	return nr_new_edges;
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_handleNextPQElement(EdgeType direction)
 {
 	uint t(_myThreadNum());
 
@@ -250,7 +250,7 @@ void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
 		while (edge_it.hasNext()) {
 
 			Shortcut const& edge(edge_it.getNext());
-			NodeID tgt_node(edge.otherNode(direction));
+			NodeID tgt_node(otherNode(edge, direction));
 			uint new_dist(dist + edge.dist);
 
 			if (new_dist < _dists[t][tgt_node]) {
@@ -267,23 +267,23 @@ void CHConstructor<Node, Edge>::_handleNextPQElement(EdgeType direction)
 	_pq[t].pop();
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_createShortcut(Shortcut const& edge1, Shortcut const& edge2,
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcut const& edge2,
 		EdgeType direction)
 {
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	if (direction == OUT) {
-		_new_shortcuts.push_back(Edge::concat(edge1,edge2));
+		_new_shortcuts.push_back(concat(edge1,edge2));
 		assert(edge1.tgt == edge2.src);
 		assert(_new_shortcuts.back().center_node == edge1.tgt);
 	}
 	else {
-		_new_shortcuts.push_back(Edge::concat(edge2,edge1));
+		_new_shortcuts.push_back(concat(edge2,edge1));
 	}
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_calcIndependentSet(std::list<NodeID>& nodes,
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::list<NodeID>& nodes,
 		std::vector<NodeID>& independent_set, uint max_degree)
 {
 	std::vector<bool> marked(_base_graph.getNrOfNodes(), false);
@@ -298,20 +298,20 @@ void CHConstructor<Node, Edge>::_calcIndependentSet(std::list<NodeID>& nodes,
 	}
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_markNeighbours(NodeID node, std::vector<bool>& marked)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_markNeighbours(NodeID node, std::vector<bool>& marked)
 {
 	for (uint i(0); i<2; i++) {
 		typename CHGraph::EdgeIt edge_it(_base_graph, node, (EdgeType) i);
 		while (edge_it.hasNext()) {
 			Shortcut const& edge(edge_it.getNext());
-			marked[edge.otherNode((EdgeType) i)] = true;
+			marked[otherNode(edge, (EdgeType) i)] = true;
 		}
 	}
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_chooseDeleteNodes(std::vector<NodeID> const& independent_set)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_chooseDeleteNodes(std::vector<NodeID> const& independent_set)
 {
 	double edge_diff_mean(0);
 	for (uint i(0), size(independent_set.size()); i<size; i++) {
@@ -330,8 +330,8 @@ void CHConstructor<Node, Edge>::_chooseDeleteNodes(std::vector<NodeID> const& in
 	}
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_chooseAllForDelete(std::vector<NodeID> const& independent_set)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_chooseAllForDelete(std::vector<NodeID> const& independent_set)
 {
 	assert(_delete.empty());
 	for (uint i(0), size(independent_set.size()); i<size; i++) {
@@ -341,8 +341,8 @@ void CHConstructor<Node, Edge>::_chooseAllForDelete(std::vector<NodeID> const& i
 	}
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::_deleteNodes(std::list<NodeID>& nodes)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::_deleteNodes(std::list<NodeID>& nodes)
 {
 	auto it(nodes.begin());
 	while (it != nodes.end()) {
@@ -359,8 +359,8 @@ void CHConstructor<Node, Edge>::_deleteNodes(std::list<NodeID>& nodes)
  * public
  */
 
-template <typename Node, typename Edge>
-CHConstructor<Node, Edge>::CHConstructor(CHGraph& base_graph, uint num_threads)
+template <typename NodeT, typename EdgeT>
+CHConstructor<NodeT, EdgeT>::CHConstructor(CHGraph& base_graph, uint num_threads)
 		:_base_graph(base_graph), _num_threads(num_threads)
 {
 	if (!_num_threads) {
@@ -383,8 +383,8 @@ CHConstructor<Node, Edge>::CHConstructor(CHGraph& base_graph, uint num_threads)
 	_delete.reserve(nr_of_nodes);
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::quick_contract(std::list<NodeID>& nodes, uint max_degree, uint max_rounds)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint max_degree, uint max_rounds)
 {
 	Print("\nStarting the quick_contraction of nodes with degree smaller than " << max_degree << ".");
 
@@ -431,8 +431,8 @@ void CHConstructor<Node, Edge>::quick_contract(std::list<NodeID>& nodes, uint ma
 	}
 }
 
-template <typename Node, typename Edge>
-void CHConstructor<Node, Edge>::contract(std::list<NodeID>& nodes)
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
 {
 	Print("\nStarting the contraction of " << nodes.size() << " nodes.");
 
@@ -474,8 +474,8 @@ void CHConstructor<Node, Edge>::contract(std::list<NodeID>& nodes)
 	}
 }
 
-template <typename Node, typename Edge>
-SCGraph<Node, Edge> const& CHConstructor<Node, Edge>::getCHGraph()
+template <typename NodeT, typename EdgeT>
+SCGraph<NodeT, EdgeT> const& CHConstructor<NodeT, EdgeT>::getCHGraph()
 {
 	Print("Building the CHGraph.");
 

@@ -10,28 +10,34 @@
 namespace chc
 {
 
-template <typename Node, typename Edge>
-class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
+template <typename NodeT, typename EdgeT>
+class SCGraph : public Graph<NodeT, CHEdge<EdgeT> >
 {
 	private:
-		typedef CHNode<Node> LvlNode;
-		typedef CHEdge<Edge> Shortcut;
-		typedef Graph<LvlNode, Shortcut> BaseGraph;
-		using BaseGraph::_nodes;
+		typedef CHEdge<EdgeT> Shortcut;
+		typedef Graph<NodeT, Shortcut> BaseGraph;
 		using BaseGraph::_out_edges;
 		using BaseGraph::_in_edges;
 		using BaseGraph::_id_to_index;
 		using BaseGraph::_next_id;
 
+		std::vector<uint> _node_levels;
+
 		std::vector<Shortcut> _edges_dump;
 
-		uint _next_lvl;
+		uint _next_lvl = 0;
 
 		void _addNewEdge(Shortcut& new_edge,
 				std::vector<Shortcut>& new_edge_vec);
 		void _addDumpEdge(Shortcut& new_edge);
 	public:
-		SCGraph() : BaseGraph(), _next_lvl(0) {}
+		template <typename Data>
+		void init(Data&& data)
+		{
+			_node_levels.resize(data.nodes.size(), c::NO_LVL);
+			BaseGraph::init(std::forward<Data>(data));
+		}
+
 
 		void restructure(std::vector<NodeID> const& deleted,
 				std::vector<bool> const& to_delete,
@@ -39,10 +45,15 @@ class SCGraph : public Graph<CHNode<Node>, CHEdge<Edge> >
 		void buildCHGraph();
 
 		bool isUp(EdgeID id, EdgeType direction) const;
+
+		GraphCHOutData<NodeT, Shortcut> getData() const
+		{
+			return GraphCHOutData<NodeT, Shortcut>{BaseGraph::_nodes, _node_levels, _out_edges};
+		}
 };
 
-template <typename Node, typename Edge>
-void SCGraph<Node, Edge>::restructure(
+template <typename NodeT, typename EdgeT>
+void SCGraph<NodeT, EdgeT>::restructure(
 		std::vector<NodeID> const& deleted,
 		std::vector<bool> const& to_delete,
 		std::vector<Shortcut>& new_shortcuts)
@@ -51,7 +62,7 @@ void SCGraph<Node, Edge>::restructure(
 	 * Process contracted nodes.
 	 */
 	for (uint i(0); i<deleted.size(); i++) {
-		_nodes[deleted[i]].lvl = _next_lvl;
+		_node_levels[deleted[i]] = _next_lvl;
 		assert(to_delete[deleted[i]]);
 	}
 	_next_lvl++;
@@ -81,7 +92,7 @@ void SCGraph<Node, Edge>::restructure(
 		}
 
 		/* edge equal */
-		while (j < new_shortcuts.size() && new_shortcuts[j] == edge) {
+		while (j < new_shortcuts.size() && equalEndpoints(new_shortcuts[j], edge)) {
 			Shortcut& new_sc(new_shortcuts[j]);
 			if (edge.dist >= new_sc.dist && to_delete[new_sc.center_node]) {
 				_addNewEdge(new_sc, new_edge_vec);
@@ -116,19 +127,19 @@ void SCGraph<Node, Edge>::restructure(
 	 * Build new graph structures.
 	 */
 	_out_edges.swap(new_edge_vec);
-	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), EdgeSortSrc<Edge>()));
+	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), BaseGraph::OutEdgeSort()));
 
 	_in_edges.assign(_out_edges.begin(), _out_edges.end());
-	BaseGraph::template sortInEdges<EdgeSortTgt<Edge> >();
+	BaseGraph::sortInEdges();
 	BaseGraph::initOffsets();
 }
 
-template <typename Node, typename Edge>
-void SCGraph<Node, Edge>::_addNewEdge(Shortcut& new_edge,
+template <typename NodeT, typename EdgeT>
+void SCGraph<NodeT, EdgeT>::_addNewEdge(Shortcut& new_edge,
 		std::vector<Shortcut>& new_edge_vec)
 {
-	Edge& last_edge(new_edge_vec.back());
-	if (!new_edge_vec.empty() && new_edge == last_edge) {
+	EdgeT& last_edge(new_edge_vec.back());
+	if (!new_edge_vec.empty() && equalEndpoints(new_edge, last_edge)) {
 		if (new_edge.dist < last_edge.dist) {
 			if (new_edge.id == c::NO_EID) {
 				new_edge.id = _next_id++;
@@ -144,11 +155,11 @@ void SCGraph<Node, Edge>::_addNewEdge(Shortcut& new_edge,
 	}
 }
 
-template <typename Node, typename Edge>
-void SCGraph<Node, Edge>::_addDumpEdge(Shortcut& new_edge)
+template <typename NodeT, typename EdgeT>
+void SCGraph<NodeT, EdgeT>::_addDumpEdge(Shortcut& new_edge)
 {
-	Edge& last_edge(_edges_dump.back());
-	if (!_edges_dump.empty() && new_edge == last_edge) {
+	EdgeT& last_edge(_edges_dump.back());
+	if (!_edges_dump.empty() && equalEndpoints(new_edge, last_edge)) {
 		if (new_edge.dist < last_edge.dist) {
 			last_edge = new_edge;
 		}
@@ -158,8 +169,8 @@ void SCGraph<Node, Edge>::_addDumpEdge(Shortcut& new_edge)
 	}
 }
 
-template <typename Node, typename Edge>
-void SCGraph<Node, Edge>::buildCHGraph()
+template <typename NodeT, typename EdgeT>
+void SCGraph<NodeT, EdgeT>::buildCHGraph()
 {
 	assert(_out_edges.empty() && _in_edges.empty());
 
@@ -167,15 +178,15 @@ void SCGraph<Node, Edge>::buildCHGraph()
 	_in_edges = _out_edges;
 	_edges_dump.clear();
 
-	BaseGraph::template update<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >();
+	BaseGraph::update();
 }
 
-template <typename Node, typename Edge>
-bool SCGraph<Node, Edge>::isUp(EdgeID id, EdgeType direction) const
+template <typename NodeT, typename EdgeT>
+bool SCGraph<NodeT, EdgeT>::isUp(EdgeID id, EdgeType direction) const
 {
-	Edge const& edge(_out_edges[_id_to_index[id]]);
-	uint src_lvl = _nodes[edge.src].lvl;
-	uint tgt_lvl = _nodes[edge.tgt].lvl;
+	EdgeT const& edge(_out_edges[_id_to_index[id]]);
+	uint src_lvl = _node_levels[edge.src];
+	uint tgt_lvl = _node_levels[edge.tgt];
 
 	if (src_lvl > tgt_lvl) {
 		return direction == IN ? true : false;

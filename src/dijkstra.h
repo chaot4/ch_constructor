@@ -251,7 +251,7 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 
 		while (bt_node != end_node) {
 			Edge const& bt_edge(_g.getEdge(_found_by[dir][bt_node]));
-			bt_node = bt_edge.otherNode(!dir);
+			bt_node = otherNode(bt_edge, !dir);
 			path.push_back(bt_edge.id);
 		}
 	}
@@ -270,7 +270,7 @@ void CHDijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 
 		Edge const& edge(edge_it.getNext());
 		if (_g.isUp(edge.id, dir)) {
-			NodeID other_node(edge.otherNode(dir));
+			NodeID other_node(otherNode(edge, dir));
 			uint new_dist(top.dist + edge.dist);
 
 			if (new_dist < _dists[dir][other_node]) {

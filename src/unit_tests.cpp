@@ -31,8 +31,8 @@ void unit_tests::testNodesAndEdges()
 			Edge(2, node0.id, node2.id, 66), 55),
 			node1.id, edge0.id, edge1.id);
 
-	Test(edge0.otherNode(IN) == 0);
-	Test(ch_edge.otherNode(OUT) == 2);
+	Test(otherNode(edge0, IN) == 0);
+	Test(otherNode(ch_edge, OUT) == 2);
 
 	Print("\n======================================");
 	Print("TEST: Nodes and edges test successful.");
@@ -44,23 +44,21 @@ void unit_tests::testGraph()
 	Print("\n=======================");
 	Print("TEST: Start Graph test.");
 	Print("=======================\n");
-	
-	Graph<Node, Edge> g;
-	GraphInData<Node,Edge> data;
-	Parser::read<Node,Edge>(data, "../test_data/15kSZHK.txt", STD);
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
+
+	Graph<OSMNode, Edge> g;
+	g.init(FormatSTD::Reader::readGraph<OSMNode, Edge>("../test_data/15kSZHK.txt"));
 
 	/* Test the normal iterator. */
 	for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
 		Test(g.getNode(node_id).id == node_id);
 
 		/* Find for every out_edge the corresponding in edge. */
-		Graph<Node, Edge>::EdgeIt it_out(g, node_id, OUT);
+		Graph<OSMNode, Edge>::EdgeIt it_out(g, node_id, OUT);
 		while (it_out.hasNext()) {
 			bool found(false);
 			Edge const& out_edge(it_out.getNext());
 
-			Graph<Node, Edge>::EdgeIt it_in(g, out_edge.tgt, IN);
+			Graph<OSMNode, Edge>::EdgeIt it_in(g, out_edge.tgt, IN);
 			while (it_in.hasNext()) {
 				Edge const& in_edge(it_in.getNext());
 				if (in_edge.id == out_edge.id) {
@@ -89,12 +87,12 @@ void unit_tests::testGraph()
 		Test(g.getNode(node_id).id == node_id);
 
 		/* Find for every out_edge the corresponding in edge. */
-		Graph<Node, Edge>::OffEdgeIt it_out(g, g.getOffId(node_id, OUT), OUT);
+		Graph<OSMNode, Edge>::OffEdgeIt it_out(g, g.getOffId(node_id, OUT), OUT);
 		while (it_out.hasNext()) {
 			bool found(false);
 			Edge const& out_edge(it_out.getNext());
 
-			Graph<Node, Edge>::OffEdgeIt it_in(
+			Graph<OSMNode, Edge>::OffEdgeIt it_in(
 					g, out_to_in_id[out_edge.tgt], IN);
 			while (it_in.hasNext()) {
 				Edge const& in_edge(it_in.getNext());
@@ -118,16 +116,13 @@ void unit_tests::testCHConstructor()
 	Print("TEST: Start CHConstructor test.");
 	Print("===============================\n");
 
-	typedef CHNode<Node> LvlNode;
-	typedef CHEdge<Edge> Shortcut;
-	typedef SCGraph<Node, Edge> CHGraph;
+	typedef CHEdge<OSMEdge> Shortcut;
+	typedef SCGraph<OSMNode, OSMEdge> CHGraph;
 
 	CHGraph g;
-	GraphInData<LvlNode,Shortcut> data;
-	Parser::read<LvlNode,Shortcut>(data, "../test_data/test", STD);
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
+	g.init(FormatSTD::Reader::readGraph<OSMNode, Shortcut>("../test_data/test"));
 
-	CHConstructor<Node, Edge> chc(g, 2);
+	CHConstructor<OSMNode, OSMEdge> chc(g, 2);
 
 	/* 
 	 * Test the independent set construction.
@@ -165,7 +160,7 @@ void unit_tests::testCHConstructor()
 	chc.getCHGraph();
 
 	// Export
-	Parser::write<LvlNode,Shortcut>(g.getData(), "../out/ch_test", STD);
+	writeCHGraphFile<FormatSTD::Writer>("../out/ch_test", g.getData());
 
 	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
@@ -178,24 +173,19 @@ void unit_tests::testCHDijkstra()
 	Print("TEST: Start CHDijkstra test.");
 	Print("============================\n");
 
-	typedef CHNode<Node> LvlNode;
-	typedef CHEdge<Edge> Shortcut;
-	typedef SCGraph<Node, Edge> CHGraph;
+	typedef CHEdge<OSMEdge> Shortcut;
+	typedef SCGraph<OSMNode, OSMEdge> CHGraph;
 
 	/* Init normal graph */
-	Graph<Node, Edge> g;
-	GraphInData<Node,Edge> g_data;
-	Parser::read<Node,Edge>(g_data, "../test_data/15kSZHK.txt", STD);
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(g_data);
+	Graph<OSMNode, OSMEdge> g;
+	g.init(FormatSTD::Reader::readGraph<OSMNode, OSMEdge>("../test_data/15kSZHK.txt"));
 
 	/* Init CH graph */
 	CHGraph chg;
-	GraphInData<LvlNode,Shortcut> chg_data;
-	Parser::read<LvlNode,Shortcut>(chg_data, "../test_data/15kSZHK.txt", STD);
-	chg.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(chg_data);
+	chg.init(FormatSTD::Reader::readGraph<OSMNode, Shortcut>("../test_data/15kSZHK.txt"));
 
 	/* Build CH */
-	CHConstructor<Node, Edge> chc(chg, 2);
+	CHConstructor<OSMNode, OSMEdge> chc(chg, 2);
 	std::list<NodeID> all_nodes;
 	for (uint i(0); i<chg.getNrOfNodes(); i++) {
 		all_nodes.push_back(i);
@@ -205,14 +195,13 @@ void unit_tests::testCHDijkstra()
 	chc.getCHGraph();
 
 	// Export
-	Parser::write<LvlNode,Shortcut>(chg.getData(),
-			"../out/ch_15kSZHK.txt", STD);
+	writeCHGraphFile<FormatSTD::Writer>("../out/ch_15kSZHK.txt", chg.getData());
 
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
 	uint nr_of_dij(10);
-	Dijkstra<Node, Edge> dij(g);
-	CHDijkstra<Node, Edge> chdij(chg);
+	Dijkstra<OSMNode, OSMEdge> dij(g);
+	CHDijkstra<OSMNode, OSMEdge> chdij(chg);
 
 	std::default_random_engine gen(std::chrono::system_clock::now().time_since_epoch().count());
 	std::uniform_int_distribution<uint> dist(0,g.getNrOfNodes()-1);
@@ -236,12 +225,10 @@ void unit_tests::testDijkstra()
 	Print("TEST: Start Dijkstra test.");
 	Print("============================\n");
 
-	Graph<Node, Edge> g;
-	GraphInData<Node,Edge> data;
-	Parser::read<Node,Edge>(data, "../test_data/test", STD);
-	g.init<EdgeSortSrc<Edge>, EdgeSortTgt<Edge> >(data);
+	Graph<OSMNode, Edge> g;
+	g.init(FormatSTD::Reader::readGraph<OSMNode, Edge>("../test_data/test"));
 
-	Dijkstra<Node, Edge> dij(g);
+	Dijkstra<OSMNode, Edge> dij(g);
 	std::vector<EdgeID> path;
 	NodeID tgt(g.getNrOfNodes() - 1);
 	uint dist = dij.calcShopa(0, tgt, path);
