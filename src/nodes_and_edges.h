@@ -177,11 +177,6 @@ struct Edge
 	Edge() { }
 	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
 		: id(id), src(src), tgt(tgt), dist(dist) { }
-
-	bool operator<(Edge const& edge) const
-	{
-		return src < edge.src || (src == edge.src && tgt < edge.tgt);
-	}
 };
 CHEdge<Edge> concat(Edge const& edge1, Edge const& edge2);
 
@@ -227,11 +222,6 @@ struct OSMEdge
 	operator Edge() const
 	{
 		return Edge(id, src, tgt, dist);
-	}
-
-	bool operator<(OSMEdge const& other) const
-	{
-		return src < other.src || (src == other.src && tgt < other.tgt);
 	}
 };
 CHEdge<OSMEdge> concat(OSMEdge const& edge1, OSMEdge const& edge2);

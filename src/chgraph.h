@@ -20,6 +20,7 @@ class SCGraph : public Graph<NodeT, CHEdge<EdgeT> >
 		using BaseGraph::_in_edges;
 		using BaseGraph::_id_to_index;
 		using BaseGraph::_next_id;
+		using typename BaseGraph::OutEdgeSort;
 
 		std::vector<uint> _node_levels;
 
@@ -58,6 +59,8 @@ void SCGraph<NodeT, EdgeT>::restructure(
 		std::vector<bool> const& to_delete,
 		std::vector<Shortcut>& new_shortcuts)
 {
+	OutEdgeSort outEdgeSort;
+
 	/*
 	 * Process contracted nodes.
 	 */
@@ -73,7 +76,7 @@ void SCGraph<NodeT, EdgeT>::restructure(
 	std::vector<Shortcut> new_edge_vec;
 	new_edge_vec.reserve(_out_edges.size() + new_shortcuts.size());
 
-	std::sort(new_shortcuts.begin(), new_shortcuts.end(), EdgeSortSrc<Shortcut>());
+	std::sort(new_shortcuts.begin(), new_shortcuts.end(), outEdgeSort);
 
 	/* Manually merge the new_shortcuts and _out_edges vector. */
 	uint j(0);
@@ -81,7 +84,7 @@ void SCGraph<NodeT, EdgeT>::restructure(
 
 		Shortcut const& edge(_out_edges[i]);
 		/* edge greater */
-		while (j < new_shortcuts.size() && new_shortcuts[j] < edge) {
+		while (j < new_shortcuts.size() && outEdgeSort(new_shortcuts[j], edge)) {
 
 			Shortcut& new_sc(new_shortcuts[j]);
 			if (to_delete[new_sc.center_node]) {
@@ -101,7 +104,7 @@ void SCGraph<NodeT, EdgeT>::restructure(
 			j++;
 		}
 
-		assert(j >= new_shortcuts.size() || edge < new_shortcuts[j]);
+		assert(j >= new_shortcuts.size() || outEdgeSort(edge, new_shortcuts[j]));
 
 		/* edges smaller */
 		if (!to_delete[edge.src] && !to_delete[edge.tgt]) {
