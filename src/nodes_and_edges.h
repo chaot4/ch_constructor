@@ -183,6 +183,13 @@ template<typename EdgeT>
 using MakeCHEdge = typename _MakeCHEdge<typename std::remove_reference<EdgeT>::type>::type;
 /* remove possible CHEdge<> with: typename MakeCHEdge<T>::base_edge_type */
 
+template<typename EdgeT>
+MakeCHEdge<EdgeT> make_shortcut(EdgeT const& edge1, EdgeT const& edge2) {
+	typedef typename MakeCHEdge<EdgeT>::base_edge_type base;
+	assert(edge1.tgt == edge2.src);
+	return MakeCHEdge<EdgeT>(concat(static_cast<base const&>(edge1), static_cast<base const&>(edge2)), edge1.id, edge2.id, edge1.tgt);
+}
+
 struct Edge
 {
 	EdgeID id = c::NO_EID;
@@ -196,7 +203,7 @@ struct Edge
 
 	uint distance() const { return dist; }
 };
-CHEdge<Edge> concat(Edge const& edge1, Edge const& edge2);
+Edge concat(Edge const& edge1, Edge const& edge2);
 
 template <typename EdgeT>
 struct MetricEdge : EdgeT
@@ -207,10 +214,8 @@ struct MetricEdge : EdgeT
 	MetricEdge(EdgeT const& edge) : EdgeT(edge) {}
 	MetricEdge(EdgeT const& edge, uint metric) : EdgeT(edge), metric(metric){}
 
-	friend CHEdge<MetricEdge> concat(MetricEdge const& edge1, MetricEdge const& edge2) {
-		return CHEdge<MetricEdge>(
-			MetricEdge(concat(static_cast<EdgeT const&>(edge1), static_cast<EdgeT const&>(edge2)), edge1.metric + edge2.metric),
-			edge1.id, edge2.id, edge1.tgt);
+	friend MetricEdge concat(MetricEdge const& edge1, MetricEdge const& edge2) {
+		return MetricEdge(concat(static_cast<EdgeT const&>(edge1), static_cast<EdgeT const&>(edge2)), edge1.metric + edge2.metric);
 	}
 };
 
@@ -234,7 +239,7 @@ struct OSMEdge
 		return Edge(id, src, tgt, dist);
 	}
 };
-CHEdge<OSMEdge> concat(OSMEdge const& edge1, OSMEdge const& edge2);
+OSMEdge concat(OSMEdge const& edge1, OSMEdge const& edge2);
 
 
 /*

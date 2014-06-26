@@ -32,7 +32,7 @@ void unit_tests::testNodesAndEdges()
 
 	MetricEdge edge0(Edge(0, node0.id, node1.id, 42), 23);
 	MetricEdge edge1(Edge(1, node1.id, node2.id, 24), 32);
-	CHEdge ch_edge(concat(edge0, edge1));
+	CHEdge ch_edge(make_shortcut(edge0, edge1));
 
 	Test(otherNode(edge0, IN) == 0);
 	Test(otherNode(ch_edge, OUT) == 2);

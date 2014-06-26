@@ -276,12 +276,12 @@ void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcu
 {
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	if (direction == OUT) {
-		_new_shortcuts.push_back(concat(edge1,edge2));
+		_new_shortcuts.push_back(make_shortcut(edge1,edge2));
 		assert(edge1.tgt == edge2.src);
 		assert(_new_shortcuts.back().center_node == edge1.tgt);
 	}
 	else {
-		_new_shortcuts.push_back(concat(edge2,edge1));
+		_new_shortcuts.push_back(make_shortcut(edge2,edge1));
 	}
 }
 
