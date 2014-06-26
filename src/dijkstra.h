@@ -53,15 +53,18 @@ struct Dijkstra<Node, Edge>::PQElement
 {
 	NodeID node;
 	EdgeID found_by;
-	uint dist;
+	uint _dist;
 
 	PQElement(NodeID node, EdgeID found_by, uint dist)
-		: node(node), found_by(found_by), dist(dist) {}
+		: node(node), found_by(found_by), _dist(dist) {}
 
 	bool operator>(PQElement const& other) const
 	{
-		return dist > other.dist;
+		return _dist > other._dist;
 	}
+
+	/* make interface look similar to an edge */
+	uint distance() const { return _dist; }
 };
 
 template <typename Node, typename Edge>
@@ -85,7 +88,7 @@ uint Dijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 	while (!pq.empty() && pq.top().node != tgt) {
 
 		PQElement top(pq.top());
-		if (_dists[top.node] == top.dist) {
+		if (_dists[top.node] == top.distance()) {
 			_found_by[top.node] = top.found_by;
 			_relaxAllEdges(pq, top);
 		}
@@ -107,7 +110,7 @@ uint Dijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 		path.push_back(bt_edge.id);
 	}
 
-	return pq.top().dist;
+	return pq.top().distance();
 }
 
 template <typename Node, typename Edge>
@@ -118,7 +121,7 @@ void Dijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 
 		Edge const& edge(edge_it.getNext());
 		NodeID tgt(edge.tgt);
-		uint new_dist(top.dist + edge.dist);
+		uint new_dist(top.distance() + edge.distance());
 
 		if (new_dist < _dists[tgt]) {
 
@@ -179,15 +182,18 @@ struct CHDijkstra<Node, Edge>::PQElement
 	NodeID node;
 	EdgeID found_by;
 	EdgeType direction;
-	uint dist;
+	uint _dist;
 
 	PQElement(NodeID node, EdgeID found_by, EdgeType direction, uint dist)
-		: node(node), found_by(found_by), direction(direction), dist(dist) {}
+		: node(node), found_by(found_by), direction(direction), _dist(dist) {}
 
 	bool operator>(PQElement const& other) const
 	{
-		return dist > other.dist;
+		return _dist > other._dist;
 	}
+
+	/* make interface look similar to an edge */
+	uint distance() const { return _dist; }
 };
 
 template <typename Node, typename Edge>
@@ -214,17 +220,17 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 	// Dijkstra loop
 	uint shortest_dist(c::NO_DIST);
 	NodeID center_node(c::NO_NID);;
-	while (!pq.empty() && pq.top().dist <= shortest_dist) {
+	while (!pq.empty() && pq.top().distance() <= shortest_dist) {
 
 		PQElement top(pq.top());
-		if (_dists[top.direction][top.node] == top.dist) {
+		if (_dists[top.direction][top.node] == top.distance()) {
 			_found_by[top.direction][top.node] = top.found_by;
 			_relaxAllEdges(pq, top);
 
 			uint rest_dist = _dists[!top.direction][top.node];
 			if (rest_dist != c::NO_DIST
-					&& top.dist + rest_dist < shortest_dist) {
-				shortest_dist = top.dist + rest_dist;
+					&& top.distance() + rest_dist < shortest_dist) {
+				shortest_dist = top.distance() + rest_dist;
 				center_node = top.node;
 			}
 		}
@@ -271,7 +277,7 @@ void CHDijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 		Edge const& edge(edge_it.getNext());
 		if (_g.isUp(edge.id, dir)) {
 			NodeID other_node(otherNode(edge, dir));
-			uint new_dist(top.dist + edge.dist);
+			uint new_dist(top.distance() + edge.distance());
 
 			if (new_dist < _dists[dir][other_node]) {
 

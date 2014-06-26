@@ -97,7 +97,7 @@ void SCGraph<NodeT, EdgeT>::restructure(
 		/* edge equal */
 		while (j < new_shortcuts.size() && equalEndpoints(new_shortcuts[j], edge)) {
 			Shortcut& new_sc(new_shortcuts[j]);
-			if (edge.dist >= new_sc.dist && to_delete[new_sc.center_node]) {
+			if (edge.distance() >= new_sc.distance() && to_delete[new_sc.center_node]) {
 				_addNewEdge(new_sc, new_edge_vec);
 				assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
 			}
@@ -143,7 +143,7 @@ void SCGraph<NodeT, EdgeT>::_addNewEdge(Shortcut& new_edge,
 {
 	EdgeT& last_edge(new_edge_vec.back());
 	if (!new_edge_vec.empty() && equalEndpoints(new_edge, last_edge)) {
-		if (new_edge.dist < last_edge.dist) {
+		if (new_edge.distance() < last_edge.distance()) {
 			if (new_edge.id == c::NO_EID) {
 				new_edge.id = _next_id++;
 			}
@@ -163,7 +163,7 @@ void SCGraph<NodeT, EdgeT>::_addDumpEdge(Shortcut& new_edge)
 {
 	EdgeT& last_edge(_edges_dump.back());
 	if (!_edges_dump.empty() && equalEndpoints(new_edge, last_edge)) {
-		if (new_edge.dist < last_edge.dist) {
+		if (new_edge.distance() < last_edge.distance()) {
 			last_edge = new_edge;
 		}
 	}

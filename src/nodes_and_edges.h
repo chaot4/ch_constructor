@@ -135,51 +135,6 @@ struct OSMNode
  * Edges
  */
 
-template <typename EdgeT>
-struct CHEdge : EdgeT
-{
-	typedef EdgeT base_edge_type;
-
-	EdgeID child_edge1 = c::NO_EID;
-	EdgeID child_edge2 = c::NO_EID;
-	NodeID center_node = c::NO_NID;
-
-	CHEdge() { }
-	CHEdge(EdgeT const& edge): EdgeT(edge) { }
-	CHEdge(EdgeT const& edge, EdgeID child_edge1, EdgeID child_edge2, NodeID center_node)
-		: EdgeT(edge), child_edge1(child_edge1),
-		child_edge2(child_edge2), center_node(center_node){}
-};
-
-template <typename EdgeT>
-struct _MakeCHEdge
-{
-	typedef CHEdge<EdgeT> type;
-};
-
-template <typename EdgeT>
-struct _MakeCHEdge<CHEdge<EdgeT>>
-{
-	typedef CHEdge<EdgeT> type;
-};
-
-template <typename EdgeT>
-using MakeCHEdge = typename _MakeCHEdge<typename std::remove_reference<EdgeT>::type>::type;
-/* remove possible CHEdge<> with: typename MakeCHEdge<T>::base_edge_type */
-
-struct Edge
-{
-	EdgeID id = c::NO_EID;
-	NodeID src = c::NO_NID;
-	NodeID tgt = c::NO_NID;
-	uint dist = c::NO_DIST;
-
-	Edge() { }
-	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
-		: id(id), src(src), tgt(tgt), dist(dist) { }
-};
-CHEdge<Edge> concat(Edge const& edge1, Edge const& edge2);
-
 template<typename EdgeT>
 inline NodeID otherNode(EdgeT const& edge, EdgeType edge_type) {
 	switch (edge_type) {
@@ -196,6 +151,53 @@ inline bool equalEndpoints(EdgeT1 const& edge1, EdgeT2 const& edge2) {
 	return edge1.src == edge2.src && edge1.tgt == edge2.tgt;
 }
 
+template<typename EdgeT>
+struct CHEdge : EdgeT
+{
+	typedef EdgeT base_edge_type;
+
+	EdgeID child_edge1 = c::NO_EID;
+	EdgeID child_edge2 = c::NO_EID;
+	NodeID center_node = c::NO_NID;
+
+	CHEdge() { }
+	CHEdge(EdgeT const& edge): EdgeT(edge) { }
+	CHEdge(EdgeT const& edge, EdgeID child_edge1, EdgeID child_edge2, NodeID center_node)
+		: EdgeT(edge), child_edge1(child_edge1),
+		child_edge2(child_edge2), center_node(center_node){}
+};
+
+template<typename EdgeT>
+struct _MakeCHEdge
+{
+	typedef CHEdge<EdgeT> type;
+};
+
+template<typename EdgeT>
+struct _MakeCHEdge<CHEdge<EdgeT>>
+{
+	typedef CHEdge<EdgeT> type;
+};
+
+template<typename EdgeT>
+using MakeCHEdge = typename _MakeCHEdge<typename std::remove_reference<EdgeT>::type>::type;
+/* remove possible CHEdge<> with: typename MakeCHEdge<T>::base_edge_type */
+
+struct Edge
+{
+	EdgeID id = c::NO_EID;
+	NodeID src = c::NO_NID;
+	NodeID tgt = c::NO_NID;
+	uint dist = c::NO_DIST;
+
+	Edge() { }
+	Edge(EdgeID id, NodeID src, NodeID tgt, uint dist)
+		: id(id), src(src), tgt(tgt), dist(dist) { }
+
+	uint distance() const { return dist; }
+};
+CHEdge<Edge> concat(Edge const& edge1, Edge const& edge2);
+
 template <typename EdgeT>
 struct MetricEdge : EdgeT
 {
@@ -204,6 +206,12 @@ struct MetricEdge : EdgeT
 	MetricEdge() {}
 	MetricEdge(EdgeT const& edge) : EdgeT(edge) {}
 	MetricEdge(EdgeT const& edge, uint metric) : EdgeT(edge), metric(metric){}
+
+	friend CHEdge<MetricEdge> concat(MetricEdge const& edge1, MetricEdge const& edge2) {
+		return CHEdge<MetricEdge>(
+			MetricEdge(concat(static_cast<EdgeT const&>(edge1), static_cast<EdgeT const&>(edge2)), edge1.metric + edge2.metric),
+			edge1.id, edge2.id, edge1.tgt);
+	}
 };
 
 struct OSMEdge
@@ -218,6 +226,8 @@ struct OSMEdge
 	OSMEdge() { }
 	OSMEdge(EdgeID id, NodeID src, NodeID tgt, uint dist, uint type, int speed)
 	: id(id), src(src), tgt(tgt), dist(dist), type(type), speed(speed) { }
+
+	uint distance() const { return dist; }
 
 	operator Edge() const
 	{

@@ -110,15 +110,18 @@ template <typename NodeT, typename EdgeT>
 struct CHConstructor<NodeT, EdgeT>::PQElement
 {
 	NodeID id;
-	uint dist;
+	uint _dist;
 
 	PQElement(NodeID id, uint dist)
-		: id(id), dist(dist) {}
+		: id(id), _dist(dist) {}
 
 	bool operator>(PQElement const& other) const
 	{
-		return dist > other.dist;
+		return _dist > other._dist;
 	}
+
+	/* make interface look similar to an edge */
+	uint distance() const { return _dist; }
 };
 
 template <typename NodeT, typename EdgeT>
@@ -222,11 +225,11 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 	uint nr_new_edges(0);
 	for (uint i(0), size(end_nodes.size()); i<size; i++) {
 
-		while (_dists[t][end_nodes[i]] > _pq[t].top().dist) {
+		while (_dists[t][end_nodes[i]] > _pq[t].top().distance()) {
 			_handleNextPQElement(direction);
 		}
 
-		uint center_node_dist(start_edge.dist + end_edges[i]->dist);
+		uint center_node_dist(start_edge.distance() + end_edges[i]->distance());
 		if (_dists[t][end_nodes[i]] == center_node_dist) {
 			_createShortcut(start_edge, *end_edges[i], direction);
 			nr_new_edges++;
@@ -242,7 +245,7 @@ void CHConstructor<NodeT, EdgeT>::_handleNextPQElement(EdgeType direction)
 	uint t(_myThreadNum());
 
 	NodeID node(_pq[t].top().id);
-	uint dist(_pq[t].top().dist);
+	uint dist(_pq[t].top().distance());
 
 	if (_dists[t][node] == dist) {
 
@@ -251,7 +254,7 @@ void CHConstructor<NodeT, EdgeT>::_handleNextPQElement(EdgeType direction)
 
 			Shortcut const& edge(edge_it.getNext());
 			NodeID tgt_node(otherNode(edge, direction));
-			uint new_dist(dist + edge.dist);
+			uint new_dist(dist + edge.distance());
 
 			if (new_dist < _dists[t][tgt_node]) {
 
