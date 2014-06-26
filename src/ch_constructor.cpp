@@ -74,14 +74,11 @@ int main(int argc, char* argv[])
 		{0,0,0,0},
 	};
 
-	std::stringstream ss;
 	int index(0);
 	int iarg(0);
 	opterr = 1;
 
-	while((iarg = getopt_long(argc, argv, "hti:f:o:g:t:", longopts, &index)) != -1) {
-		ss.clear();
-
+	while((iarg = getopt_long(argc, argv, "hi:f:o:g:t:", longopts, &index)) != -1) {
 		switch (iarg) {
 			case 'h':
 				printHelp();
@@ -100,8 +97,14 @@ int main(int argc, char* argv[])
 				outformat = toFileFormat(optarg);
 				break;
 			case 't':
-				ss << optarg;
-				ss >> nr_of_threads;
+				{
+					size_t idx = 0; // index of first "non digit"
+					nr_of_threads = std::stoi(optarg, &idx);
+					if ('\0' != optarg[idx] || nr_of_threads <= 0) {
+						std::cerr << "Invalid thread count: '" << optarg << "'\n";
+						return 1;
+					}
+				}
 				break;
 			default:
 				printHelp();
@@ -115,6 +118,8 @@ int main(int argc, char* argv[])
 		std::cerr << "Use ./ch_constructor --help to print the usage.\n";
 		return 1;
 	}
+
+	Print("Using " << nr_of_threads << " threads.");
 
 	readGraphForWriteFormat(outformat, informat, infile, BuildAndStoreCHGraph { outformat, outfile, nr_of_threads });
 
