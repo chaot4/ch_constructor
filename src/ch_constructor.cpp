@@ -11,14 +11,15 @@ using namespace chc;
 
 void printHelp()
 {
-	Print("Usage: ./ch_constructor [ARGUMENTS]");
-	Print("Mandatory arguments are:");
-	Print("  -i, --infile <path>        Read graph from <path>");
-	Print("Optional arguments are:");
-	Print("  -f, --informat <format>    Expects infile in <format> (SIMPLE, STD, FMI - default FMI)");
-	Print("  -o, --outfile <path>       Write graph to <path> (default: ch_out.graph)");
-	Print("  -g, --outformat <format>   Writes outfile in <format> (SIMPLE, STD, FMI_CH - default FMI_CH)");
-	Print("  -t, --threads <number>     Number of threads to use in the calculations (default: 1)");
+	std::cout
+		<< "Usage: ./ch_constructor [ARGUMENTS]\n"
+		<< "Mandatory arguments are:\n"
+		<< "  -i, --infile <path>        Read graph from <path>\n"
+		<< "Optional arguments are:\n"
+		<< "  -f, --informat <format>    Expects infile in <format> (SIMPLE, STD, FMI - default FMI)\n"
+		<< "  -o, --outfile <path>       Write graph to <path> (default: ch_out.graph)\n"
+		<< "  -g, --outformat <format>   Writes outfile in <format> (SIMPLE, STD, FMI_CH - default FMI_CH)\n"
+		<< "  -t, --threads <number>     Number of threads to use in the calculations (default: 1)\n";
 }
 
 struct BuildAndStoreCHGraph {
@@ -110,8 +111,8 @@ int main(int argc, char* argv[])
 	}
 
 	if (infile == "") {
-		std::cerr << "No input file specified! Exiting." << std::endl;
-		Print("Use ./ch_constructor --help to print the usage.");
+		std::cerr << "No input file specified! Exiting.\n";
+		std::cerr << "Use ./ch_constructor --help to print the usage.\n";
 		return 1;
 	}
 

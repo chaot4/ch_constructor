@@ -34,6 +34,12 @@ endif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_CXX_FLAGS} -std=c++11 -fopenmp")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER_FLAGS} -fopenmp")
 
+option(VERBOSE "Verbose logging" OFF)
+
+if(NOT VERBOSE)
+	add_definitions(-DNVERBOSE)
+endif(NOT VERBOSE)
+
 # compile shared sources only once, and reuse object files in both,
 # as they are compiled with the same options anyway
 add_library(common OBJECT

@@ -111,6 +111,9 @@ void Graph<NodeT, EdgeT>::printInfo() const
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::printInfo(std::list<NodeID> const& nodes) const
 {
+#ifdef NVERBOSE
+	(void) nodes;
+#else
 	uint active_nodes(0);
 
 	double avg_out_deg(0);
@@ -166,6 +169,7 @@ void Graph<NodeT, EdgeT>::printInfo(std::list<NodeID> const& nodes) const
 	else {
 		Print("(no degree info is provided as there are no active nodes)");
 	}
+#endif
 }
 
 template <typename NodeT, typename EdgeT>

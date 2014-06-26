@@ -1,3 +1,8 @@
+/* always Print() stuff */
+#ifdef NVERBOSE
+# undef NVERBOSE
+#endif
+
 #include "unit_tests.h"
 
 namespace chc
