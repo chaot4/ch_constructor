@@ -68,51 +68,13 @@ void unit_tests::testGraph()
 		Test(g.getNode(node_id).id == node_id);
 
 		/* Find for every out_edge the corresponding in edge. */
-		Graph<OSMNode, Edge>::EdgeIt it_out(g, node_id, OUT);
-		while (it_out.hasNext()) {
+		for (auto const& out_edge: g.nodeEdges(node_id, OUT)) {
 			bool found(false);
-			Edge const& out_edge(it_out.getNext());
 
-			Graph<OSMNode, Edge>::EdgeIt it_in(g, out_edge.tgt, IN);
-			while (it_in.hasNext()) {
-				Edge const& in_edge(it_in.getNext());
-				if (in_edge.id == out_edge.id) {
+			for (auto const& in_edge: g.nodeEdges(out_edge.tgt, IN)) {
+				if (equalEndpoints(in_edge, out_edge)) {
 					found = true;
-				}
-			}
-
-			Test(found);
-		}
-	}
-
-	for (EdgeID edge_id(0); edge_id<g.getNrOfEdges(); edge_id++) {
-		Test(g.getEdge(edge_id).id == edge_id);
-	}
-
-	/* Test the offset iterator. */
-	g.setEdgeSrcTgtToOffset();
-	std::map<NodeID, NodeID> out_to_in_id;
-	for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
-		out_to_in_id.insert(
-				std::pair<NodeID, NodeID>(
-				g.getOffId(node_id, OUT), g.getOffId(node_id, IN)));
-	}
-
-	for (NodeID node_id(0); node_id<g.getNrOfNodes(); node_id++) {
-		Test(g.getNode(node_id).id == node_id);
-
-		/* Find for every out_edge the corresponding in edge. */
-		Graph<OSMNode, Edge>::OffEdgeIt it_out(g, g.getOffId(node_id, OUT), OUT);
-		while (it_out.hasNext()) {
-			bool found(false);
-			Edge const& out_edge(it_out.getNext());
-
-			Graph<OSMNode, Edge>::OffEdgeIt it_in(
-					g, out_to_in_id[out_edge.tgt], IN);
-			while (it_in.hasNext()) {
-				Edge const& in_edge(it_in.getNext());
-				if (in_edge.id == out_edge.id) {
-					found = true;
+					break;
 				}
 			}
 
@@ -160,10 +122,7 @@ void unit_tests::testCHConstructor()
 	}
 
 	for (auto it(independent_set.begin()); it != independent_set.end(); it++) {
-		typename CHGraph::EdgeIt edge_it(g, *it, OUT);
-
-		while (edge_it.hasNext()) {
-			Shortcut const& edge(edge_it.getNext());
+		for (auto const& edge: g.nodeEdges(*it, OUT)) {
 			Test(!is_in_ind_set[edge.tgt]);
 		}
 	}
@@ -172,7 +131,7 @@ void unit_tests::testCHConstructor()
 	 * Test the contraction.
 	 */
 	chc.contract(all_nodes);
-	chc.getCHGraph();
+	chc.rebuildCompleteGraph();
 
 	// Export
 	writeCHGraphFile<FormatSTD::Writer>("../out/ch_test", g.getData());
@@ -207,7 +166,7 @@ void unit_tests::testCHDijkstra()
 	}
 	chc.quick_contract(all_nodes, 4, 5);
 	chc.contract(all_nodes);
-	chc.getCHGraph();
+	chc.rebuildCompleteGraph();
 
 	// Export
 	writeCHGraphFile<FormatSTD::Writer>("../out/ch_15kSZHK.txt", chg.getData());
@@ -254,7 +213,7 @@ void unit_tests::testDijkstra()
 	Print("Shortest path from 0 to " << tgt << ":");
 	for (uint i(0); i<path.size(); i++) {
 		Edge const& edge(g.getEdge(path[i]));
-		Print("EdgeID: " << edge.id << ", src: " << edge.src << ", tgt: " << edge.tgt);
+		Print("EdgeID: " << path[i] << ", src: " << edge.src << ", tgt: " << edge.tgt);
 	}
 
 	Print("Test if shortest paths are the same from both sides for the 'test' graph.");

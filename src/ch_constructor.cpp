@@ -41,7 +41,7 @@ struct BuildAndStoreCHGraph {
 		}
 		chc.quick_contract(all_nodes, 4, 5);
 		chc.contract(all_nodes);
-		chc.getCHGraph();
+		chc.rebuildCompleteGraph();
 
 		/* Export */
 		writeCHGraphFile(outformat, outfile, g.getData());

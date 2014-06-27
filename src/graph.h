@@ -3,6 +3,7 @@
 
 #include "defs.h"
 #include "nodes_and_edges.h"
+#include "indexed_container.h"
 
 #include <vector>
 #include <list>
@@ -38,10 +39,8 @@ class Graph
 
 		void sortInEdges();
 		void sortOutEdges();
-
 		void initOffsets();
 		void initIdToIndex();
-		void setEdgeSrcTgtToOffset();
 
 		void update();
 
@@ -56,21 +55,19 @@ class Graph
 		 * the edges according to OutEdgeSort and InEdgeSort. */
 		void init(GraphInData<NodeT,EdgeT>&& data);
 
-		class EdgeIt;
-		class OffEdgeIt;
-
-		/* Read the nodes and edges from the file <filename>.
-		 * The offset vectors aren't initialized! */
 		void printInfo() const;
 		void printInfo(std::list<NodeID> const& nodes) const;
 
-		uint getNrOfNodes() const;
-		uint getNrOfEdges() const;
+		uint getNrOfNodes() const { return _nodes.size(); }
+		uint getNrOfEdges() const { return _out_edges.size(); }
+		EdgeT const& getEdge(EdgeID edge_id) const { return _out_edges[_id_to_index[edge_id]]; }
+		NodeT const& getNode(NodeID node_id) const { return _nodes[node_id]; }
+
 		uint getNrOfEdges(NodeID node_id) const;
 		uint getNrOfEdges(NodeID node_id, EdgeType type) const;
-		EdgeT const& getEdge(EdgeID edge_id) const;
-		NodeT const& getNode(NodeID node_id) const;
-		NodeID getOffId(NodeID node_id, EdgeType type) const;
+
+		typedef range<typename std::vector<EdgeT>::const_iterator> node_edges_range;
+		node_edges_range nodeEdges(NodeID node_id, EdgeType type) const;
 
 		friend void unit_tests::testGraph();
 };
@@ -87,10 +84,7 @@ void Graph<NodeT, EdgeT>::init(GraphInData<NodeT, EdgeT>&& data)
 	_in_edges = _out_edges;
 	_next_id = _out_edges.size();
 
-	sortOutEdges();
-	sortInEdges();
-	initOffsets();
-	initIdToIndex();
+	update();
 
 	Print("Graph info:");
 	Print("===========");
@@ -100,10 +94,8 @@ void Graph<NodeT, EdgeT>::init(GraphInData<NodeT, EdgeT>&& data)
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::printInfo() const
 {
-	std::list<NodeID> nodes;
-	for (uint i(0), size(_nodes.size()); i<size; i++) {
-		nodes.push_back(i);
-	}
+	std::list<NodeID> nodes(_nodes.size());
+	std::iota(nodes.begin(), nodes.end(), 0);
 
 	printInfo(nodes);
 }
@@ -124,15 +116,15 @@ void Graph<NodeT, EdgeT>::printInfo(std::list<NodeID> const& nodes) const
 	std::vector<uint> in_deg;
 	std::vector<uint> deg;
 
-	for (auto it(nodes.begin()), end(nodes.end()); it != end; it++) {
-		uint out(getNrOfEdges(*it, OUT));
-		uint in(getNrOfEdges(*it, IN));
+	for (auto node: nodes) {
+		uint out(getNrOfEdges(node, OUT));
+		uint in(getNrOfEdges(node, IN));
 
 		if (out != 0 || in != 0) {
-			active_nodes++;
+			++active_nodes;
 
-			out_deg.push_back(getNrOfEdges(*it, OUT));
-			in_deg.push_back(getNrOfEdges(*it, IN));
+			out_deg.push_back(out);
+			in_deg.push_back(in);
 			deg.push_back(out + in);
 
 			avg_out_deg += out;
@@ -144,7 +136,7 @@ void Graph<NodeT, EdgeT>::printInfo(std::list<NodeID> const& nodes) const
 	Print("#nodes: " << nodes.size());
 	Print("#active nodes: " << active_nodes);
 	Print("#edges: " << _out_edges.size());
-	Print("maximal edge id: " << _next_id-1);
+	Print("maximal edge id: " << _next_id - 1);
 
 	if (active_nodes != 0) {
 		auto mm_out_deg = std::minmax_element(out_deg.begin(), out_deg.end());
@@ -198,29 +190,29 @@ void Graph<NodeT, EdgeT>::initOffsets()
 	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), InEdgeSort()));
 
 	uint nr_of_nodes(_nodes.size());
-	uint nr_of_edges(_out_edges.size());
 
-	std::vector<uint> out_edge_count(nr_of_nodes, 0);
-	std::vector<uint> in_edge_count(nr_of_nodes, 0);
-	for (uint i(0); i<nr_of_edges; i++) {
-		out_edge_count[_out_edges[i].src]++;
-		in_edge_count[_in_edges[i].tgt]++;
+	_out_offsets.assign(nr_of_nodes + 1, 0);
+	_in_offsets.assign(nr_of_nodes + 1, 0);
+
+	/* assume "valid" edges are in _out_edges and _in_edges */
+	for (auto const& edge: _out_edges) {
+		_out_offsets[edge.src]++;
+		_in_offsets[edge.tgt]++;
 	}
 
 	uint out_sum(0);
 	uint in_sum(0);
-	_out_offsets.resize(nr_of_nodes + 1);
-	_in_offsets.resize(nr_of_nodes + 1);
 	for (NodeID i(0); i<nr_of_nodes; i++) {
-		_out_offsets[i] = out_sum;
-		_in_offsets[i] = in_sum;
-		out_sum += out_edge_count[i];
-		in_sum += in_edge_count[i];
+		auto old_out_sum = out_sum, old_in_sum = in_sum;
+		out_sum += _out_offsets[i];
+		in_sum += _in_offsets[i];
+		_out_offsets[i] = old_out_sum;
+		_in_offsets[i] = old_in_sum;
 	}
-	assert(out_sum == nr_of_edges);
-	assert(in_sum == nr_of_edges);
-	_out_offsets[nr_of_nodes] = nr_of_edges;
-	_in_offsets[nr_of_nodes] = nr_of_edges;
+	assert(out_sum == _out_edges.indices.size());
+	assert(in_sum == _in_edges.indices.size());
+	_out_offsets[nr_of_nodes] = out_sum;
+	_in_offsets[nr_of_nodes] = in_sum;
 }
 
 template <typename NodeT, typename EdgeT>
@@ -244,54 +236,6 @@ void Graph<NodeT, EdgeT>::update()
 }
 
 template <typename NodeT, typename EdgeT>
-void Graph<NodeT, EdgeT>::setEdgeSrcTgtToOffset()
-{
-	assert(_in_edges.size() == _out_edges.size());
-
-	for (uint i(0), size(_in_edges.size()); i<size; i++) {
-		_in_edges[i].src = _in_offsets[_in_edges[i].src];
-		_in_edges[i].tgt = _out_offsets[_in_edges[i].tgt];
-		_out_edges[i].src = _in_offsets[_out_edges[i].src];
-		_out_edges[i].tgt = _out_offsets[_out_edges[i].tgt];
-	}
-}
-
-template <typename NodeT, typename EdgeT>
-EdgeT const& Graph<NodeT, EdgeT>::getEdge(EdgeID edge_id) const
-{
-	return _out_edges[_id_to_index[edge_id]];
-}
-
-template <typename NodeT, typename EdgeT>
-NodeT const& Graph<NodeT, EdgeT>::getNode(NodeID node_id) const
-{
-	return _nodes[node_id];
-}
-
-template <typename NodeT, typename EdgeT>
-NodeID Graph<NodeT, EdgeT>::getOffId(NodeID node_id, EdgeType type) const
-{
-	if (type == OUT) {
-		return _out_offsets[node_id];
-	}
-	else {
-		return _in_offsets[node_id];
-	}
-}
-
-template <typename NodeT, typename EdgeT>
-uint Graph<NodeT, EdgeT>::getNrOfNodes() const
-{
-	return _nodes.size();
-}
-
-template <typename NodeT, typename EdgeT>
-uint Graph<NodeT, EdgeT>::getNrOfEdges() const
-{
-	return _out_edges.size();
-}
-
-template <typename NodeT, typename EdgeT>
 uint Graph<NodeT, EdgeT>::getNrOfEdges(NodeID node_id) const
 {
 	return getNrOfEdges(node_id, OUT) + getNrOfEdges(node_id, IN);
@@ -308,106 +252,13 @@ uint Graph<NodeT, EdgeT>::getNrOfEdges(NodeID node_id, EdgeType type) const
 	}
 }
 
-/*
- * EdgeIt.
- */
-
 template <typename NodeT, typename EdgeT>
-class Graph<NodeT, EdgeT>::EdgeIt
-{
-	private:
-		EdgeT const* _current;
-		EdgeT const* _end;
-	public:
-		EdgeIt(Graph<NodeT, EdgeT> const& g, NodeID node_id, EdgeType type);
-
-		bool hasNext() const;
-		EdgeT const& getNext();
-};
-
-template <typename NodeT, typename EdgeT>
-Graph<NodeT, EdgeT>::EdgeIt::EdgeIt(Graph<NodeT, EdgeT> const& g, NodeID node_id, EdgeType type)
-{
-	if (type == OUT) {
-		_current = &g._out_edges[g._out_offsets[node_id]];
-		_end = &g._out_edges[g._out_offsets[node_id+1]];
+auto Graph<NodeT, EdgeT>::nodeEdges(NodeID node_id, EdgeType type) const -> node_edges_range {
+	if (OUT == type) {
+		return node_edges_range(_out_edges.begin() + _out_offsets[node_id], _out_edges.begin() + _out_offsets[node_id+1]);
+	} else {
+		return node_edges_range(_in_edges.begin() + _in_offsets[node_id], _in_edges.begin() + _in_offsets[node_id+1]);
 	}
-	else {
-		_current = &g._in_edges[g._in_offsets[node_id]];
-		_end = &g._in_edges[g._in_offsets[node_id+1]];
-	}
-}
-
-template <typename NodeT, typename EdgeT>
-bool Graph<NodeT, EdgeT>::EdgeIt::hasNext() const
-{
-	return _current != _end;
-}
-
-template <typename NodeT, typename EdgeT>
-EdgeT const& Graph<NodeT, EdgeT>::EdgeIt::getNext()
-{
-	return *(_current++);
-}
-
-/*
- * OffEdgeIt
- */
-
-template <typename NodeT, typename EdgeT>
-class Graph<NodeT, EdgeT>::OffEdgeIt
-{
-	private:
-		EdgeType _type;
-		NodeID _off_node_id;
-		EdgeT const* _current;
-		EdgeT const* _end_of_vector;
-	public:
-		OffEdgeIt(Graph<NodeT, EdgeT> const& g, NodeID off_node_id, EdgeType type);
-
-		bool hasNext() const;
-		EdgeT const& getNext();
-};
-
-template <typename NodeT, typename EdgeT>
-Graph<NodeT, EdgeT>::OffEdgeIt::OffEdgeIt(Graph<NodeT, EdgeT> const& g,
-		NodeID off_node_id, EdgeType type)
-	: _type(type), _off_node_id(off_node_id)
-{
-	if (type == OUT) {
-		_current = &g._out_edges[off_node_id];
-		_end_of_vector = &*g._out_edges.end();
-	}
-	else {
-		_current = &g._in_edges[off_node_id];
-		_end_of_vector = &*g._in_edges.end();
-	}
-}
-
-template <typename NodeT, typename EdgeT>
-bool Graph<NodeT, EdgeT>::OffEdgeIt::hasNext() const
-{
-	NodeID next_off_node_id;
-
-	if (_current != _end_of_vector) {
-		next_off_node_id = otherNode(*_current, _type);
-	}
-	else {
-		return false;
-	}
-
-	if (next_off_node_id == _off_node_id) {
-		return true;
-	}
-	else {
-		return false;
-	}
-}
-
-template <typename NodeT, typename EdgeT>
-EdgeT const& Graph<NodeT, EdgeT>::OffEdgeIt::getNext()
-{
-	return *(_current++);
 }
 
 }

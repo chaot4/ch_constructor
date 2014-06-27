@@ -43,9 +43,9 @@ class SCGraph : public Graph<NodeT, CHEdge<EdgeT> >
 		void restructure(std::vector<NodeID> const& deleted,
 				std::vector<bool> const& to_delete,
 				std::vector<Shortcut>& new_shortcuts);
-		void buildCHGraph();
+		void rebuildCompleteGraph();
 
-		bool isUp(EdgeID id, EdgeType direction) const;
+		bool isUp(Shortcut const& edge, EdgeType direction) const;
 
 		GraphCHOutData<NodeT, Shortcut> getData() const
 		{
@@ -173,7 +173,7 @@ void SCGraph<NodeT, EdgeT>::_addDumpEdge(Shortcut& new_edge)
 }
 
 template <typename NodeT, typename EdgeT>
-void SCGraph<NodeT, EdgeT>::buildCHGraph()
+void SCGraph<NodeT, EdgeT>::rebuildCompleteGraph()
 {
 	assert(_out_edges.empty() && _in_edges.empty());
 
@@ -185,9 +185,8 @@ void SCGraph<NodeT, EdgeT>::buildCHGraph()
 }
 
 template <typename NodeT, typename EdgeT>
-bool SCGraph<NodeT, EdgeT>::isUp(EdgeID id, EdgeType direction) const
+bool SCGraph<NodeT, EdgeT>::isUp(Shortcut const& edge, EdgeType direction) const
 {
-	EdgeT const& edge(_out_edges[_id_to_index[id]]);
 	uint src_lvl = _node_levels[edge.src];
 	uint tgt_lvl = _node_levels[edge.tgt];
 

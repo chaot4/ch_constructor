@@ -86,14 +86,13 @@ uint Dijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 
 	// Dijkstra loop
 	while (!pq.empty() && pq.top().node != tgt) {
-
 		PQElement top(pq.top());
+		pq.pop();
+
 		if (_dists[top.node] == top.distance()) {
 			_found_by[top.node] = top.found_by;
 			_relaxAllEdges(pq, top);
 		}
-
-		pq.pop();
 	}
 
 	if (pq.empty()) {
@@ -105,9 +104,9 @@ uint Dijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 	NodeID bt_node(tgt);
 	_found_by[tgt] = pq.top().found_by;
 	while (bt_node != src) {
-		Edge const& bt_edge(_g.getEdge(_found_by[bt_node]));
-		bt_node = bt_edge.src;
-		path.push_back(bt_edge.id);
+		EdgeID edge_id = _found_by[bt_node];
+		bt_node = _g.getEdge(edge_id).src;
+		path.push_back(edge_id);
 	}
 
 	return pq.top().distance();
@@ -116,15 +115,11 @@ uint Dijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 template <typename Node, typename Edge>
 void Dijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 {
-	typename Graph<Node,Edge>::EdgeIt edge_it(_g, top.node, OUT);
-	while (edge_it.hasNext()) {
-
-		Edge const& edge(edge_it.getNext());
+	for (auto const& edge: _g.nodeEdges(top.node, OUT)) {
 		NodeID tgt(edge.tgt);
 		uint new_dist(top.distance() + edge.distance());
 
 		if (new_dist < _dists[tgt]) {
-
 			if (_dists[tgt] == c::NO_DIST) {
 				_reset_dists.push_back(tgt);
 			}
@@ -221,8 +216,9 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 	uint shortest_dist(c::NO_DIST);
 	NodeID center_node(c::NO_NID);;
 	while (!pq.empty() && pq.top().distance() <= shortest_dist) {
-
 		PQElement top(pq.top());
+		pq.pop();
+
 		if (_dists[top.direction][top.node] == top.distance()) {
 			_found_by[top.direction][top.node] = top.found_by;
 			_relaxAllEdges(pq, top);
@@ -234,8 +230,6 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 				center_node = top.node;
 			}
 		}
-
-		pq.pop();
 	}
 
 	if (center_node == c::NO_NID) {
@@ -256,9 +250,9 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 		}
 
 		while (bt_node != end_node) {
-			Edge const& bt_edge(_g.getEdge(_found_by[dir][bt_node]));
-			bt_node = otherNode(bt_edge, !dir);
-			path.push_back(bt_edge.id);
+			EdgeID edge_id = _found_by[dir][bt_node];
+			bt_node = otherNode(_g.getEdge(edge_id), !dir);
+			path.push_back(edge_id);
 		}
 	}
 
@@ -269,18 +263,14 @@ template <typename Node, typename Edge>
 void CHDijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 {
 	EdgeType dir(top.direction);
-	typename SCGraph<Node,Edge>::EdgeIt edge_it(_g, top.node, dir);
 	// TODO When edges are sorted accordingly: loop while
 	// edge is up.
-	while (edge_it.hasNext()) {
-
-		Edge const& edge(edge_it.getNext());
-		if (_g.isUp(edge.id, dir)) {
+	for (auto const& edge: _g.nodeEdges(top.node, dir)) {
+		if (_g.isUp(edge, dir)) {
 			NodeID other_node(otherNode(edge, dir));
 			uint new_dist(top.distance() + edge.distance());
 
 			if (new_dist < _dists[dir][other_node]) {
-
 				if (_dists[dir][other_node] == c::NO_DIST) {
 					_reset_dists[dir].push_back(other_node);
 				}

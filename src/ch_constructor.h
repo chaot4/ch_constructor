@@ -78,7 +78,7 @@ class CHConstructor{
 		void quick_contract(std::list<NodeID>& nodes, uint max_degree,
 				uint max_rounds);
 		void contract(std::list<NodeID>& nodes);
-		SCGraph<NodeT, EdgeT> const& getCHGraph();
+		void rebuildCompleteGraph();
 
 		friend void unit_tests::testCHConstructor();
 };
@@ -172,10 +172,9 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 	}
 
 	uint nr_new_edges(0);
-	typename CHGraph::EdgeIt edge_it(_base_graph, node, !search_direction);
-	while (edge_it.hasNext()) {
+	for (auto const& edge: _base_graph.nodeEdges(node, !search_direction)) {
 		_resetThreadData();
-		nr_new_edges += _calcShortcuts(edge_it.getNext(), node, search_direction);
+		nr_new_edges += _calcShortcuts(edge, node, search_direction);
 	}
 
 	uint edge_diff(nr_new_edges - _base_graph.getNrOfEdges(node));
@@ -185,12 +184,8 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_quickContract(NodeID node)
 {
-	typename CHGraph::EdgeIt in_it(_base_graph, node, IN);
-	while (in_it.hasNext()) {
-		Shortcut const& in_edge(in_it.getNext());
-		typename CHGraph::EdgeIt out_it(_base_graph, node, OUT);
-		while (out_it.hasNext()) {
-			Shortcut const& out_edge(out_it.getNext());
+	for (auto const& in_edge: _base_graph.nodeEdges(node, IN)) {
+		for (auto const& out_edge: _base_graph.nodeEdges(node, OUT)) {
 			if (in_edge.src != out_edge.tgt) {
 				_createShortcut(in_edge, out_edge);
 			}
@@ -211,9 +206,7 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 	end_nodes.reserve(_base_graph.getNrOfEdges(center_node, direction));
 	end_edges.reserve(_base_graph.getNrOfEdges(center_node, direction));
 
-	typename CHGraph::EdgeIt edge_it(_base_graph, center_node, direction);
-	while (edge_it.hasNext()) {
-		Shortcut const& edge(edge_it.getNext());
+	for (auto const& edge: _base_graph.nodeEdges(center_node, direction)) {
 		end_edges.push_back(&edge);
 		end_nodes.push_back(otherNode(edge, direction));
 	}
@@ -223,15 +216,17 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 	_reset_dists[t].push_back(start_node);
 
 	uint nr_new_edges(0);
-	for (uint i(0), size(end_nodes.size()); i<size; i++) {
+	for (uint i(0), size(end_nodes.size()); i < size; ++i) {
+		auto const end_node = end_nodes[i];
+		auto const& end_edge = *end_edges[i];
 
-		while (_dists[t][end_nodes[i]] > _pq[t].top().distance()) {
+		while (_dists[t][end_node] > _pq[t].top().distance()) {
 			_handleNextPQElement(direction);
 		}
 
-		uint center_node_dist(start_edge.distance() + end_edges[i]->distance());
-		if (_dists[t][end_nodes[i]] == center_node_dist) {
-			_createShortcut(start_edge, *end_edges[i], direction);
+		uint center_node_dist(start_edge.distance() + end_edge.distance());
+		if (_dists[t][end_node] == center_node_dist) {
+			_createShortcut(start_edge, end_edge, direction);
 			nr_new_edges++;
 		}
 	}
@@ -249,10 +244,7 @@ void CHConstructor<NodeT, EdgeT>::_handleNextPQElement(EdgeType direction)
 
 	if (_dists[t][node] == dist) {
 
-		typename CHGraph::EdgeIt edge_it(_base_graph, node, direction);
-		while (edge_it.hasNext()) {
-
-			Shortcut const& edge(edge_it.getNext());
+		for (auto const& edge: _base_graph.nodeEdges(node, direction)) {
 			NodeID tgt_node(otherNode(edge, direction));
 			uint new_dist(dist + edge.distance());
 
@@ -276,12 +268,12 @@ void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcu
 {
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	if (direction == OUT) {
-		_new_shortcuts.push_back(make_shortcut(edge1,edge2));
+		_new_shortcuts.push_back(make_shortcut(edge1, edge2));
 		assert(edge1.tgt == edge2.src);
 		assert(_new_shortcuts.back().center_node == edge1.tgt);
 	}
 	else {
-		_new_shortcuts.push_back(make_shortcut(edge2,edge1));
+		_new_shortcuts.push_back(make_shortcut(edge2, edge1));
 	}
 }
 
@@ -305,9 +297,7 @@ template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_markNeighbours(NodeID node, std::vector<bool>& marked)
 {
 	for (uint i(0); i<2; i++) {
-		typename CHGraph::EdgeIt edge_it(_base_graph, node, (EdgeType) i);
-		while (edge_it.hasNext()) {
-			Shortcut const& edge(edge_it.getNext());
+		for (auto const& edge: _base_graph.nodeEdges(node, (EdgeType) i)) {
 			marked[otherNode(edge, (EdgeType) i)] = true;
 		}
 	}
@@ -478,13 +468,13 @@ void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
 }
 
 template <typename NodeT, typename EdgeT>
-SCGraph<NodeT, EdgeT> const& CHConstructor<NodeT, EdgeT>::getCHGraph()
+void CHConstructor<NodeT, EdgeT>::rebuildCompleteGraph()
 {
-	Print("Building the CHGraph.");
+	Print("Restoring edges from contracted nodes.");
 
-	_base_graph.buildCHGraph();
-	return _base_graph;
+	_base_graph.rebuildCompleteGraph();
 }
+
 
 }
 
