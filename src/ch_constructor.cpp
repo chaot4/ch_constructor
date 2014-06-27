@@ -2,12 +2,12 @@
 #include "unit_tests.h"
 #include "ch_constructor.h"
 #include "file_formats.h"
+#include "track_time.h"
 
-#include <iostream>
 #include <getopt.h>
-#include <string>
 
 using namespace chc;
+using namespace std::chrono;
 
 void printHelp()
 {
@@ -26,12 +26,16 @@ struct BuildAndStoreCHGraph {
 	FileFormat outformat;
 	std::string outfile;
 	uint nr_of_threads;
+	TrackTime tt;
 
 	template<typename NodeT, typename EdgeT>
 	void operator()(GraphInData<NodeT, CHEdge<EdgeT>>&& data) {
+		tt.track("reading input");
+
 		/* Read graph */
 		SCGraph<NodeT, EdgeT> g;
 		g.init(std::move(data));
+		tt.track("loading graph");
 
 		/* Build CH */
 		CHConstructor<NodeT, EdgeT> chc(g, nr_of_threads);
@@ -41,10 +45,17 @@ struct BuildAndStoreCHGraph {
 		}
 		chc.quick_contract(all_nodes, 4, 5);
 		chc.contract(all_nodes);
+
+		tt.track("contracting graph");
+
 		chc.rebuildCompleteGraph();
+		tt.track("rebuliding graph");
 
 		/* Export */
 		writeCHGraphFile(outformat, outfile, g.getData());
+		tt.track("exporting graph", false);
+
+		tt.summary();
 	}
 };
 
@@ -121,7 +132,15 @@ int main(int argc, char* argv[])
 
 	Print("Using " << nr_of_threads << " threads.");
 
-	readGraphForWriteFormat(outformat, informat, infile, BuildAndStoreCHGraph { outformat, outfile, nr_of_threads });
+	readGraphForWriteFormat(outformat, informat, infile,
+		BuildAndStoreCHGraph { outformat, outfile, nr_of_threads,
+#ifndef NVERBOSE
+			TrackTime(std::cout)
+#else
+			TrackTime()
+#endif
+		}
+	);
 
 	return 0;
 }

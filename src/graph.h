@@ -132,10 +132,7 @@ void Graph<NodeT, EdgeT>::printInfo(Range&& nodes) const
 		}
 	}
 
-	Print("#nodes: " << nodes.size());
-	Print("#active nodes: " << active_nodes);
-	Print("#edges: " << _out_edges.size());
-	Print("maximal edge id: " << _next_id - 1);
+	Print("#nodes: " << nodes.size() << ", #active nodes: " << active_nodes << ", #edges: " << _out_edges.size() << ", maximal edge id: " << _next_id - 1);
 
 	if (active_nodes != 0) {
 		auto mm_out_deg = std::minmax_element(out_deg.begin(), out_deg.end());
@@ -146,19 +143,13 @@ void Graph<NodeT, EdgeT>::printInfo(Range&& nodes) const
 		avg_in_deg /= active_nodes;
 		avg_deg /= active_nodes;
 
-		Print("maximal out degree: " << *mm_out_deg.second);
-		Print("minimal out degree: " << *mm_out_deg.first);
-		Print("maximal in degree: " << *mm_in_deg.second);
-		Print("minimal in degree: " << *mm_in_deg.first);
-		Print("maximal degree: " << *mm_deg.second);
-		Print("minimal degree: " << *mm_deg.first);
-		Print("average out degree: " << avg_out_deg);
-		Print("average in degree: " << avg_in_deg);
-		Print("average degree: " << avg_deg);
-		Print("(only degrees of active nodes are counted)");
+		Print("min/max/avg degree:"
+			<< " out "   << *mm_out_deg.first << " / " << *mm_out_deg.second << " / " << avg_out_deg
+			<< ", in "   << *mm_in_deg.first  << " / " << *mm_in_deg.second  << " / " << avg_in_deg
+			<< ", both " << *mm_deg.first     << " / " << *mm_deg.second     << " / " << avg_deg);
 	}
 	else {
-		Print("(no degree info is provided as there are no active nodes)");
+		Debug("(no degree info is provided as there are no active nodes)");
 	}
 #endif
 }
@@ -166,7 +157,7 @@ void Graph<NodeT, EdgeT>::printInfo(Range&& nodes) const
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::sortInEdges()
 {
-	Print("Sort the incomming edges.");
+	Debug("Sort the incomming edges.");
 
 	std::sort(_in_edges.begin(), _in_edges.end(), InEdgeSort());
 	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), InEdgeSort()));
@@ -175,7 +166,7 @@ void Graph<NodeT, EdgeT>::sortInEdges()
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::sortOutEdges()
 {
-	Print("Sort the outgoing edges.");
+	Debug("Sort the outgoing edges.");
 
 	std::sort(_out_edges.begin(), _out_edges.end(), OutEdgeSort());
 	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), OutEdgeSort()));
@@ -184,7 +175,7 @@ void Graph<NodeT, EdgeT>::sortOutEdges()
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::initOffsets()
 {
-	Print("Init the offsets.");
+	Debug("Init the offsets.");
 	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), OutEdgeSort()));
 	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), InEdgeSort()));
 
@@ -217,7 +208,7 @@ void Graph<NodeT, EdgeT>::initOffsets()
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::initIdToIndex()
 {
-	Print("Renew the index mapper.");
+	Debug("Renew the index mapper.");
 
 	_id_to_index.resize(_next_id);
 	for (uint i(0), size(_out_edges.size()); i<size; i++) {

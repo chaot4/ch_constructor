@@ -15,9 +15,7 @@ namespace chc
 #define Debug(x) std::cout << x << std::endl
 #endif
 
-// #define NVERBOSE
-
-#ifdef NVERBOSE
+#if defined(NVERBOSE) && defined(NDEBUG)
 #define Print(x)
 #else
 #define Print(x) std::cout << x << std::endl

@@ -6,11 +6,8 @@
 #include "graph.h"
 #include "chgraph.h"
 
-#include <vector>
-#include <list>
+#include <chrono>
 #include <queue>
-#include <algorithm>
-#include <limits>
 #include <mutex>
 #include <omp.h>
 
@@ -379,71 +376,73 @@ CHConstructor<NodeT, EdgeT>::CHConstructor(CHGraph& base_graph, uint num_threads
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint max_degree, uint max_rounds)
 {
-	Print("\nStarting the quick_contraction of nodes with degree smaller than " << max_degree << ".");
+	using namespace std::chrono;
 
-	bool nodes_left(true);
-	uint round(1);
-	while (nodes_left && round <= max_rounds) {
-		Print("\nStarting round " << round);
-		Print("Initializing the vectors for a new round.");
+	Print("\nStarting the quick_contraction of nodes with degree smaller than " << max_degree << ".\n");
+
+	for (uint round(1); round <= max_rounds; ++round) {
+		steady_clock::time_point t1 = steady_clock::now();
+		Print("Starting round " << round);
+		Debug("Initializing the vectors for a new round.");
 		_initVectors(true);
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
 		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
 
-		Print("Constructing the independent set.");
+		Debug("Constructing the independent set.");
 		std::vector<NodeID> independent_set;
 		_calcIndependentSet(nodes, independent_set, max_degree);
 		Print("The independent set has size " << independent_set.size() << ".");
 
-		if (!independent_set.empty()) {
-			Print("Quick-contracting all the nodes in the independent set.");
-			uint size(independent_set.size());
-			#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
-			for (uint i = 0; i < size; i++) {
-				uint node(independent_set[i]);
-				_quickContract(node);
-			}
-			Print("Number of possible new Shortcuts: " << _new_shortcuts.size());
+		if (independent_set.empty()) break;
 
-			_chooseAllForDelete(independent_set);
-			_deleteNodes(nodes);
-			Print("Deleted " << _delete.size() << " nodes.");
-
-			Print("Restructuring the graph.");
-			_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
-
-			Print("Graph info:");
-			_base_graph.printInfo(nodes);
-
-			round++;
+		Debug("Quick-contracting all the nodes in the independent set.");
+		uint size(independent_set.size());
+		#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
+		for (uint i = 0; i < size; i++) {
+			uint node(independent_set[i]);
+			_quickContract(node);
 		}
-		else {
-			nodes_left = false;
-		}
+		Print("Number of possible new Shortcuts: " << _new_shortcuts.size());
+
+		Debug("Delete the nodes with low edge difference.");
+		_chooseAllForDelete(independent_set);
+		_deleteNodes(nodes);
+		Print("Deleted " << _delete.size() << " nodes with low edge difference.");
+
+		Debug("Restructuring the graph.");
+		_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
+
+		Debug("Graph info:");
+		_base_graph.printInfo(nodes);
+
+		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
+		Print("Round took " << time_span.count() << " seconds.\n");
 	}
 }
 
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
 {
-	Print("\nStarting the contraction of " << nodes.size() << " nodes.");
+	using namespace std::chrono;
 
-	uint round(1);
-	while (!nodes.empty()) {
-		Print("\nStarting round " << round);
-		Print("Initializing the vectors for a new round.");
+	Print("\nStarting the contraction of " << nodes.size() << " nodes.\n");
+
+	for (uint round(1); !nodes.empty(); ++round) {
+		steady_clock::time_point t1 = steady_clock::now();
+		Print("Starting round " << round);
+		Debug("Initializing the vectors for a new round.");
 		_initVectors();
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
 		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
 
-		Print("Constructing the independent set.");
+		Debug("Constructing the independent set.");
 		std::vector<NodeID> independent_set;
 		_calcIndependentSet(nodes, independent_set);
 		Print("The independent set has size " << independent_set.size() << ".");
 
-		Print("Contracting all the nodes in the independent set.");
+		Debug("Contracting all the nodes in the independent set.");
 		uint size(independent_set.size());
 		#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
 		for (uint i = 0; i < size; i++) {
@@ -452,18 +451,19 @@ void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
 		}
 		Print("Number of possible new Shortcuts: " << _new_shortcuts.size());
 
-		Print("Delete the nodes with low edge difference.");
+		Debug("Delete the nodes with low edge difference.");
 		_chooseDeleteNodes(independent_set);
 		_deleteNodes(nodes);
-		Print("Deleted " << _delete.size() << " nodes.");
+		Print("Deleted " << _delete.size() << " nodes with low edge difference.");
 
-		Print("Restructuring the graph.");
+		Debug("Restructuring the graph.");
 		_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
 
-		Print("Graph info:");
+		Debug("Graph info:");
 		_base_graph.printInfo(nodes);
 
-		round++;
+		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
+		Print("Round took " << time_span.count() << " seconds.\n");
 	}
 }
 
