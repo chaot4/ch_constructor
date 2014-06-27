@@ -5,6 +5,18 @@
 
 #include "unit_tests.h"
 
+#include "nodes_and_edges.h"
+#include "graph.h"
+#include "file_formats.h"
+#include "chgraph.h"
+#include "ch_constructor.h"
+#include "dijkstra.h"
+
+#include <map>
+#include <iostream>
+#include <random>
+#include <chrono>
+
 namespace chc
 {
 
