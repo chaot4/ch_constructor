@@ -131,10 +131,9 @@ void unit_tests::testCHConstructor()
 	 * Test the contraction.
 	 */
 	chc.contract(all_nodes);
-	chc.rebuildCompleteGraph();
 
 	// Export
-	writeCHGraphFile<FormatSTD::Writer>("../out/ch_test", g.getData());
+	writeCHGraphFile<FormatSTD::Writer>("../out/ch_test", g.exportData());
 
 	Print("\n====================================");
 	Print("TEST: CHConstructor test successful.");
@@ -168,9 +167,6 @@ void unit_tests::testCHDijkstra()
 	chc.contract(all_nodes);
 	chc.rebuildCompleteGraph();
 
-	// Export
-	writeCHGraphFile<FormatSTD::Writer>("../out/ch_15kSZHK.txt", chg.getData());
-
 	/* Random Dijkstras */
 	Print("\nStarting random Dijkstras.");
 	uint nr_of_dij(10);
@@ -187,6 +183,9 @@ void unit_tests::testCHDijkstra()
 		Debug("From " << src << " to " << tgt << ".");
 		Test(dij.calcShopa(src,tgt,path) == chdij.calcShopa(src,tgt,path));
 	}
+
+	// Export (destroys graph data)
+	writeCHGraphFile<FormatSTD::Writer>("../out/ch_15kSZHK.txt", chg.exportData());
 
 	Print("\n=================================");
 	Print("TEST: CHDijkstra test successful.");

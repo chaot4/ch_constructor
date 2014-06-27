@@ -46,10 +46,8 @@ class SCGraph : public Graph<NodeT, CHEdge<EdgeT> >
 
 		bool isUp(Shortcut const& edge, EdgeType direction) const;
 
-		GraphCHOutData<NodeT, Shortcut> getData() const
-		{
-			return GraphCHOutData<NodeT, Shortcut>{BaseGraph::_nodes, _node_levels, _out_edges};
-		}
+		/* destroys internal data structures */
+		GraphCHOutData<NodeT, Shortcut> exportData();
 };
 
 template <typename NodeT, typename EdgeT>
@@ -183,6 +181,34 @@ bool SCGraph<NodeT, EdgeT>::isUp(Shortcut const& edge, EdgeType direction) const
 
 	assert(src_lvl == tgt_lvl);
 	return false;
+}
+
+template <typename NodeT, typename EdgeT>
+auto SCGraph<NodeT, EdgeT>::exportData() -> GraphCHOutData<NodeT, Shortcut>
+{
+	std::vector<Shortcut>* edges_source;
+	std::vector<Shortcut> edges;
+
+	_id_to_index = decltype(_id_to_index)();
+
+	if (_out_edges.empty() && _in_edges.empty()) {
+		edges_source = &_edges_dump;
+	}
+	else {
+		edges_source = &_out_edges;
+		_in_edges = decltype(_in_edges)();
+	}
+
+	edges.resize(edges_source->size());
+	for (auto const& edge: *edges_source) {
+		edges[edge.id] = edge;
+	}
+
+	_out_edges = std::move(edges);
+
+	_edges_dump = decltype(_edges_dump)();
+
+	return GraphCHOutData<NodeT, Shortcut>{BaseGraph::_nodes, _node_levels, _out_edges};
 }
 
 }

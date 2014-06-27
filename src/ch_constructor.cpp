@@ -48,11 +48,11 @@ struct BuildAndStoreCHGraph {
 
 		tt.track("contracting graph");
 
-		chc.rebuildCompleteGraph();
+		auto exportData = g.exportData();
 		tt.track("rebuliding graph");
 
 		/* Export */
-		writeCHGraphFile(outformat, outfile, g.getData());
+		writeCHGraphFile(outformat, outfile, std::move(exportData));
 		tt.track("exporting graph", false);
 
 		tt.summary();
