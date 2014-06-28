@@ -30,7 +30,6 @@ class SCGraph : public Graph<NodeT, CHEdge<EdgeT> >
 
 		void _addNewEdge(Shortcut& new_edge,
 				std::vector<Shortcut>& new_edge_vec);
-		void _addDumpEdge(Shortcut& new_edge);
 	public:
 		template <typename Data>
 		void init(Data&& data)
@@ -83,47 +82,37 @@ void SCGraph<NodeT, EdgeT>::restructure(
 	for (uint i(0); i<_out_edges.size(); i++) {
 
 		Shortcut const& edge(_out_edges[i]);
-		/* edge greater */
-		while (j < new_shortcuts.size() && outEdgeSort(new_shortcuts[j], edge)) {
-
+		/* edge greater than new_sc */
+		for (;j < new_shortcuts.size() && outEdgeSort(new_shortcuts[j], edge); ++j) {
 			Shortcut& new_sc(new_shortcuts[j]);
 			if (to_delete[new_sc.center_node]) {
 				_addNewEdge(new_sc, new_edge_vec);
 				assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
 			}
-			j++;
 		}
 
-		/* edge equal */
-		while (j < new_shortcuts.size() && equalEndpoints(new_shortcuts[j], edge)) {
-			Shortcut& new_sc(new_shortcuts[j]);
-			if (edge.distance() >= new_sc.distance() && to_delete[new_sc.center_node]) {
-				_addNewEdge(new_sc, new_edge_vec);
-				assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
-			}
-			j++;
-		}
+		/* if edge and new_sc are "equal", i.e. have same endpoints, first add
+		 * the old edge and overwrite on demand later
+		 */
 
-		assert(j >= new_shortcuts.size() || outEdgeSort(edge, new_shortcuts[j]));
+		assert(j >= new_shortcuts.size() || !outEdgeSort(new_shortcuts[j], edge));
 
-		/* edges smaller */
+		/* edge less than or equal new_sc */
 		if (!to_delete[edge.src] && !to_delete[edge.tgt]) {
 			_addNewEdge(_out_edges[i], new_edge_vec);
 		}
 		else {
-			_addDumpEdge(_out_edges[i]);
+			_edges_dump.push_back(_out_edges[i]);
 		}
 	}
 
 	/* Rest of new_shortcuts */
-	while (j < new_shortcuts.size()) {
-
+	for (; j < new_shortcuts.size(); ++j) {
 		Shortcut& new_sc(new_shortcuts[j]);
 		if (to_delete[new_sc.center_node]) {
 			_addNewEdge(new_sc, new_edge_vec);
 			assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
 		}
-		j++;
 	}
 
 	/*
@@ -141,35 +130,30 @@ template <typename NodeT, typename EdgeT>
 void SCGraph<NodeT, EdgeT>::_addNewEdge(Shortcut& new_edge,
 		std::vector<Shortcut>& new_edge_vec)
 {
-	EdgeT& last_edge(new_edge_vec.back());
-	if (!new_edge_vec.empty() && equalEndpoints(new_edge, last_edge)) {
-		if (new_edge.distance() < last_edge.distance()) {
-			if (new_edge.id == c::NO_EID) {
-				new_edge.id = _next_id++;
-			}
-			last_edge = new_edge;
-		}
-	}
-	else {
-		if (new_edge.id == c::NO_EID) {
-			new_edge.id = _next_id++;
-		}
-		new_edge_vec.push_back(new_edge);
-	}
-}
+	if (!new_edge_vec.empty() && (c::NO_EID == new_edge.id)) {
+		Shortcut& last_edge(new_edge_vec.back());
 
-template <typename NodeT, typename EdgeT>
-void SCGraph<NodeT, EdgeT>::_addDumpEdge(Shortcut& new_edge)
-{
-	EdgeT& last_edge(_edges_dump.back());
-	if (!_edges_dump.empty() && equalEndpoints(new_edge, last_edge)) {
-		if (new_edge.distance() < last_edge.distance()) {
-			last_edge = new_edge;
+		if (equalEndpoints(new_edge, last_edge)) {
+			/* ignore new edges if they are not better than what we already have */
+			if (new_edge.distance() >= last_edge.distance()) return;
+
+			/* only replace shortcut edges */
+			if (c::NO_NID == last_edge.center_node) {
+				/* reuse already assigned id */
+				new_edge.id = last_edge.id;
+				last_edge = new_edge;
+				return;
+			}
+			/* otherwise simply add a new "duplicate" edge; don't remove
+			 * edges from original graph - they might be useful for visualization
+			 */
 		}
 	}
-	else {
-		_edges_dump.push_back(new_edge);
+
+	if (c::NO_EID == new_edge.id) {
+		new_edge.id = _next_id++;
 	}
+	new_edge_vec.push_back(new_edge);
 }
 
 template <typename NodeT, typename EdgeT>
