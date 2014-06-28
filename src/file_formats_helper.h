@@ -61,7 +61,13 @@ namespace chc {
 			Print("Read all the nodes.");
 
 			for (EdgeID i = 0; i < nr_of_edges; ++i) {
-				result.edges.push_back(static_cast<EdgeT>(impl.readEdge((EdgeID) i)));
+				auto edge = static_cast<EdgeT>(impl.readEdge((EdgeID) i));
+				if (edge.src == edge.tgt) {
+					std::cerr << "WARNING: input contained loop edge (@" << i << "), dropped edge.\n";
+					--i; --nr_of_edges;
+					continue;
+				}
+				result.edges.push_back(std::move(edge));
 			}
 			Print("Read all the edges.");
 

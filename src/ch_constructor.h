@@ -170,6 +170,7 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 
 	uint nr_new_edges(0);
 	for (auto const& edge: _base_graph.nodeEdges(node, !search_direction)) {
+		if (edge.tgt == edge.src) continue; /* skip loops */
 		_resetThreadData();
 		nr_new_edges += _calcShortcuts(edge, node, search_direction);
 	}
@@ -182,8 +183,10 @@ template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_quickContract(NodeID node)
 {
 	for (auto const& in_edge: _base_graph.nodeEdges(node, IN)) {
+		if (in_edge.tgt == in_edge.src) continue; /* skip loops */
 		for (auto const& out_edge: _base_graph.nodeEdges(node, OUT)) {
-			if (in_edge.src != out_edge.tgt) {
+			if (out_edge.tgt == out_edge.src) continue; /* skip loops */
+			if (in_edge.src != out_edge.tgt) { /* don't create loops */
 				_createShortcut(in_edge, out_edge);
 			}
 		}
@@ -204,8 +207,12 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 	end_edges.reserve(_base_graph.getNrOfEdges(center_node, direction));
 
 	for (auto const& edge: _base_graph.nodeEdges(center_node, direction)) {
+		if (edge.tgt == edge.src) continue; /* skip loops */
+		auto const end_node = otherNode(edge, direction);
+		if (start_node == end_node) continue; /* don't create loops */
+
 		end_edges.push_back(&edge);
-		end_nodes.push_back(otherNode(edge, direction));
+		end_nodes.push_back(end_node);
 	}
 
 	_pq[t].push(PQElement(start_node, 0));
@@ -263,13 +270,18 @@ template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcut const& edge2,
 		EdgeType direction)
 {
+	/* make sure no "loop" edges are used */
+	assert(edge1.src != edge1.tgt && edge2.src != edge2.tgt);
+
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	if (direction == OUT) {
+		/* make sure no "loop" edges are created */
+		assert(edge1.src != edge2.tgt);
 		_new_shortcuts.push_back(make_shortcut(edge1, edge2));
-		assert(edge1.tgt == edge2.src);
-		assert(_new_shortcuts.back().center_node == edge1.tgt);
 	}
 	else {
+		/* make sure no "loop" edges are created */
+		assert(edge2.src != edge1.tgt);
 		_new_shortcuts.push_back(make_shortcut(edge2, edge1));
 	}
 }
