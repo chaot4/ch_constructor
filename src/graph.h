@@ -160,7 +160,7 @@ void Graph<NodeT, EdgeT>::sortInEdges()
 	Debug("Sort the incomming edges.");
 
 	std::sort(_in_edges.begin(), _in_edges.end(), InEdgeSort());
-	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), InEdgeSort()));
+	debug_assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), InEdgeSort()));
 }
 
 template <typename NodeT, typename EdgeT>
@@ -169,15 +169,15 @@ void Graph<NodeT, EdgeT>::sortOutEdges()
 	Debug("Sort the outgoing edges.");
 
 	std::sort(_out_edges.begin(), _out_edges.end(), OutEdgeSort());
-	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), OutEdgeSort()));
+	debug_assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), OutEdgeSort()));
 }
 
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::initOffsets()
 {
 	Debug("Init the offsets.");
-	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), OutEdgeSort()));
-	assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), InEdgeSort()));
+	debug_assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), OutEdgeSort()));
+	debug_assert(std::is_sorted(_in_edges.begin(), _in_edges.end(), InEdgeSort()));
 
 	uint nr_of_nodes(_nodes.size());
 
@@ -199,8 +199,8 @@ void Graph<NodeT, EdgeT>::initOffsets()
 		_out_offsets[i] = old_out_sum;
 		_in_offsets[i] = old_in_sum;
 	}
-	assert(out_sum == _out_edges.indices.size());
-	assert(in_sum == _in_edges.indices.size());
+	assert(out_sum == _out_edges.size());
+	assert(in_sum == _in_edges.size());
 	_out_offsets[nr_of_nodes] = out_sum;
 	_in_offsets[nr_of_nodes] = in_sum;
 }

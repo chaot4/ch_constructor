@@ -93,7 +93,7 @@ void SCGraph<NodeT, EdgeT>::restructure(
 		 * the old edge and overwrite on demand later
 		 */
 
-		assert(j >= new_shortcuts.size() || !outEdgeSort(new_shortcuts[j], edge));
+		debug_assert(j >= new_shortcuts.size() || !outEdgeSort(new_shortcuts[j], edge));
 
 		/* edge less than or equal new_sc */
 		if (!to_delete[edge.src] && !to_delete[edge.tgt]) {
@@ -117,7 +117,7 @@ void SCGraph<NodeT, EdgeT>::restructure(
 	 * Build new graph structures.
 	 */
 	_out_edges.swap(new_edge_vec);
-	assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), BaseGraph::OutEdgeSort()));
+	debug_assert(std::is_sorted(_out_edges.begin(), _out_edges.end(), outEdgeSort));
 
 	_in_edges.assign(_out_edges.begin(), _out_edges.end());
 	BaseGraph::sortInEdges();
@@ -179,7 +179,8 @@ bool SCGraph<NodeT, EdgeT>::isUp(Shortcut const& edge, EdgeType direction) const
 		return direction == OUT ? true : false;
 	}
 
-	assert(src_lvl == tgt_lvl);
+	/* should never reach this: */
+	assert(src_lvl != tgt_lvl);
 	return false;
 }
 
@@ -195,6 +196,7 @@ auto SCGraph<NodeT, EdgeT>::exportData() -> GraphCHOutData<NodeT, Shortcut>
 		edges_source = &_edges_dump;
 	}
 	else {
+		assert(_edges_dump.empty());
 		edges_source = &_out_edges;
 		_in_edges = decltype(_in_edges)();
 	}
