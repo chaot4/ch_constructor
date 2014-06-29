@@ -38,8 +38,15 @@ class CHConstructor{
 
 		CHGraph& _base_graph;
 
+		struct ThreadData {
+			PQ pq;
+			std::vector<uint> dists;
+			std::vector<uint> reset_dists;
+		};
+		std::vector<ThreadData> _thread_data;
+
 		uint _num_threads;
-		uint _myThreadNum();
+		ThreadData& _myThreadData();
 		void _resetThreadData();
 
 		std::vector<Shortcut> _new_shortcuts;
@@ -48,9 +55,6 @@ class CHConstructor{
 		std::vector<bool> _to_delete;
 		std::mutex _new_shortcuts_mutex;
 
-		std::vector<PQ> _pq;
-		std::vector< std::vector<uint> > _dists;
-		std::vector< std::vector<uint> > _reset_dists;
 
 		void _initVectors(bool quick_version = false);
 		void _contract(NodeID node);
@@ -122,22 +126,21 @@ struct CHConstructor<NodeT, EdgeT>::PQElement
 };
 
 template <typename NodeT, typename EdgeT>
-uint CHConstructor<NodeT, EdgeT>::_myThreadNum()
+auto CHConstructor<NodeT, EdgeT>::_myThreadData() -> ThreadData&
 {
-	return omp_get_thread_num();
+	return _thread_data[omp_get_thread_num()];
 }
 
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_resetThreadData()
 {
-	uint t(_myThreadNum());
+	ThreadData& td(_myThreadData());
 
-	_pq[t] = PQ();
-
-	for (uint i(0), size(_reset_dists[t].size()); i<size; i++) {
-		_dists[t][_reset_dists[t][i]] = c::NO_DIST;
+	td.pq = PQ();
+	for (auto node_id: td.reset_dists) {
+		td.dists[node_id] = c::NO_DIST;
 	}
-	_reset_dists[t].clear();
+	td.reset_dists.clear();
 }
 
 template <typename NodeT, typename EdgeT>
@@ -148,10 +151,10 @@ void CHConstructor<NodeT, EdgeT>::_initVectors(bool quick_version)
 	_to_delete.assign(_base_graph.getNrOfNodes(), false);
 
 	if (!quick_version) {
-		for (uint i(0); i<_num_threads; i++) {
-			_pq[i] = PQ();
-			_dists[i].assign(_base_graph.getNrOfNodes(), c::NO_DIST);
-			_reset_dists[i].clear();
+		for (auto& td: _thread_data) {
+			td.pq = PQ();
+			td.dists.assign(_base_graph.getNrOfNodes(), c::NO_DIST);
+			td.reset_dists.clear();
 		}
 	}
 }
@@ -197,7 +200,7 @@ template <typename NodeT, typename EdgeT>
 uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, NodeID center_node,
 		EdgeType direction)
 {
-	uint t(_myThreadNum());
+	ThreadData& td(_myThreadData());
 
 	NodeID start_node(otherNode(start_edge, !direction));
 
@@ -215,21 +218,21 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 		end_nodes.push_back(end_node);
 	}
 
-	_pq[t].push(PQElement(start_node, 0));
-	_dists[t][start_node] = 0;
-	_reset_dists[t].push_back(start_node);
+	td.pq.push(PQElement(start_node, 0));
+	td.dists[start_node] = 0;
+	td.reset_dists.push_back(start_node);
 
 	uint nr_new_edges(0);
 	for (uint i(0), size(end_nodes.size()); i < size; ++i) {
 		auto const end_node = end_nodes[i];
 		auto const& end_edge = *end_edges[i];
 
-		while (_dists[t][end_node] > _pq[t].top().distance()) {
+		while (td.dists[end_node] > td.pq.top().distance()) {
 			_handleNextPQElement(direction);
 		}
 
 		uint center_node_dist(start_edge.distance() + end_edge.distance());
-		if (_dists[t][end_node] == center_node_dist) {
+		if (td.dists[end_node] == center_node_dist) {
 			_createShortcut(start_edge, end_edge, direction);
 			nr_new_edges++;
 		}
@@ -241,29 +244,29 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_handleNextPQElement(EdgeType direction)
 {
-	uint t(_myThreadNum());
+	ThreadData& td(_myThreadData());
 
-	NodeID node(_pq[t].top().id);
-	uint dist(_pq[t].top().distance());
+	NodeID node(td.pq.top().id);
+	uint dist(td.pq.top().distance());
 
-	if (_dists[t][node] == dist) {
+	if (td.dists[node] == dist) {
 
 		for (auto const& edge: _base_graph.nodeEdges(node, direction)) {
 			NodeID tgt_node(otherNode(edge, direction));
 			uint new_dist(dist + edge.distance());
 
-			if (new_dist < _dists[t][tgt_node]) {
+			if (new_dist < td.dists[tgt_node]) {
 
-				if (_dists[t][tgt_node] == c::NO_DIST) {
-					_reset_dists[t].push_back(tgt_node);
+				if (td.dists[tgt_node] == c::NO_DIST) {
+					td.reset_dists.push_back(tgt_node);
 				}
-				_dists[t][tgt_node] = new_dist;
-				_pq[t].push(PQElement(tgt_node, new_dist));
+				td.dists[tgt_node] = new_dist;
+				td.pq.push(PQElement(tgt_node, new_dist));
 			}
 		}
 	}
 
-	_pq[t].pop();
+	td.pq.pop();
 }
 
 template <typename NodeT, typename EdgeT>
@@ -371,15 +374,13 @@ CHConstructor<NodeT, EdgeT>::CHConstructor(CHGraph& base_graph, uint num_threads
 
 	uint nr_of_nodes(_base_graph.getNrOfNodes());
 
-	_pq.resize(_num_threads);
-	_dists.resize(_num_threads);
-	_reset_dists.resize(_num_threads);
+	_thread_data.resize(_num_threads);
 	_edge_diffs.resize(nr_of_nodes);
 	_to_delete.resize(nr_of_nodes);
 
-	for (uint i(0); i<_num_threads; i++) {
-		_dists[i].reserve(nr_of_nodes);
-		_reset_dists[i].reserve(nr_of_nodes);
+	for (auto& td: _thread_data) {
+		td.dists.reserve(nr_of_nodes);
+		td.reset_dists.reserve(nr_of_nodes);
 	}
 	_new_shortcuts.reserve(_base_graph.getNrOfEdges());
 	_delete.reserve(nr_of_nodes);
