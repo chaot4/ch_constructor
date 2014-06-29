@@ -56,7 +56,7 @@ class CHConstructor{
 		std::mutex _new_shortcuts_mutex;
 
 
-		void _initVectors(bool quick_version = false);
+		void _initVectors();
 		void _contract(NodeID node);
 		void _quickContract(NodeID node);
 		uint _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
@@ -144,19 +144,11 @@ void CHConstructor<NodeT, EdgeT>::_resetThreadData()
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_initVectors(bool quick_version)
+void CHConstructor<NodeT, EdgeT>::_initVectors()
 {
 	_new_shortcuts.clear();
 	_delete.clear();
 	_to_delete.assign(_base_graph.getNrOfNodes(), false);
-
-	if (!quick_version) {
-		for (auto& td: _thread_data) {
-			td.pq = PQ();
-			td.dists.assign(_base_graph.getNrOfNodes(), c::NO_DIST);
-			td.reset_dists.clear();
-		}
-	}
 }
 
 template <typename NodeT, typename EdgeT>
@@ -397,7 +389,7 @@ void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint 
 		steady_clock::time_point t1 = steady_clock::now();
 		Print("Starting round " << round);
 		Debug("Initializing the vectors for a new round.");
-		_initVectors(true);
+		_initVectors();
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
 		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
