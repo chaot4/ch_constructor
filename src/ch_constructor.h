@@ -65,8 +65,7 @@ class CHConstructor{
 		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
 				EdgeType direction = OUT);
 
-		void _calcIndependentSet(std::list<NodeID>& nodes,
-				std::vector<NodeID>& independent_set,
+		std::vector<NodeID> _calcIndependentSet(std::list<NodeID>& nodes,
 				uint max_degree = MAX_UINT);
 		void _markNeighbours(NodeID node, std::vector<bool>& marked);
 
@@ -282,9 +281,10 @@ void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcu
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::list<NodeID>& nodes,
-		std::vector<NodeID>& independent_set, uint max_degree)
+std::vector<NodeID> CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::list<NodeID>& nodes,
+		uint max_degree)
 {
+	std::vector<NodeID> independent_set;
 	std::vector<bool> marked(_base_graph.getNrOfNodes(), false);
 	independent_set.reserve(nodes.size());
 
@@ -295,6 +295,7 @@ void CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::list<NodeID>& nodes,
 			independent_set.push_back(*it);
 		}
 	}
+	return independent_set;
 }
 
 template <typename NodeT, typename EdgeT>
@@ -395,8 +396,7 @@ void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint 
 		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
 
 		Debug("Constructing the independent set.");
-		std::vector<NodeID> independent_set;
-		_calcIndependentSet(nodes, independent_set, max_degree);
+		auto independent_set = _calcIndependentSet(nodes, max_degree);
 		Print("The independent set has size " << independent_set.size() << ".");
 
 		if (independent_set.empty()) break;
@@ -443,8 +443,7 @@ void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
 		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
 
 		Debug("Constructing the independent set.");
-		std::vector<NodeID> independent_set;
-		_calcIndependentSet(nodes, independent_set);
+		auto independent_set = _calcIndependentSet(nodes);
 		Print("The independent set has size " << independent_set.size() << ".");
 
 		Debug("Contracting all the nodes in the independent set.");
