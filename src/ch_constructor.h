@@ -47,7 +47,6 @@ class CHConstructor{
 
 		uint _num_threads;
 		ThreadData& _myThreadData();
-		void _resetThreadData();
 
 		std::vector<Shortcut> _new_shortcuts;
 		std::vector<int> _edge_diffs;
@@ -61,6 +60,7 @@ class CHConstructor{
 		void _quickContract(NodeID node);
 		uint _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
 				EdgeType direction);
+		void _calcShortestDists(ThreadData& td, NodeID start_node, EdgeType direction, uint radius);
 		void _handleNextPQElement(EdgeType direction);
 		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
 				EdgeType direction = OUT);
@@ -109,11 +109,11 @@ struct CHConstructor<NodeT, EdgeT>::CompInOutProduct
 template <typename NodeT, typename EdgeT>
 struct CHConstructor<NodeT, EdgeT>::PQElement
 {
-	NodeID id;
+	NodeID node;
 	uint _dist;
 
-	PQElement(NodeID id, uint dist)
-		: id(id), _dist(dist) {}
+	PQElement(NodeID node, uint dist)
+		: node(node), _dist(dist) {}
 
 	bool operator>(PQElement const& other) const
 	{
@@ -128,18 +128,6 @@ template <typename NodeT, typename EdgeT>
 auto CHConstructor<NodeT, EdgeT>::_myThreadData() -> ThreadData&
 {
 	return _thread_data[omp_get_thread_num()];
-}
-
-template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_resetThreadData()
-{
-	ThreadData& td(_myThreadData());
-
-	td.pq = PQ();
-	for (auto node_id: td.reset_dists) {
-		td.dists[node_id] = c::NO_DIST;
-	}
-	td.reset_dists.clear();
 }
 
 template <typename NodeT, typename EdgeT>
@@ -165,7 +153,6 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 	int nr_new_edges(0);
 	for (auto const& edge: _base_graph.nodeEdges(node, !search_direction)) {
 		if (edge.tgt == edge.src) continue; /* skip loops */
-		_resetThreadData();
 		nr_new_edges += _calcShortcuts(edge, node, search_direction);
 	}
 
@@ -192,38 +179,39 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 {
 	ThreadData& td(_myThreadData());
 
-	NodeID start_node(otherNode(start_edge, !direction));
+	struct Target {
+		NodeID end_node;
+		Shortcut const& end_edge;
+	};
+	std::vector<Target> targets;
+	targets.reserve(_base_graph.getNrOfEdges(center_node, direction));
 
-	std::vector<NodeID> end_nodes;
-	std::vector<Shortcut const*> end_edges;
-	end_nodes.reserve(_base_graph.getNrOfEdges(center_node, direction));
-	end_edges.reserve(_base_graph.getNrOfEdges(center_node, direction));
+	NodeID start_node(otherNode(start_edge, !direction));
+	uint radius = 0;
 
 	for (auto const& edge: _base_graph.nodeEdges(center_node, direction)) {
 		if (edge.tgt == edge.src) continue; /* skip loops */
 		auto const end_node = otherNode(edge, direction);
 		if (start_node == end_node) continue; /* don't create loops */
 
-		end_edges.push_back(&edge);
-		end_nodes.push_back(end_node);
+		radius = std::max(radius, edge.distance());
+		targets.emplace_back(Target { end_node, edge });
 	}
+	radius += start_edge.distance();
 
-	td.pq.push(PQElement(start_node, 0));
-	td.dists[start_node] = 0;
-	td.reset_dists.push_back(start_node);
+	_calcShortestDists(td, start_node, direction, radius);
+
+	/* abort if start_edge wasn't a shortest path from start_node to center_node */
+	if (td.dists[center_node] != start_edge.distance()) return 0;
 
 	uint nr_new_edges(0);
-	for (uint i(0), size(end_nodes.size()); i < size; ++i) {
-		auto const end_node = end_nodes[i];
-		auto const& end_edge = *end_edges[i];
+	for (auto const& target: targets) {
+		/* we know a path within radius - so _calcShortestDists must have found one */
+		assert(c::NO_DIST != td.dists[target.end_node]);
 
-		while (td.dists[end_node] > td.pq.top().distance()) {
-			_handleNextPQElement(direction);
-		}
-
-		uint center_node_dist(start_edge.distance() + end_edge.distance());
-		if (td.dists[end_node] == center_node_dist) {
-			_createShortcut(start_edge, end_edge, direction);
+		uint center_node_dist(start_edge.distance() + target.end_edge.distance());
+		if (td.dists[target.end_node] == center_node_dist) {
+			_createShortcut(start_edge, target.end_edge, direction);
 			nr_new_edges++;
 		}
 	}
@@ -232,21 +220,32 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_handleNextPQElement(EdgeType direction)
+void CHConstructor<NodeT, EdgeT>::_calcShortestDists(ThreadData& td, NodeID start_node, EdgeType direction, uint radius)
 {
-	ThreadData& td(_myThreadData());
+	/* calculates all shortest paths within radius distance from start_node */
 
-	NodeID node(td.pq.top().id);
-	uint dist(td.pq.top().distance());
+	/* clear thread data first */
+	td.pq = PQ();
+	for (auto node_id: td.reset_dists) {
+		td.dists[node_id] = c::NO_DIST;
+	}
+	td.reset_dists.clear();
 
-	if (td.dists[node] == dist) {
+	/* now initialize with start node */
+	td.pq.push(PQElement(start_node, 0));
+	td.dists[start_node] = 0;
+	td.reset_dists.push_back(start_node);
 
-		for (auto const& edge: _base_graph.nodeEdges(node, direction)) {
+	while (!td.pq.empty() && td.pq.top().distance() <= radius) {
+		auto top = td.pq.top();
+		td.pq.pop();
+		if (td.dists[top.node] != top.distance()) continue;
+
+		for (auto const& edge: _base_graph.nodeEdges(top.node, direction)) {
 			NodeID tgt_node(otherNode(edge, direction));
-			uint new_dist(dist + edge.distance());
+			uint new_dist(top.distance() + edge.distance());
 
 			if (new_dist < td.dists[tgt_node]) {
-
 				if (td.dists[tgt_node] == c::NO_DIST) {
 					td.reset_dists.push_back(tgt_node);
 				}
@@ -255,8 +254,6 @@ void CHConstructor<NodeT, EdgeT>::_handleNextPQElement(EdgeType direction)
 			}
 		}
 	}
-
-	td.pq.pop();
 }
 
 template <typename NodeT, typename EdgeT>
@@ -371,7 +368,7 @@ CHConstructor<NodeT, EdgeT>::CHConstructor(CHGraph& base_graph, uint num_threads
 	_to_delete.resize(nr_of_nodes);
 
 	for (auto& td: _thread_data) {
-		td.dists.reserve(nr_of_nodes);
+		td.dists.assign(nr_of_nodes, c::NO_DIST);
 		td.reset_dists.reserve(nr_of_nodes);
 	}
 	_new_shortcuts.reserve(_base_graph.getNrOfEdges());
