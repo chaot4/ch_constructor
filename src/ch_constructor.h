@@ -135,7 +135,7 @@ void CHConstructor<NodeT, EdgeT>::_resetThreadData()
 	_pq[t] = PQ();
 
 	for (uint i(0), size(_reset_dists[t].size()); i<size; i++) {
-		_dists[t][_reset_dists[t][i]] = MAX_UINT;
+		_dists[t][_reset_dists[t][i]] = c::NO_DIST;
 	}
 	_reset_dists[t].clear();
 }
@@ -150,7 +150,7 @@ void CHConstructor<NodeT, EdgeT>::_initVectors(bool quick_version)
 	if (!quick_version) {
 		for (uint i(0); i<_num_threads; i++) {
 			_pq[i] = PQ();
-			_dists[i].assign(_base_graph.getNrOfNodes(), MAX_UINT);
+			_dists[i].assign(_base_graph.getNrOfNodes(), c::NO_DIST);
 			_reset_dists[i].clear();
 		}
 	}
@@ -254,7 +254,7 @@ void CHConstructor<NodeT, EdgeT>::_handleNextPQElement(EdgeType direction)
 
 			if (new_dist < _dists[t][tgt_node]) {
 
-				if (_dists[t][tgt_node] == MAX_UINT) {
+				if (_dists[t][tgt_node] == c::NO_DIST) {
 					_reset_dists[t].push_back(tgt_node);
 				}
 				_dists[t][tgt_node] = new_dist;
