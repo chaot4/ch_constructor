@@ -56,7 +56,8 @@ class Graph
 		void init(GraphInData<NodeT,EdgeT>&& data);
 
 		void printInfo() const;
-		void printInfo(std::list<NodeID> const& nodes) const;
+		template<typename Range>
+		void printInfo(Range&& nodes) const;
 
 		uint getNrOfNodes() const { return _nodes.size(); }
 		uint getNrOfEdges() const { return _out_edges.size(); }
@@ -94,14 +95,12 @@ void Graph<NodeT, EdgeT>::init(GraphInData<NodeT, EdgeT>&& data)
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::printInfo() const
 {
-	std::list<NodeID> nodes(_nodes.size());
-	std::iota(nodes.begin(), nodes.end(), 0);
-
-	printInfo(nodes);
+	printInfo(counting_iteration(range<NodeID>(0, _nodes.size())));
 }
 
 template <typename NodeT, typename EdgeT>
-void Graph<NodeT, EdgeT>::printInfo(std::list<NodeID> const& nodes) const
+template <typename Range>
+void Graph<NodeT, EdgeT>::printInfo(Range&& nodes) const
 {
 #ifdef NVERBOSE
 	(void) nodes;
