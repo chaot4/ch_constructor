@@ -162,15 +162,14 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 		search_direction = IN;
 	}
 
-	uint nr_new_edges(0);
+	int nr_new_edges(0);
 	for (auto const& edge: _base_graph.nodeEdges(node, !search_direction)) {
 		if (edge.tgt == edge.src) continue; /* skip loops */
 		_resetThreadData();
 		nr_new_edges += _calcShortcuts(edge, node, search_direction);
 	}
 
-	uint edge_diff(nr_new_edges - _base_graph.getNrOfEdges(node));
-	_edge_diffs[node] = edge_diff;
+	_edge_diffs[node] = nr_new_edges - (int) _base_graph.getNrOfEdges(node);
 }
 
 template <typename NodeT, typename EdgeT>
