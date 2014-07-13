@@ -231,7 +231,7 @@ namespace chc {
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dist(0, 15);
 
-		std::string s; s.reserve(len);
+		std::string s; s.resize(len);
 		for (unsigned int i = 0; i < len; ++i) {
 			s[i] = hex[dist(gen)];
 		}

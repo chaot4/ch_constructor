@@ -65,7 +65,7 @@ class CHConstructor{
 		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
 				EdgeType direction = OUT);
 
-		std::vector<NodeID> _calcIndependentSet(std::list<NodeID>& nodes,
+		std::vector<NodeID> _calcIndependentSet(std::list<NodeID> const& nodes,
 				uint max_degree = MAX_UINT);
 		void _markNeighbours(NodeID node, std::vector<bool>& marked);
 
@@ -277,7 +277,7 @@ void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcu
 }
 
 template <typename NodeT, typename EdgeT>
-std::vector<NodeID> CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::list<NodeID>& nodes,
+std::vector<NodeID> CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::list<NodeID> const& nodes,
 		uint max_degree)
 {
 	std::vector<NodeID> independent_set;
