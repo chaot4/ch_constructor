@@ -53,12 +53,32 @@ namespace chc {
 			return FMI_CH;
 		}
 		else {
-			std::cerr << "Unknown fileformat!" << "\n";
+			std::cerr << "Unknown fileformat: " << format << "\n";
 		}
 
 		return FMI;
 	}
 
+	std::string toString(FileFormat format)
+	{
+		if (format == STD) {
+			return "STD";
+		}
+		else if (format == SIMPLE) {
+			return "SIMPLE";
+		}
+		else if (format == FMI) {
+			return "FMI";
+		}
+		else if (format == FMI_CH) {
+			return "FMI_CH";
+		}
+		else {
+			std::cerr << "Unknown fileformat: " << format << "\n";
+		}
+
+		return "FMI";
+	}
 
 	template<>
 	void text_writeNode<OSMNode>(std::ostream& os, OSMNode const& node)

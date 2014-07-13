@@ -115,6 +115,7 @@ namespace chc {
 
 	enum FileFormat { STD, SIMPLE, FMI, FMI_CH };
 	FileFormat toFileFormat(std::string const& format);
+	std::string toString(FileFormat format);
 
 	template<typename Node, typename Edge>
 	inline GraphInData<Node, Edge> readGraph(FileFormat format, std::string const& filename)
@@ -129,7 +130,7 @@ namespace chc {
 		case FMI_CH:
 			break;
 		}
-		std::cerr << "Unknown input fileformat: " << format << std::endl;
+		std::cerr << "Unknown input fileformat!" << std::endl;
 		std::exit(1);
 	}
 
@@ -147,7 +148,7 @@ namespace chc {
 		case FMI_CH:
 			break;
 		}
-		std::cerr << "Unknown input fileformat: " << format << std::endl;
+		std::cerr << "Unknown input fileformat!" << std::endl;
 		std::exit(1);
 	}
 
@@ -175,7 +176,7 @@ namespace chc {
 			callable(readGraphForWriter<FormatFMI_CH::Writer>(read_format, filename));
 			return;
 		}
-		std::cerr << "Unknown output fileformat: " << write_format << std::endl;
+		std::cerr << "Unknown output fileformat!" << std::endl;
 		std::exit(1);
 	}
 
@@ -210,7 +211,7 @@ namespace chc {
 			writeCHGraphFile<FormatFMI_CH::Writer>(filename, data);
 			return;
 		}
-		std::cerr << "Unknown output fileformat: " << format << std::endl;
+		std::cerr << "Unknown output fileformat!" << std::endl;
 		std::exit(1);
 	}
 }
