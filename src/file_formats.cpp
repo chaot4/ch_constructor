@@ -88,6 +88,13 @@ namespace chc {
 	}
 
 	template<>
+	void text_writeNode<CHNode<OSMNode>>(std::ostream& os, CHNode<OSMNode> const& node)
+	{
+		os << node.id << " " << node.osm_id << " " << node.lat << " "
+			<< node.lon << " " << node.elev << " " << node.lvl << "\n";
+	}
+
+	template<>
 	OSMNode text_readNode<OSMNode>(std::istream& is, NodeID node_id)
 	{
 		return readLine(is, [node_id](std::istream& is) {
@@ -152,6 +159,14 @@ namespace chc {
 			edge.id = edge_id;
 			return edge;
 		});
+	}
+
+	template<>
+	void text_writeEdge<CHEdge<OSMEdge>>(std::ostream& os, CHEdge<OSMEdge> const& edge)
+	{
+		os << edge.src << " " << edge.tgt << " " << edge.dist << " "
+			<< edge.type << " " << edge.speed << " " << edge.child_edge1 << " "
+			<< edge.child_edge2 << "\n";
 	}
 
 
@@ -227,7 +242,6 @@ namespace chc {
 	}
 
 
-
 	void FormatFMI::Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges)
 	{
 		char c;
@@ -258,16 +272,34 @@ namespace chc {
 		return s;
 	}
 
-	void FormatFMI_CH::Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges)
-	{
-		/* Write header */
-		os << "# Id : " << random_id(32) << "\n";
-		os << "# Timestamp : " << time(nullptr) << "\n";
-		os << "# Type: maxspeed" << "\n";
-		os << "# Revision: 1" << "\n";
-		os << "\n";
 
-		os << nr_of_nodes << "\n";
-		os << nr_of_edges << "\n";
+	namespace FormatFMI_CH {
+		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges)
+		{
+			/* Write header */
+			os << "# OriginRevision : " << "TODO" << "\n";
+			os << "# Type: chgraph" << "\n";
+			os << "# OriginType : " << "TODO" << "\n";
+			os << "# OriginId : " << "TODO" << "\n";
+			os << "# Id : " << random_id(32) << "\n";
+			os << "# Revision: 1" << "\n";
+			os << "# Origin: ch_constructor" << "\n";
+			os << "# OriginTimestamp : " << "TODO" << "\n";
+			os << "# Timestamp : " << time(nullptr) << "\n";
+			os << "\n";
+
+			os << nr_of_nodes << "\n";
+			os << nr_of_edges << "\n";
+		}
+
+		void Writer_impl::writeNode(node_type const& out, NodeID)
+		{
+			text_writeNode<node_type>(os, out);
+		}
+
+		void Writer_impl::writeEdge(edge_type const& out, EdgeID)
+		{
+			text_writeEdge<edge_type>(os, out);
+		}
 	}
 }

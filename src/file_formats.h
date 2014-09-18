@@ -10,6 +10,7 @@ namespace chc {
 	void text_writeNode(std::ostream& os, NodeT const& node);
 	template<> void text_writeNode<OSMNode>(std::ostream& os, OSMNode const& node);
 	template<> void text_writeNode<GeoNode>(std::ostream& os, GeoNode const& node);
+	template<> void text_writeNode<CHNode<OSMNode>>(std::ostream& os, CHNode<OSMNode> const& node);
 
 	template<typename NodeT>
 	NodeT text_readNode(std::istream& is, NodeID node_id = c::NO_NID);
@@ -20,6 +21,7 @@ namespace chc {
 	void text_writeEdge(std::ostream& os, EdgeT const& edge);
 	template<> void text_writeEdge<OSMEdge>(std::ostream& os, OSMEdge const& edge);
 	template<> void text_writeEdge<Edge>(std::ostream& os, Edge const& edge);
+	template<> void text_writeEdge<CHEdge<OSMEdge>>(std::ostream& os, CHEdge<OSMEdge> const& edge);
 
 	template<typename EdgeT>
 	EdgeT text_readEdge(std::istream& is, EdgeID edge_id = c::NO_EID);
@@ -99,14 +101,16 @@ namespace chc {
 	}
 	namespace FormatFMI_CH
 	{
-		typedef OSMNode node_type;
-		typedef OSMEdge edge_type;
+		typedef CHNode<OSMNode> node_type;
+		typedef CHEdge<OSMEdge> edge_type;
 
 		struct Writer_impl : public FormatSTD::Writer_impl
 		{
 		public:
 			Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) { }
 			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges);
+			void writeNode(node_type const& out, NodeID node_id);
+			void writeEdge(edge_type const& out, EdgeID edge_id);
 		};
 		typedef SimpleWriter<Writer_impl> Writer;
 	}
