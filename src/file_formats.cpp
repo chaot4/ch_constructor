@@ -2,6 +2,7 @@
 
 #include <random>
 #include <sstream>
+#include <string>
 
 namespace chc {
 	namespace {
@@ -165,8 +166,9 @@ namespace chc {
 	void text_writeEdge<CHEdge<OSMEdge>>(std::ostream& os, CHEdge<OSMEdge> const& edge)
 	{
 		os << edge.src << " " << edge.tgt << " " << edge.dist << " "
-			<< edge.type << " " << edge.speed << " " << edge.child_edge1 << " "
-			<< edge.child_edge2 << "\n";
+			<< edge.type << " " << edge.speed << " "
+			<< (edge.child_edge1 == c::NO_EID ? "-1" : std::to_string(edge.child_edge1)) << " "
+			<< (edge.child_edge2 == c::NO_EID ? "-1" : std::to_string(edge.child_edge2)) << "\n";
 	}
 
 
