@@ -25,6 +25,8 @@ template <typename NodeT, typename EdgeT>
 class Graph
 {
 	protected:
+		Metadata _meta_data;
+
 		std::vector<NodeT> _nodes;
 
 		std::vector<uint> _out_offsets;
@@ -80,6 +82,7 @@ class Graph
 template <typename NodeT, typename EdgeT>
 void Graph<NodeT, EdgeT>::init(GraphInData<NodeT, EdgeT>&& data)
 {
+	_meta_data.swap(data.meta_data);
 	_nodes.swap(data.nodes);
 	_out_edges.swap(data.edges);
 	_in_edges = _out_edges;

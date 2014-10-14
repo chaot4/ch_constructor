@@ -7,6 +7,8 @@
 #include <sstream>
 #include <vector>
 #include <limits>
+#include <map>
+#include <string>
 
 namespace chc
 {
@@ -26,6 +28,8 @@ namespace c
 	uint const NO_LVL(std::numeric_limits<uint>::max());
 }
 
+typedef std::map<std::string, std::string> Metadata;
+
 enum EdgeType {OUT = 0, IN = 1};
 inline EdgeType operator!(EdgeType type) { return (EdgeType)(1 - type); }
 
@@ -35,12 +39,14 @@ struct GraphInData {
 	/* graph will "steal" data */
 	std::vector<NodeT> nodes;
 	std::vector<EdgeT> edges;
+	Metadata meta_data;
 };
 template <typename NodeT, typename EdgeT>
 struct GraphCHOutData {
 	std::vector<NodeT> const& nodes;
 	std::vector<uint> const& node_levels;
 	std::vector<EdgeT> const& edges;
+	Metadata meta_data;
 };
 
 

@@ -210,7 +210,7 @@ auto SCGraph<NodeT, EdgeT>::exportData() -> GraphCHOutData<NodeT, Shortcut>
 
 	_edges_dump = decltype(_edges_dump)();
 
-	return GraphCHOutData<NodeT, Shortcut>{BaseGraph::_nodes, _node_levels, _out_edges};
+	return GraphCHOutData<NodeT, Shortcut>{BaseGraph::_nodes, _node_levels, _out_edges, BaseGraph::_meta_data};
 }
 
 }

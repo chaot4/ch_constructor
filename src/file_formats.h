@@ -36,7 +36,8 @@ namespace chc {
 		struct Reader_impl
 		{
 			Reader_impl(std::istream& is) : is(is) { }
-			void readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges);
+			void readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges,
+					Metadata& meta_data);
 			node_type readNode(NodeID node_id);
 			edge_type readEdge(EdgeID edge_id);
 		protected:
@@ -47,7 +48,7 @@ namespace chc {
 		struct Writer_impl
 		{
 			Writer_impl(std::ostream& os) : os(os) { }
-			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges);
+			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
 			void writeNode(node_type const& out, NodeID node_id);
 			void writeEdge(edge_type const& out, EdgeID edge_id);
 		protected:
@@ -65,7 +66,8 @@ namespace chc {
 		struct Reader_impl
 		{
 			Reader_impl(std::istream& is) : is(is) { }
-			void readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges);
+			void readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges,
+					Metadata& meta_data);
 			node_type readNode(NodeID node_id);
 			edge_type readEdge(EdgeID edge_id);
 		protected:
@@ -77,7 +79,7 @@ namespace chc {
 		{
 		public:
 			Writer_impl(std::ostream& os) : os(os) { }
-			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges);
+			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
 			void writeNode(node_type const& out, NodeID node_id);
 			void writeEdge(edge_type const& out, EdgeID edge_id);
 		protected:
@@ -95,7 +97,8 @@ namespace chc {
 		struct Reader_impl : public FormatSTD::Reader_impl
 		{
 			Reader_impl(std::istream& is) : FormatSTD::Reader_impl(is) { }
-			void readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges);
+			void readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges,
+					Metadata& meta_data);
 		};
 		typedef SimpleReader<Reader_impl> Reader;
 	}
@@ -108,7 +111,7 @@ namespace chc {
 		{
 		public:
 			Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) { }
-			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges);
+			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
 			void writeNode(node_type const& out, NodeID node_id);
 			void writeEdge(edge_type const& out, EdgeID edge_id);
 		};

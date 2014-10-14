@@ -46,9 +46,9 @@ namespace chc {
 			Implementation impl(is);
 			NodeID nr_of_nodes = 0;
 			EdgeID nr_of_edges = 0;
-			impl.readHeader(nr_of_nodes, nr_of_edges);
-
 			GraphInData<NodeT, EdgeT> result;
+			impl.readHeader(nr_of_nodes, nr_of_edges, result.meta_data);
+
 			result.nodes.reserve(nr_of_nodes);
 			result.edges.reserve(nr_of_edges);
 
@@ -115,7 +115,7 @@ namespace chc {
 
 			Implementation impl(os);
 
-			impl.writeHeader(nr_of_nodes, nr_of_edges);
+			impl.writeHeader(nr_of_nodes, nr_of_edges, data.meta_data);
 
 			NodeID node_id = 0;
 			for (auto const& node: data.nodes) {

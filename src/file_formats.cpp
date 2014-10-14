@@ -173,7 +173,8 @@ namespace chc {
 
 
 	namespace FormatSTD {
-		void Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges)
+		void Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges,
+				Metadata& meta_data)
 		{
 			is >> estimated_nr_nodes >> estimated_nr_edges;
 		}
@@ -188,7 +189,7 @@ namespace chc {
 			return text_readEdge<edge_type>(is, edge_id);
 		}
 
-		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges)
+		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
 		{
 			os << nr_of_nodes << "\n";
 			os << nr_of_edges << "\n";
@@ -211,7 +212,8 @@ namespace chc {
 
 
 	namespace FormatSimple {
-		void Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges)
+		void Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges,
+				Metadata& meta_data)
 		{
 			is >> estimated_nr_nodes >> estimated_nr_edges;
 		}
@@ -226,7 +228,7 @@ namespace chc {
 			return text_readEdge<edge_type>(is, edge_id);
 		}
 
-		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges)
+		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
 		{
 			os << nr_of_nodes << "\n";
 			os << nr_of_edges << "\n";
@@ -244,15 +246,31 @@ namespace chc {
 	}
 
 
-	void FormatFMI::Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges)
+	void FormatFMI::Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges,
+			Metadata& meta_data)
 	{
-		char c;
-		is.get(c);
-		// Note that this loop also reads the first character after
-		// all the comments are over.
-		while (c == '#') {
-			is.ignore(1024, '\n');
-			is.get(c);
+		std::string line;
+		std::getline(is, line);
+		while (line != "") {
+			std::stringstream ss(line);
+			std::string hash;
+			std::string key;
+			std::string map;
+			std::string colon;
+			ss >> hash >> key >> colon >> map;
+
+			if (hash != "#") {
+				std::cout << "Error while parsing meta data: expected '#' instead of '"
+					<< hash << "'\n";
+			}
+			if (colon != ":") {
+				std::cout << "Error while parsing meta data: expected ':' instead of '"
+					<< colon << "'\n";
+			}
+
+			meta_data[key] = map;
+
+			std::getline(is, line);
 		}
 
 		is >> estimated_nr_nodes >> estimated_nr_edges;
@@ -276,18 +294,17 @@ namespace chc {
 
 
 	namespace FormatFMI_CH {
-		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges)
+		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
 		{
 			/* Write header */
-			os << "# OriginRevision : " << "TODO" << "\n";
-			os << "# Type: chgraph" << "\n";
-			os << "# OriginType : " << "TODO" << "\n";
-			os << "# OriginId : " << "TODO" << "\n";
+			os << "# Type : chgraph" << "\n";
 			os << "# Id : " << random_id(32) << "\n";
-			os << "# Revision: 1" << "\n";
-			os << "# Origin: ch_constructor" << "\n";
-			os << "# OriginTimestamp : " << "TODO" << "\n";
+			os << "# Revision : 1" << "\n";
 			os << "# Timestamp : " << time(nullptr) << "\n";
+			os << "# Origin : ch_constructor" << "\n";
+			for (auto it(meta_data.begin()); it != meta_data.end(); it++) {
+				os << "# Origin" << it->first << " : " << it->second << "\n";
+			}
 			os << "\n";
 
 			os << nr_of_nodes << "\n";
