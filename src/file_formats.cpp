@@ -81,6 +81,83 @@ namespace chc {
 		return "FMI";
 	}
 
+	void calcTimeMetric(OSMEdge& edge)
+	{
+		/* Stolen from ToureNPlaner */
+		if (edge.speed <= 0){
+			switch (edge.type) {
+				//motorway
+				case 1:
+					edge.dist = (edge.dist * 1.3) / 1.3;
+					break;
+					//motorway link
+				case 2:
+					edge.dist = (edge.dist * 1.3) / 1.0;
+					break;
+					//primary
+				case 3:
+					edge.dist = (edge.dist * 1.3) / 0.7;
+					break;
+					//primary link
+				case 4:
+					edge.dist = (edge.dist * 1.3) / 0.7;
+					break;
+					//secondary
+				case 5:
+					edge.dist = (edge.dist * 1.3) / 0.65;
+					break;
+					//secondary link
+				case 6:
+					edge.dist = (edge.dist * 1.3) / 0.65;
+					break;
+					//tertiary
+				case 7:
+					edge.dist = (edge.dist * 1.3) / 0.6;
+					break;
+					//tertiary link
+				case 8:
+					edge.dist = (edge.dist * 1.3) / 0.6;
+					break;
+					//trunk
+				case 9:
+					edge.dist = (edge.dist * 1.3) / 0.8;
+					break;
+					//trunk link
+				case 10:
+					edge.dist = (edge.dist * 1.3) / 0.8;
+					break;
+					//unclassified
+				case 11:
+					edge.dist = (edge.dist * 1.3) / 0.25;
+					break;
+					//residential
+				case 12:
+					edge.dist = (edge.dist * 1.3) / 0.45;
+					break;
+					//living street
+				case 13:
+					edge.dist = (edge.dist * 1.3) / 0.3;
+					break;
+					//road
+				case 14:
+					edge.dist = (edge.dist * 1.3) / 0.25;
+					break;
+					//service
+				case 15:
+					edge.dist = (edge.dist * 1.3) / 0.3;
+					break;
+					//turning circle
+				case 16:
+					edge.dist = (edge.dist * 1.3) / 0.3;
+					break;
+				default:
+					edge.dist = (edge.dist * 1.3) / 0.5;
+			}
+		} else {
+			edge.dist = (edge.dist * 1.3) / (((edge.speed > 130) ? 130.0 : (double) edge.speed)/100.0);
+		}
+	}
+
 	template<>
 	void text_writeNode<OSMNode>(std::ostream& os, OSMNode const& node)
 	{
@@ -141,6 +218,7 @@ namespace chc {
 			OSMEdge edge;
 			is >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
 			edge.id = edge_id;
+			calcTimeMetric(edge);
 			return edge;
 		});
 	}

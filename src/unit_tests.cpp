@@ -206,7 +206,7 @@ void unit_tests::testDijkstra()
 	uint dist = dij.calcShopa(0, tgt, path);
 
 	Print("Dist of Dijkstra from 0 to " << tgt << ": " << dist);
-	Test(dist == 9);
+	Test(dist == 18);
 
 	Print("Shortest path from 0 to " << tgt << ":");
 	for (uint i(0); i<path.size(); i++) {
