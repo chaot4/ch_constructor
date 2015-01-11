@@ -50,6 +50,9 @@ namespace chc {
 		else if (format == "FMI") {
 			return FMI;
 		}
+		else if (format == "FMI_DIST") {
+			return FMI_DIST;
+		}
 		else if (format == "FMI_CH") {
 			return FMI_CH;
 		}
@@ -70,6 +73,9 @@ namespace chc {
 		}
 		else if (format == FMI) {
 			return "FMI";
+		}
+		else if (format == FMI_DIST) {
+			return "FMI_DIST";
 		}
 		else if (format == FMI_CH) {
 			return "FMI_CH";
@@ -224,6 +230,17 @@ namespace chc {
 	}
 
 	template<>
+	OSMDistEdge text_readEdge<OSMDistEdge>(std::istream& is, EdgeID edge_id)
+	{
+		return readLine(is, [edge_id](std::istream& is) {
+			OSMDistEdge edge;
+			is >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
+			edge.id = edge_id;
+			return edge;
+		});
+	}
+
+	template<>
 	void text_writeEdge<Edge>(std::ostream& os, Edge const& edge)
 	{
 		os << edge.src << " " << edge.tgt << " " << edge.dist << "\n";
@@ -368,6 +385,11 @@ namespace chc {
 			s[i] = hex[dist(gen)];
 		}
 		return s;
+	}
+
+	auto FormatFMI_DIST::Reader_impl::readEdge(EdgeID edge_id) -> edge_type
+	{
+		return text_readEdge<edge_type>(is, edge_id);
 	}
 
 

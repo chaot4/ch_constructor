@@ -102,6 +102,20 @@ namespace chc {
 		};
 		typedef SimpleReader<Reader_impl> Reader;
 	}
+
+	namespace FormatFMI_DIST
+	{
+		typedef OSMNode node_type;
+		typedef OSMDistEdge edge_type;
+
+		struct Reader_impl : public FormatFMI::Reader_impl
+		{
+			edge_type readEdge(EdgeID edge_id);
+			Reader_impl(std::istream& is) : FormatFMI::Reader_impl(is) { }
+		};
+		typedef SimpleReader<Reader_impl> Reader;
+	}
+
 	namespace FormatFMI_CH
 	{
 		typedef CHNode<OSMNode> node_type;
@@ -120,7 +134,7 @@ namespace chc {
 
 
 
-	enum FileFormat { STD, SIMPLE, FMI, FMI_CH };
+	enum FileFormat { STD, SIMPLE, FMI, FMI_DIST, FMI_CH };
 	FileFormat toFileFormat(std::string const& format);
 	std::string toString(FileFormat format);
 
@@ -134,6 +148,8 @@ namespace chc {
 			return FormatSimple::Reader::readGraph<Node, Edge>(filename);
 		case FMI:
 			return FormatFMI::Reader::readGraph<Node, Edge>(filename);
+		case FMI_DIST:
+			return FormatFMI_DIST::Reader::readGraph<Node, Edge>(filename);
 		case FMI_CH:
 			break;
 		}
@@ -151,6 +167,8 @@ namespace chc {
 		case SIMPLE:
 			callable(FormatSimple::Reader::readGraph(filename));
 		case FMI:
+			callable(FormatFMI::Reader::readGraph(filename));
+		case FMI_DIST:
 			callable(FormatFMI::Reader::readGraph(filename));
 		case FMI_CH:
 			break;
@@ -178,6 +196,8 @@ namespace chc {
 			callable(readGraphForWriter<FormatSimple::Writer>(read_format, filename));
 			return;
 		case FMI:
+			break;
+		case FMI_DIST:
 			break;
 		case FMI_CH:
 			callable(readGraphForWriter<FormatFMI_CH::Writer>(read_format, filename));
@@ -213,6 +233,8 @@ namespace chc {
 			writeCHGraphFile<FormatSimple::Writer>(filename, data);
 			return;
 		case FMI:
+			break;
+		case FMI_DIST:
 			break;
 		case FMI_CH:
 			writeCHGraphFile<FormatFMI_CH::Writer>(filename, data);

@@ -247,6 +247,10 @@ struct OSMEdge
 };
 OSMEdge concat(OSMEdge const& edge1, OSMEdge const& edge2);
 
+struct OSMDistEdge : OSMEdge
+{
+
+};
 
 /*
  * EdgeSort
