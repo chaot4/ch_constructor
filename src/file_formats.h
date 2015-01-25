@@ -101,6 +101,13 @@ namespace chc {
 					Metadata& meta_data);
 		};
 		typedef SimpleReader<Reader_impl> Reader;
+
+		struct Writer_impl : public FormatSTD::Writer_impl
+		{
+			Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) { }
+			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
+		};
+		typedef SimpleWriter<Writer_impl> Writer;
 	}
 
 	namespace FormatFMI_DIST
@@ -211,6 +218,9 @@ namespace chc {
 	inline void writeCHGraphFile(std::string const& filename, GraphCHOutData<NodeT, EdgeT> const& data)
 	{
 		std::ofstream os(filename.c_str());
+		os.precision(7);
+		os << std::fixed;
+
 		if (!os.is_open()) {
 			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
 				filename << "\'. Exiting." << std::endl;
@@ -238,6 +248,47 @@ namespace chc {
 			break;
 		case FMI_CH:
 			writeCHGraphFile<FormatFMI_CH::Writer>(filename, data);
+			return;
+		}
+		std::cerr << "Unknown output fileformat!" << std::endl;
+		std::exit(1);
+	}
+
+	template<typename Writer, typename NodeT, typename EdgeT>
+	inline void writeGraphFile(std::string const& filename, GraphOutData<NodeT, EdgeT> const& data)
+	{
+		std::ofstream os(filename.c_str());
+		os.precision(7);
+		os << std::fixed;
+
+		if (!os.is_open()) {
+			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
+				filename << "\'. Exiting." << std::endl;
+			std::abort();
+		}
+
+		Print("Exporting to " << filename);
+		Writer::writeGraph(os, data);
+		os.close();
+	}
+
+	template<typename NodeT, typename EdgeT>
+	inline void writeGraphFile(FileFormat format, std::string const& filename, GraphOutData<NodeT, EdgeT> const& data)
+	{
+		switch (format) {
+		case STD:
+			writeGraphFile<FormatSTD::Writer>(filename, data);
+			return;
+		case SIMPLE:
+			writeGraphFile<FormatSimple::Writer>(filename, data);
+			return;
+		case FMI:
+			writeGraphFile<FormatFMI::Writer>(filename, data);
+			return;
+		case FMI_DIST:
+			break;
+		case FMI_CH:
+			writeGraphFile<FormatFMI_CH::Writer>(filename, data);
 			return;
 		}
 		std::cerr << "Unknown output fileformat!" << std::endl;

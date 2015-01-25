@@ -99,6 +99,40 @@ namespace chc {
 		using can_write = writer_can_write<SimpleWriter, NodeT, EdgeT>;
 
 		template<typename NodeT, typename EdgeT, typename std::enable_if<!can_write<NodeT, EdgeT>::value>::type* = nullptr>
+		static void writeGraph(std::ostream&, GraphOutData<NodeT, EdgeT> const&)
+		{
+			Print("Can't export nodes / edges in this format");
+			std::abort();
+		}
+
+		template<typename NodeT, typename EdgeT, typename std::enable_if<can_write<NodeT, EdgeT>::value>::type* = nullptr>
+		static void writeGraph(std::ostream& os, GraphOutData<NodeT, EdgeT> const& data)
+		{
+			NodeID nr_of_nodes(data.nodes.size());
+			EdgeID nr_of_edges(data.edges.size());
+
+			Print("Exporting " << nr_of_nodes << " nodes and " << nr_of_edges << " edges");
+
+			Implementation impl(os);
+
+			impl.writeHeader(nr_of_nodes, nr_of_edges, data.meta_data);
+
+			NodeID node_id = 0;
+			for (auto const& node: data.nodes) {
+				impl.writeNode(static_cast<node_type>(node), (NodeID) node_id);
+				++node_id;
+			}
+			Print("Exported all nodes.");
+
+			EdgeID edge_id = 0;
+			for (auto const& edge: data.edges) {
+				impl.writeEdge(static_cast<edge_type>(edge), (EdgeID) edge_id);
+				++edge_id;
+			}
+			Print("Exported all edges.");
+		}
+
+		template<typename NodeT, typename EdgeT, typename std::enable_if<!can_write<NodeT, EdgeT>::value>::type* = nullptr>
 		static void writeCHGraph(std::ostream&, GraphCHOutData<NodeT, EdgeT> const&)
 		{
 			Print("Can't export nodes / edges in this format");

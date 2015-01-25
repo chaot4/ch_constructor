@@ -18,7 +18,7 @@ namespace chc
 
 namespace unit_tests
 {
-	void testGraph();
+	    void testGraph();
 }
 
 template <typename NodeT, typename EdgeT>
@@ -65,6 +65,7 @@ class Graph
 		uint getNrOfEdges() const { return _out_edges.size(); }
 		EdgeT const& getEdge(EdgeID edge_id) const { return _out_edges[_id_to_index[edge_id]]; }
 		NodeT const& getNode(NodeID node_id) const { return _nodes[node_id]; }
+		Metadata const& getMetadata() const { return _meta_data; }
 
 		uint getNrOfEdges(NodeID node_id) const;
 		uint getNrOfEdges(NodeID node_id, EdgeType type) const;

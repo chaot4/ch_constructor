@@ -87,6 +87,21 @@ namespace chc {
 		return "FMI";
 	}
 
+	static std::string random_id(unsigned int len)
+	{
+		static const char hex[17] = "0123456789abcdef";
+
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<> dist(0, 15);
+
+		std::string s; s.resize(len);
+		for (unsigned int i = 0; i < len; ++i) {
+			s[i] = hex[dist(gen)];
+		}
+		return s;
+	}
+
 	void calcTimeMetric(OSMEdge& edge)
 	{
 		/* Stolen from ToureNPlaner */
@@ -371,20 +386,20 @@ namespace chc {
 		is >> estimated_nr_nodes >> estimated_nr_edges;
 	}
 
-	/* Generate random id */
-	static std::string random_id(unsigned int len)
+	void FormatFMI::Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
 	{
-		static const char hex[17] = "0123456789abcdef";
-
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_int_distribution<> dist(0, 15);
-
-		std::string s; s.resize(len);
-		for (unsigned int i = 0; i < len; ++i) {
-			s[i] = hex[dist(gen)];
+		os << "# Type : graph" << "\n";
+		os << "# Id : " << random_id(32) << "\n";
+		os << "# Revision : 1" << "\n";
+		os << "# Timestamp : " << time(nullptr) << "\n";
+		os << "# Origin : ch_constructor" << "\n";
+		for (auto it(meta_data.begin()); it != meta_data.end(); it++) {
+			os << "# Origin" << it->first << " : " << it->second << "\n";
 		}
-		return s;
+		os << "\n";
+
+		os << nr_of_nodes << "\n";
+		os << nr_of_edges << "\n";
 	}
 
 	auto FormatFMI_DIST::Reader_impl::readEdge(EdgeID edge_id) -> edge_type
@@ -392,11 +407,9 @@ namespace chc {
 		return text_readEdge<edge_type>(is, edge_id);
 	}
 
-
 	namespace FormatFMI_CH {
 		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
 		{
-			/* Write header */
 			os << "# Type : chgraph" << "\n";
 			os << "# Id : " << random_id(32) << "\n";
 			os << "# Revision : 1" << "\n";

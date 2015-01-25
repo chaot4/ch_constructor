@@ -15,7 +15,7 @@ namespace chc
 
 namespace unit_tests
 {
-	void testNodesAndEdges();
+	    void testNodesAndEdges();
 }
 
 typedef uint NodeID;
@@ -33,7 +33,9 @@ typedef std::map<std::string, std::string> Metadata;
 enum EdgeType {OUT = 0, IN = 1};
 inline EdgeType operator!(EdgeType type) { return (EdgeType)(1 - type); }
 
-/* Data required to construct or write out graphs. */
+/* 
+ * Data required to construct or write out graphs.
+ */
 template <typename NodeT, typename EdgeT>
 struct GraphInData {
 	/* graph will "steal" data */
@@ -41,6 +43,14 @@ struct GraphInData {
 	std::vector<EdgeT> edges;
 	Metadata meta_data;
 };
+
+template <typename NodeT, typename EdgeT>
+struct GraphOutData {
+	std::vector<NodeT> const& nodes;
+	std::vector<EdgeT> const& edges;
+	Metadata meta_data;
+};
+
 template <typename NodeT, typename EdgeT>
 struct GraphCHOutData {
 	std::vector<NodeT> const& nodes;
