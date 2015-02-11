@@ -56,6 +56,9 @@ namespace chc {
 		else if (format == "FMI_CH") {
 			return FMI_CH;
 		}
+		else if (format == "STEFAN_CH") {
+			return STEFAN_CH;
+		}
 		else {
 			std::cerr << "Unknown fileformat: " << format << "\n";
 		}
@@ -79,6 +82,9 @@ namespace chc {
 		}
 		else if (format == FMI_CH) {
 			return "FMI_CH";
+		}
+		else if (format == STEFAN_CH) {
+			return "STEFAN_CH";
 		}
 		else {
 			std::cerr << "Unknown fileformat: " << format << "\n";
@@ -194,6 +200,12 @@ namespace chc {
 	}
 
 	template<>
+	void text_writeNode<CHNode<StefanNode>>(std::ostream& os, CHNode<StefanNode> const& node)
+	{
+		os << node.lon << " " << node.lat << " " <<  node.lvl << " " << node.osm_id << "\n";
+	}
+
+	template<>
 	OSMNode text_readNode<OSMNode>(std::istream& is, NodeID node_id)
 	{
 		return readLine(is, [node_id](std::istream& is) {
@@ -277,6 +289,14 @@ namespace chc {
 	{
 		os << edge.src << " " << edge.tgt << " " << edge.dist << " "
 			<< edge.type << " " << edge.speed << " "
+			<< (edge.child_edge1 == c::NO_EID ? "-1" : std::to_string(edge.child_edge1)) << " "
+			<< (edge.child_edge2 == c::NO_EID ? "-1" : std::to_string(edge.child_edge2)) << "\n";
+	}
+
+	template<>
+	void text_writeEdge<CHEdge<StefanEdge>>(std::ostream& os, CHEdge<StefanEdge> const& edge)
+	{
+		os << edge.src << " " << edge.tgt << " " << edge.dist << " "
 			<< (edge.child_edge1 == c::NO_EID ? "-1" : std::to_string(edge.child_edge1)) << " "
 			<< (edge.child_edge2 == c::NO_EID ? "-1" : std::to_string(edge.child_edge2)) << "\n";
 	}
@@ -424,6 +444,18 @@ namespace chc {
 			os << nr_of_edges << "\n";
 		}
 
+		void Writer_impl::writeNode(node_type const& out, NodeID)
+		{
+			text_writeNode<node_type>(os, out);
+		}
+
+		void Writer_impl::writeEdge(edge_type const& out, EdgeID)
+		{
+			text_writeEdge<edge_type>(os, out);
+		}
+	}
+
+	namespace FormatSTEFAN_CH {
 		void Writer_impl::writeNode(node_type const& out, NodeID)
 		{
 			text_writeNode<node_type>(os, out);

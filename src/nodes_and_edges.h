@@ -126,10 +126,34 @@ struct GeoNode
 	bool operator<(GeoNode const& other) const { return id < other.id; }
 };
 
+struct StefanNode
+{
+	NodeID id = c::NO_NID;
+	uint64_t osm_id = std::numeric_limits<uint>::max();
+	double lat = 0;
+	double lon = 0;
+
+	StefanNode() { }
+	StefanNode(NodeID id, uint64_t osm_id, double lat, double lon)
+		: id(id), osm_id(osm_id), lat(lat), lon(lon) {}
+
+	explicit operator Node() const
+	{
+		return Node(id);
+	}
+
+	operator GeoNode() const
+	{
+		return GeoNode(id, lat, lon, 0);
+	}
+
+	bool operator<(StefanNode const& other) const { return id < other.id; }
+};
+
 struct OSMNode
 {
 	NodeID id = c::NO_NID;
-	uint osm_id = std::numeric_limits<uint>::max();
+	uint64_t osm_id = std::numeric_limits<uint>::max();
 	double lat = 0;
 	double lon = 0;
 	int elev = 0;
@@ -142,6 +166,11 @@ struct OSMNode
 	operator GeoNode() const
 	{
 		return GeoNode(id, lat, lon, elev);
+	}
+
+	operator StefanNode() const
+	{
+		return StefanNode(id, osm_id, lat, lon);
 	}
 
 	bool operator<(OSMNode const& other) const { return id < other.id; }
@@ -235,6 +264,26 @@ struct MetricEdge : EdgeT
 	}
 };
 
+struct StefanEdge
+{
+	EdgeID id = c::NO_EID;
+	NodeID src = c::NO_NID;
+	NodeID tgt = c::NO_NID;
+	uint dist = c::NO_DIST;
+
+	StefanEdge() { }
+	StefanEdge(EdgeID id, NodeID src, NodeID tgt, uint dist)
+	: id(id), src(src), tgt(tgt), dist(dist) { }
+
+	uint distance() const { return dist; }
+
+	operator Edge() const
+	{
+		return Edge(id, src, tgt, dist);
+	}
+};
+StefanEdge concat(StefanEdge const& edge1, StefanEdge const& edge2);
+
 struct OSMEdge
 {
 	EdgeID id = c::NO_EID;
@@ -254,13 +303,15 @@ struct OSMEdge
 	{
 		return Edge(id, src, tgt, dist);
 	}
+
+	operator StefanEdge() const
+	{
+		return StefanEdge(id, src, tgt, dist);
+	}
 };
 OSMEdge concat(OSMEdge const& edge1, OSMEdge const& edge2);
 
-struct OSMDistEdge : OSMEdge
-{
-
-};
+struct OSMDistEdge : OSMEdge { };
 
 /*
  * EdgeSort

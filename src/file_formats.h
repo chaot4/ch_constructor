@@ -11,6 +11,7 @@ namespace chc {
 	template<> void text_writeNode<OSMNode>(std::ostream& os, OSMNode const& node);
 	template<> void text_writeNode<GeoNode>(std::ostream& os, GeoNode const& node);
 	template<> void text_writeNode<CHNode<OSMNode>>(std::ostream& os, CHNode<OSMNode> const& node);
+	template<> void text_writeNode<CHNode<StefanNode>>(std::ostream& os, CHNode<StefanNode> const& node);
 
 	template<typename NodeT>
 	NodeT text_readNode(std::istream& is, NodeID node_id = c::NO_NID);
@@ -22,6 +23,7 @@ namespace chc {
 	template<> void text_writeEdge<OSMEdge>(std::ostream& os, OSMEdge const& edge);
 	template<> void text_writeEdge<Edge>(std::ostream& os, Edge const& edge);
 	template<> void text_writeEdge<CHEdge<OSMEdge>>(std::ostream& os, CHEdge<OSMEdge> const& edge);
+	template<> void text_writeEdge<CHEdge<StefanEdge>>(std::ostream& os, CHEdge<StefanEdge> const& edge);
 
 	template<typename EdgeT>
 	EdgeT text_readEdge(std::istream& is, EdgeID edge_id = c::NO_EID);
@@ -139,9 +141,24 @@ namespace chc {
 		typedef SimpleWriter<Writer_impl> Writer;
 	}
 
+	namespace FormatSTEFAN_CH
+	{
+		typedef CHNode<StefanNode> node_type;
+		typedef CHEdge<StefanEdge> edge_type;
+
+		struct Writer_impl : public FormatSTD::Writer_impl
+		{
+		public:
+			Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) { }
+			void writeNode(node_type const& out, NodeID node_id);
+			void writeEdge(edge_type const& out, EdgeID edge_id);
+		};
+		typedef SimpleWriter<Writer_impl> Writer;
+	}
 
 
-	enum FileFormat { STD, SIMPLE, FMI, FMI_DIST, FMI_CH };
+
+	enum FileFormat { STD, SIMPLE, FMI, FMI_DIST, FMI_CH, STEFAN_CH };
 	FileFormat toFileFormat(std::string const& format);
 	std::string toString(FileFormat format);
 
@@ -158,6 +175,8 @@ namespace chc {
 		case FMI_DIST:
 			return FormatFMI_DIST::Reader::readGraph<Node, Edge>(filename);
 		case FMI_CH:
+			break;
+		case STEFAN_CH:
 			break;
 		}
 		std::cerr << "Unknown input fileformat!" << std::endl;
@@ -178,6 +197,8 @@ namespace chc {
 		case FMI_DIST:
 			callable(FormatFMI::Reader::readGraph(filename));
 		case FMI_CH:
+			break;
+		case STEFAN_CH:
 			break;
 		}
 		std::cerr << "Unknown input fileformat!" << std::endl;
@@ -208,6 +229,9 @@ namespace chc {
 			break;
 		case FMI_CH:
 			callable(readGraphForWriter<FormatFMI_CH::Writer>(read_format, filename));
+			return;
+		case STEFAN_CH:
+			callable(readGraphForWriter<FormatSTEFAN_CH::Writer>(read_format, filename));
 			return;
 		}
 		std::cerr << "Unknown output fileformat!" << std::endl;
@@ -249,6 +273,9 @@ namespace chc {
 		case FMI_CH:
 			writeCHGraphFile<FormatFMI_CH::Writer>(filename, data);
 			return;
+		case STEFAN_CH:
+			writeCHGraphFile<FormatSTEFAN_CH::Writer>(filename, data);
+			return;
 		}
 		std::cerr << "Unknown output fileformat!" << std::endl;
 		std::exit(1);
@@ -289,6 +316,9 @@ namespace chc {
 			break;
 		case FMI_CH:
 			writeGraphFile<FormatFMI_CH::Writer>(filename, data);
+			return;
+		case STEFAN_CH:
+			writeGraphFile<FormatSTEFAN_CH::Writer>(filename, data);
 			return;
 		}
 		std::cerr << "Unknown output fileformat!" << std::endl;

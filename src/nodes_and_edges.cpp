@@ -13,4 +13,10 @@ namespace chc
 		assert(edge1.tgt == edge2.src);
 		return OSMEdge(c::NO_EID, edge1.src, edge2.tgt, edge1.dist + edge2.dist, 0, -1);
 	}
+
+	StefanEdge concat(StefanEdge const& edge1, StefanEdge const& edge2)
+	{
+		assert(edge1.tgt == edge2.src);
+		return StefanEdge(c::NO_EID, edge1.src, edge2.tgt, edge1.dist + edge2.dist);
+	}
 }
