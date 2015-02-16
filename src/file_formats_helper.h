@@ -4,6 +4,8 @@
 #include "nodes_and_edges.h"
 #include "function_traits.h"
 
+#include <algorithm>
+
 namespace chc {
 	template<typename Writer, typename NodeT, typename EdgeT>
 	struct writer_can_write
@@ -70,6 +72,19 @@ namespace chc {
 				result.edges.push_back(std::move(edge));
 			}
 			Print("Read all the edges.");
+
+			auto size_before(result.edges.size());
+			std::sort(result.edges.begin(), result.edges.end(), EdgeSortSrcTgtDist<EdgeT>());
+			result.edges.erase(std::unique(result.edges.begin(), result.edges.end(),
+				equalEndpoints<EdgeT,EdgeT>), result.edges.end());
+			auto size_diff(size_before - result.edges.size());
+
+			if (size_diff) {
+				for (EdgeID i(0); i<result.edges.size(); i++) {
+					result.edges[i].id = i;
+				}
+				std::cerr << "Removed " << size_diff << " duplicate edge(s) and updated edge IDs.";
+			}
 
 			return result;
 		}

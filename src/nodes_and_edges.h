@@ -318,7 +318,7 @@ struct OSMDistEdge : OSMEdge { };
  */
 
 template <typename EdgeT>
-struct EdgeSortSrc
+struct EdgeSortSrcTgt
 {
 	bool operator()(EdgeT const& edge1, EdgeT const& edge2) const
 	{
@@ -328,12 +328,23 @@ struct EdgeSortSrc
 };
 
 template <typename EdgeT>
-struct EdgeSortTgt
+struct EdgeSortTgtSrc
 {
 	bool operator()(EdgeT const& edge1, EdgeT const& edge2) const
 	{
 		return edge1.tgt < edge2.tgt ||
 		       (edge1.tgt == edge2.tgt && edge1.src < edge2.src);
+	}
+};
+
+template <typename EdgeT>
+struct EdgeSortSrcTgtDist
+{
+	bool operator()(EdgeT const& edge1, EdgeT const& edge2) const
+	{
+		return edge1.src < edge2.src ||
+		       (edge1.src == edge2.src && edge1.tgt < edge2.tgt) ||
+		       (edge1.src == edge2.src && edge1.tgt == edge2.tgt && edge1.dist < edge2.dist);
 	}
 };
 

@@ -50,8 +50,8 @@ class Graph
 		typedef NodeT node_type;
 		typedef EdgeT edge_type;
 
-		typedef EdgeSortSrc<EdgeT> OutEdgeSort;
-		typedef EdgeSortTgt<EdgeT> InEdgeSort;
+		typedef EdgeSortSrcTgt<EdgeT> OutEdgeSort;
+		typedef EdgeSortTgtSrc<EdgeT> InEdgeSort;
 
 		/* Init the graph from file 'filename' and sort
 		 * the edges according to OutEdgeSort and InEdgeSort. */

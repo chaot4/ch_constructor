@@ -207,7 +207,7 @@ auto SCGraph<NodeT, EdgeT>::exportData() -> GraphCHOutData<NodeT, Shortcut>
 	}
 
 	/* Sort edges for output and adapt id's */
-	std::sort(edges.begin(), edges.end(), EdgeSortSrc<EdgeT>());
+	std::sort(edges.begin(), edges.end(), EdgeSortSrcTgt<EdgeT>());
 	std::vector<size_t> new_id(edges.size());
 	for (uint i(0); i<edges.size(); i++) {
 		new_id[edges[i].id] = i;
