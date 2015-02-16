@@ -419,6 +419,7 @@ void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint 
 
 		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
 		Print("Round took " << time_span.count() << " seconds.\n");
+		Unused(time_span);
 	}
 }
 
@@ -464,6 +465,7 @@ void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
 
 		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
 		Print("Round took " << time_span.count() << " seconds.\n");
+		Unused(time_span);
 	}
 }
 

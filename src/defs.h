@@ -18,6 +18,8 @@
 #define Print(x) do { std::cout << x << std::endl; } while (0)
 #endif
 
+#define Unused(x) ((void)x)
+
 #ifdef NDEBUG
 # undef NDEBUG
 # include <cassert>
