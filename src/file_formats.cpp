@@ -249,8 +249,11 @@ namespace chc {
 	{
 		return readLine(is, [edge_id](std::istream& is) {
 			OSMEdge edge;
-			is >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
+			std::make_signed<decltype(edge.dist)>::type signed_dist;
+
+			is >> edge.src >> edge.tgt >> signed_dist >> edge.type >> edge.speed;
 			edge.id = edge_id;
+			edge.dist = std::max(0, signed_dist); // set neg edges to 0
 			calcTimeMetric(edge);
 			return edge;
 		});
@@ -261,8 +264,11 @@ namespace chc {
 	{
 		return readLine(is, [edge_id](std::istream& is) {
 			OSMDistEdge edge;
-			is >> edge.src >> edge.tgt >> edge.dist >> edge.type >> edge.speed;
+			std::make_signed<decltype(edge.dist)>::type signed_dist;
+
+			is >> edge.src >> edge.tgt >> signed_dist >> edge.type >> edge.speed;
 			edge.id = edge_id;
+			edge.dist = std::max(0, signed_dist); // set neg edges to 0
 			return edge;
 		});
 	}
@@ -278,8 +284,11 @@ namespace chc {
 	{
 		return readLine(is, [edge_id](std::istream& is) {
 			Edge edge;
-			is >> edge.src >> edge.tgt >> edge.dist;
+			std::make_signed<decltype(edge.dist)>::type signed_dist;
+
+			is >> edge.src >> edge.tgt >> signed_dist;
 			edge.id = edge_id;
+			edge.dist = std::max(0, signed_dist); // set neg edges to 0
 			return edge;
 		});
 	}
