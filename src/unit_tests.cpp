@@ -101,7 +101,7 @@ void unit_tests::testCHConstructor()
 
 	CHConstructor<OSMNode, OSMEdge> chc(g, 2);
 
-	/* 
+	/*
 	 * Test the independent set construction.
 	 */
 

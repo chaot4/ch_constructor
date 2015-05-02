@@ -18,7 +18,7 @@ namespace chc
 
 namespace unit_tests
 {
-	    void testGraph();
+	void testGraph();
 }
 
 template <typename NodeT, typename EdgeT>

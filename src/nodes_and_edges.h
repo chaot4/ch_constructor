@@ -15,7 +15,7 @@ namespace chc
 
 namespace unit_tests
 {
-	    void testNodesAndEdges();
+	void testNodesAndEdges();
 }
 
 typedef uint NodeID;
@@ -33,7 +33,7 @@ typedef std::map<std::string, std::string> Metadata;
 enum EdgeType {OUT = 0, IN = 1};
 inline EdgeType operator!(EdgeType type) { return (EdgeType)(1 - type); }
 
-/* 
+/*
  * Data required to construct or write out graphs.
  */
 template <typename NodeT, typename EdgeT>
@@ -72,7 +72,7 @@ struct CHNode : NodeT
 	uint lvl = c::NO_LVL;
 
 	explicit CHNode() { }
-	explicit CHNode(NodeT const& node) : NodeT(node) { } 
+	explicit CHNode(NodeT const& node) : NodeT(node) { }
 	explicit CHNode(NodeT const& node, uint lvl) : NodeT(node), lvl(lvl){}
 };
 
