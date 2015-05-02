@@ -158,8 +158,12 @@ namespace chc {
 
 
 	enum class FileFormat { STD, SIMPLE, FMI, FMI_DIST, FMI_CH, STEFAN_CH };
+	static constexpr FileFormat LastFileFormat = FileFormat::STEFAN_CH;
+
 	FileFormat toFileFormat(std::string const& format);
-	std::string toString(FileFormat format);
+	std::string to_string(FileFormat format);
+	std::vector<FileFormat> getAllFileFormats();
+	std::string getAllFileFormatsString();
 
 	template<typename Node, typename Edge>
 	inline GraphInData<Node, Edge> readGraph(FileFormat format, std::string const& filename)

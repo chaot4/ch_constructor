@@ -66,7 +66,7 @@ namespace chc {
 		return FileFormat::FMI;
 	}
 
-	std::string toString(FileFormat format)
+	std::string to_string(FileFormat format)
 	{
 		switch (format) {
 		case FileFormat::STD:
@@ -85,6 +85,25 @@ namespace chc {
 
 		std::cerr << "Unknown fileformat: " << static_cast<int>(format) << "\n";
 		return "FMI";
+	}
+
+	std::vector<FileFormat> getAllFileFormats() {
+		std::vector<FileFormat> result;
+		size_t const last = from_enum(LastFileFormat);
+		for (size_t i = 0; i <= last; ++i) {
+			result.emplace_back(static_cast<FileFormat>(i));
+		}
+		return result;
+	}
+
+	std::string getAllFileFormatsString() {
+		std::stringstream s;
+		size_t const last = from_enum(LastFileFormat);
+		s << to_string(static_cast<FileFormat>(0));
+		for (size_t i = 1; i <= last; ++i) {
+			s << ", " << to_string(static_cast<FileFormat>(i));
+		}
+		return s.str();
 	}
 
 	static std::string random_id(unsigned int len)

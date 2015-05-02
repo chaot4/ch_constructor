@@ -16,10 +16,11 @@ void printHelp()
 		<< "Mandatory arguments are:\n"
 		<< "  -i, --infile <path>        Read graph from <path>\n"
 		<< "Optional arguments are:\n"
-		<< "  -f, --informat <format>    Expects infile in <format> (SIMPLE, STD, FMI - default FMI)\n"
+		<< "  -f, --informat <format>    Expects infile in <format> (" << getAllFileFormatsString() << " - default FMI)\n"
 		<< "  -o, --outfile <path>       Write graph to <path> (default: ch_out.graph)\n"
-		<< "  -g, --outformat <format>   Writes outfile in <format> (SIMPLE, STD, FMI_CH - default FMI_CH)\n"
-		<< "  -t, --threads <number>     Number of threads to use in the calculations (default: 1)\n";
+		<< "  -g, --outformat <format>   Writes outfile in <format> (" << getAllFileFormatsString() << " - default FMI_CH)\n"
+		<< "  -t, --threads <number>     Number of threads to use in the calculations (default: 1)\n"
+		<< "Note: not all formats are available as input / ouput format, and not all combinations are possible.\n";
 }
 
 struct BuildAndStoreCHGraph {
