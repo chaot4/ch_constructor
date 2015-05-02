@@ -2,6 +2,7 @@
 
 #include "graph.h"
 #include "chgraph.h"
+#include "enum_array.h"
 
 #include <vector>
 #include <limits>
@@ -28,7 +29,7 @@ class Dijkstra
 
 		std::vector<EdgeID> _found_by;
 		std::vector<uint> _dists;
-		std::vector<uint> _reset_dists;
+		std::vector<NodeID> _reset_dists;
 
 		void _reset();
 		void _relaxAllEdges(PQ& pq, PQElement const& top);
@@ -114,7 +115,7 @@ uint Dijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 template <typename Node, typename Edge>
 void Dijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 {
-	for (auto const& edge: _g.nodeEdges(top.node, OUT)) {
+	for (auto const& edge: _g.nodeEdges(top.node, EdgeType::OUT)) {
 		NodeID tgt(edge.tgt);
 		uint new_dist(top.distance() + edge.distance());
 
@@ -132,10 +133,9 @@ void Dijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 template <typename Node, typename Edge>
 void Dijkstra<Node,Edge>::_reset()
 {
-	for (uint i(0), size(_reset_dists.size()); i<size; i++) {
-		_dists[_reset_dists[i]] = c::NO_DIST;
+	for (auto const node: _reset_dists) {
+		_dists[node] = c::NO_DIST;
 	}
-
 	_reset_dists.clear();
 }
 
@@ -149,9 +149,15 @@ class CHDijkstra
 
 		SCGraph<Node, Edge> const& _g;
 
-		std::vector<std::vector<EdgeID> > _found_by;
-		std::vector<std::vector<uint> > _dists;
-		std::vector<std::vector<uint> > _reset_dists;
+		/*
+		 * data stored per direction
+		 */
+		struct direction_info {
+			std::vector<EdgeID> _found_by;
+			std::vector<uint> _dists;
+			std::vector<NodeID> _reset_dists;
+		};
+		enum_array<direction_info, EdgeType, 2> _dir;
 
 		void _reset();
 		void _relaxAllEdges(PQ& pq, PQElement const& top);
@@ -192,9 +198,12 @@ struct CHDijkstra<Node, Edge>::PQElement
 
 template <typename Node, typename Edge>
 CHDijkstra<Node,Edge>::CHDijkstra(SCGraph<Node, Edge> const& g)
-	: _g(g), _found_by(2, std::vector<EdgeID>(g.getNrOfNodes())),
-	_dists(2, std::vector<uint>(g.getNrOfNodes(), c::NO_DIST)),
-	_reset_dists(2) {}
+: _g(g) {
+	for(auto& dir_info: _dir) {
+		dir_info._dists.resize(g.getNrOfNodes(), c::NO_DIST);
+		dir_info._found_by.resize(g.getNrOfNodes());
+	}
+}
 
 template <typename Node, typename Edge>
 uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
@@ -204,12 +213,12 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 	path.clear();
 
 	PQ pq;
-	pq.push(PQElement(src, c::NO_EID, OUT, 0));
-	pq.push(PQElement(tgt, c::NO_EID, IN, 0));
-	_dists[OUT][src] = 0;
-	_reset_dists[OUT].push_back(src);
-	_dists[IN][tgt] = 0;
-	_reset_dists[IN].push_back(tgt);
+	pq.push(PQElement(src, c::NO_EID, EdgeType::OUT, 0));
+	pq.push(PQElement(tgt, c::NO_EID, EdgeType::IN, 0));
+	_dir[EdgeType::OUT]._dists[src] = 0;
+	_dir[EdgeType::OUT]._reset_dists.push_back(src);
+	_dir[EdgeType::IN]._dists[tgt] = 0;
+	_dir[EdgeType::IN]._reset_dists.push_back(tgt);
 
 	// Dijkstra loop
 	uint shortest_dist(c::NO_DIST);
@@ -218,11 +227,11 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 		PQElement top(pq.top());
 		pq.pop();
 
-		if (_dists[top.direction][top.node] == top.distance()) {
-			_found_by[top.direction][top.node] = top.found_by;
+		if (_dir[top.direction]._dists[top.node] == top.distance()) {
+			_dir[top.direction]._found_by[top.node] = top.found_by;
 			_relaxAllEdges(pq, top);
 
-			uint rest_dist = _dists[!top.direction][top.node];
+			uint rest_dist = _dir[!top.direction]._dists[top.node];
 			if (rest_dist != c::NO_DIST
 					&& top.distance() + rest_dist < shortest_dist) {
 				shortest_dist = top.distance() + rest_dist;
@@ -241,7 +250,7 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 		EdgeType dir((EdgeType) i);
 		NodeID bt_node(center_node);
 		NodeID end_node;
-		if (dir == OUT) {
+		if (dir == EdgeType::OUT) {
 			end_node = src;
 		}
 		else {
@@ -249,7 +258,7 @@ uint CHDijkstra<Node,Edge>::calcShopa(NodeID src, NodeID tgt,
 		}
 
 		while (bt_node != end_node) {
-			EdgeID edge_id = _found_by[dir][bt_node];
+			EdgeID edge_id = _dir[dir]._found_by[bt_node];
 			bt_node = otherNode(_g.getEdge(edge_id), !dir);
 			path.push_back(edge_id);
 		}
@@ -269,11 +278,11 @@ void CHDijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 			NodeID other_node(otherNode(edge, dir));
 			uint new_dist(top.distance() + edge.distance());
 
-			if (new_dist < _dists[dir][other_node]) {
-				if (_dists[dir][other_node] == c::NO_DIST) {
-					_reset_dists[dir].push_back(other_node);
+			if (new_dist < _dir[dir]._dists[other_node]) {
+				if (_dir[dir]._dists[other_node] == c::NO_DIST) {
+					_dir[dir]._reset_dists.push_back(other_node);
 				}
-				_dists[dir][other_node] = new_dist;
+				_dir[dir]._dists[other_node] = new_dist;
 
 				pq.push(PQElement(other_node, edge.id, dir, new_dist));
 			}
@@ -284,14 +293,12 @@ void CHDijkstra<Node,Edge>::_relaxAllEdges(PQ& pq, PQElement const& top)
 template <typename Node, typename Edge>
 void CHDijkstra<Node,Edge>::_reset()
 {
-	for(uint i=0; i<2; i++) {
-		for (uint j(0), size(_reset_dists[i].size()); j<size; j++) {
-			_dists[i][_reset_dists[i][j]] = c::NO_DIST;
+	for (auto& dir: _dir) {
+		for (auto const node: dir._reset_dists) {
+			dir._dists[node] = c::NO_DIST;
 		}
+		dir._reset_dists.clear();
 	}
-
-	_reset_dists[0].clear();
-	_reset_dists[1].clear();
 }
 
 }

@@ -119,8 +119,8 @@ void Graph<NodeT, EdgeT>::printInfo(Range&& nodes) const
 	std::vector<uint> deg;
 
 	for (auto node: nodes) {
-		uint out(getNrOfEdges(node, OUT));
-		uint in(getNrOfEdges(node, IN));
+		uint out(getNrOfEdges(node, EdgeType::OUT));
+		uint in(getNrOfEdges(node, EdgeType::IN));
 
 		if (out != 0 || in != 0) {
 			++active_nodes;
@@ -231,13 +231,13 @@ void Graph<NodeT, EdgeT>::update()
 template <typename NodeT, typename EdgeT>
 uint Graph<NodeT, EdgeT>::getNrOfEdges(NodeID node_id) const
 {
-	return getNrOfEdges(node_id, OUT) + getNrOfEdges(node_id, IN);
+	return getNrOfEdges(node_id, EdgeType::OUT) + getNrOfEdges(node_id, EdgeType::IN);
 }
 
 template <typename NodeT, typename EdgeT>
 uint Graph<NodeT, EdgeT>::getNrOfEdges(NodeID node_id, EdgeType type) const
 {
-	if (type == IN) {
+	if (type == EdgeType::IN) {
 		return _in_offsets[node_id+1] - _in_offsets[node_id];
 	}
 	else {
@@ -247,7 +247,7 @@ uint Graph<NodeT, EdgeT>::getNrOfEdges(NodeID node_id, EdgeType type) const
 
 template <typename NodeT, typename EdgeT>
 auto Graph<NodeT, EdgeT>::nodeEdges(NodeID node_id, EdgeType type) const -> node_edges_range {
-	if (OUT == type) {
+	if (EdgeType::OUT == type) {
 		return node_edges_range(_out_edges.begin() + _out_offsets[node_id], _out_edges.begin() + _out_offsets[node_id+1]);
 	} else {
 		return node_edges_range(_in_edges.begin() + _in_offsets[node_id], _in_edges.begin() + _in_offsets[node_id+1]);

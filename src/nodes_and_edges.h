@@ -1,6 +1,7 @@
 #pragma once
 
 #include "defs.h"
+#include "enum_helpers.h"
 
 #include <fstream>
 #include <sstream>
@@ -29,8 +30,8 @@ namespace c
 
 typedef std::map<std::string, std::string> Metadata;
 
-enum EdgeType {OUT = 0, IN = 1};
-inline EdgeType operator!(EdgeType type) { return (EdgeType)(1 - type); }
+enum class EdgeType : uint8_t {OUT = 0, IN = 1};
+inline EdgeType operator!(EdgeType type) { return to_enum<EdgeType>(1 - from_enum(type)); }
 
 /*
  * Data required to construct or write out graphs.
@@ -182,9 +183,9 @@ struct OSMNode
 template<typename EdgeT>
 inline NodeID otherNode(EdgeT const& edge, EdgeType edge_type) {
 	switch (edge_type) {
-	case OUT:
+	case EdgeType::OUT:
 		return edge.tgt;
-	case IN:
+	case EdgeType::IN:
 		break;
 	}
 	return edge.src;

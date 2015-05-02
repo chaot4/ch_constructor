@@ -46,8 +46,8 @@ void unit_tests::testNodesAndEdges()
 	MetricEdge edge1(Edge(1, node1.id, node2.id, 24), 32);
 	CHEdge ch_edge(make_shortcut(edge0, edge1));
 
-	Test(otherNode(edge0, IN) == 0);
-	Test(otherNode(ch_edge, OUT) == 2);
+	Test(otherNode(edge0, EdgeType::IN) == 0);
+	Test(otherNode(ch_edge, EdgeType::OUT) == 2);
 
 	Print("\n======================================");
 	Print("TEST: Nodes and edges test successful.");
@@ -68,10 +68,10 @@ void unit_tests::testGraph()
 		Test(g.getNode(node_id).id == node_id);
 
 		/* Find for every out_edge the corresponding in edge. */
-		for (auto const& out_edge: g.nodeEdges(node_id, OUT)) {
+		for (auto const& out_edge: g.nodeEdges(node_id, EdgeType::OUT)) {
 			bool found(false);
 
-			for (auto const& in_edge: g.nodeEdges(out_edge.tgt, IN)) {
+			for (auto const& in_edge: g.nodeEdges(out_edge.tgt, EdgeType::IN)) {
 				if (equalEndpoints(in_edge, out_edge)) {
 					found = true;
 					break;
@@ -121,7 +121,7 @@ void unit_tests::testCHConstructor()
 	}
 
 	for (auto it(independent_set.begin()); it != independent_set.end(); it++) {
-		for (auto const& edge: g.nodeEdges(*it, OUT)) {
+		for (auto const& edge: g.nodeEdges(*it, EdgeType::OUT)) {
 			Test(!is_in_ind_set[edge.tgt]);
 		}
 	}

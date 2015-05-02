@@ -172,10 +172,10 @@ bool SCGraph<NodeT, EdgeT>::isUp(Shortcut const& edge, EdgeType direction) const
 	uint tgt_lvl = _node_levels[edge.tgt];
 
 	if (src_lvl > tgt_lvl) {
-		return direction == IN ? true : false;
+		return direction == EdgeType::IN ? true : false;
 	}
 	else if (src_lvl < tgt_lvl) {
-		return direction == OUT ? true : false;
+		return direction == EdgeType::OUT ? true : false;
 	}
 
 	/* should never reach this: */

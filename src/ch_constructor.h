@@ -62,7 +62,7 @@ class CHConstructor{
 		void _calcShortestDists(ThreadData& td, NodeID start_node, EdgeType direction, uint radius);
 		void _handleNextPQElement(EdgeType direction);
 		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
-				EdgeType direction = OUT);
+				EdgeType direction = EdgeType::OUT);
 
 		std::vector<NodeID> _calcIndependentSet(std::list<NodeID> const& nodes,
 				uint max_degree = MAX_UINT);
@@ -96,10 +96,10 @@ struct CHConstructor<NodeT, EdgeT>::CompInOutProduct
 
 	bool operator()(NodeID node1, NodeID node2) const
 	{
-		uint edge_product1(g.getNrOfEdges(node1, IN)
-				* g.getNrOfEdges(node1, OUT));
-		uint edge_product2(g.getNrOfEdges(node2, IN)
-				* g.getNrOfEdges(node2, OUT));
+		uint edge_product1(g.getNrOfEdges(node1, EdgeType::IN)
+				* g.getNrOfEdges(node1, EdgeType::OUT));
+		uint edge_product2(g.getNrOfEdges(node2, EdgeType::IN)
+				* g.getNrOfEdges(node2, EdgeType::OUT));
 
 		return edge_product1 < edge_product2;
 	}
@@ -142,11 +142,11 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 {
 	EdgeType search_direction;
 
-	if (_base_graph.getNrOfEdges(node, IN) <= _base_graph.getNrOfEdges(node, OUT)) {
-		search_direction = OUT;
+	if (_base_graph.getNrOfEdges(node, EdgeType::IN) <= _base_graph.getNrOfEdges(node, EdgeType::OUT)) {
+		search_direction = EdgeType::OUT;
 	}
 	else {
-		search_direction = IN;
+		search_direction = EdgeType::IN;
 	}
 
 	int nr_new_edges(0);
@@ -161,9 +161,9 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_quickContract(NodeID node)
 {
-	for (auto const& in_edge: _base_graph.nodeEdges(node, IN)) {
+	for (auto const& in_edge: _base_graph.nodeEdges(node, EdgeType::IN)) {
 		if (in_edge.tgt == in_edge.src) continue; /* skip loops */
-		for (auto const& out_edge: _base_graph.nodeEdges(node, OUT)) {
+		for (auto const& out_edge: _base_graph.nodeEdges(node, EdgeType::OUT)) {
 			if (out_edge.tgt == out_edge.src) continue; /* skip loops */
 			if (in_edge.src != out_edge.tgt) { /* don't create loops */
 				_createShortcut(in_edge, out_edge);
@@ -263,7 +263,7 @@ void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcu
 	assert(edge1.src != edge1.tgt && edge2.src != edge2.tgt);
 
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
-	if (direction == OUT) {
+	if (direction == EdgeType::OUT) {
 		/* make sure no "loop" edges are created */
 		assert(edge1.src != edge2.tgt);
 		_new_shortcuts.push_back(make_shortcut(edge1, edge2));
