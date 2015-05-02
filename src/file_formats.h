@@ -158,7 +158,7 @@ namespace chc {
 
 
 
-	enum FileFormat { STD, SIMPLE, FMI, FMI_DIST, FMI_CH, STEFAN_CH };
+	enum class FileFormat { STD, SIMPLE, FMI, FMI_DIST, FMI_CH, STEFAN_CH };
 	FileFormat toFileFormat(std::string const& format);
 	std::string toString(FileFormat format);
 
@@ -166,17 +166,17 @@ namespace chc {
 	inline GraphInData<Node, Edge> readGraph(FileFormat format, std::string const& filename)
 	{
 		switch (format) {
-		case STD:
+		case FileFormat::STD:
 			return FormatSTD::Reader::readGraph<Node, Edge>(filename);
-		case SIMPLE:
+		case FileFormat::SIMPLE:
 			return FormatSimple::Reader::readGraph<Node, Edge>(filename);
-		case FMI:
+		case FileFormat::FMI:
 			return FormatFMI::Reader::readGraph<Node, Edge>(filename);
-		case FMI_DIST:
+		case FileFormat::FMI_DIST:
 			return FormatFMI_DIST::Reader::readGraph<Node, Edge>(filename);
-		case FMI_CH:
+		case FileFormat::FMI_CH:
 			break;
-		case STEFAN_CH:
+		case FileFormat::STEFAN_CH:
 			break;
 		}
 		std::cerr << "Unknown input fileformat!" << std::endl;
@@ -188,17 +188,17 @@ namespace chc {
 	inline void withReadGraph(FileFormat format, std::string const& filename, Callable&& callable)
 	{
 		switch (format) {
-		case STD:
+		case FileFormat::STD:
 			callable(FormatSTD::Reader::readGraph(filename));
-		case SIMPLE:
+		case FileFormat::SIMPLE:
 			callable(FormatSimple::Reader::readGraph(filename));
-		case FMI:
+		case FileFormat::FMI:
 			callable(FormatFMI::Reader::readGraph(filename));
-		case FMI_DIST:
+		case FileFormat::FMI_DIST:
 			callable(FormatFMI::Reader::readGraph(filename));
-		case FMI_CH:
+		case FileFormat::FMI_CH:
 			break;
-		case STEFAN_CH:
+		case FileFormat::STEFAN_CH:
 			break;
 		}
 		std::cerr << "Unknown input fileformat!" << std::endl;
@@ -217,20 +217,20 @@ namespace chc {
 	inline void readGraphForWriteFormat(FileFormat write_format, FileFormat read_format, std::string const& filename, Callable&& callable)
 	{
 		switch (write_format) {
-		case STD:
+		case FileFormat::STD:
 			callable(readGraphForWriter<FormatSTD::Writer>(read_format, filename));
 			return;
-		case SIMPLE:
+		case FileFormat::SIMPLE:
 			callable(readGraphForWriter<FormatSimple::Writer>(read_format, filename));
 			return;
-		case FMI:
+		case FileFormat::FMI:
 			break;
-		case FMI_DIST:
+		case FileFormat::FMI_DIST:
 			break;
-		case FMI_CH:
+		case FileFormat::FMI_CH:
 			callable(readGraphForWriter<FormatFMI_CH::Writer>(read_format, filename));
 			return;
-		case STEFAN_CH:
+		case FileFormat::STEFAN_CH:
 			callable(readGraphForWriter<FormatSTEFAN_CH::Writer>(read_format, filename));
 			return;
 		}
@@ -260,20 +260,20 @@ namespace chc {
 	inline void writeCHGraphFile(FileFormat format, std::string const& filename, GraphCHOutData<NodeT, EdgeT> const& data)
 	{
 		switch (format) {
-		case STD:
+		case FileFormat::STD:
 			writeCHGraphFile<FormatSTD::Writer>(filename, data);
 			return;
-		case SIMPLE:
+		case FileFormat::SIMPLE:
 			writeCHGraphFile<FormatSimple::Writer>(filename, data);
 			return;
-		case FMI:
+		case FileFormat::FMI:
 			break;
-		case FMI_DIST:
+		case FileFormat::FMI_DIST:
 			break;
-		case FMI_CH:
+		case FileFormat::FMI_CH:
 			writeCHGraphFile<FormatFMI_CH::Writer>(filename, data);
 			return;
-		case STEFAN_CH:
+		case FileFormat::STEFAN_CH:
 			writeCHGraphFile<FormatSTEFAN_CH::Writer>(filename, data);
 			return;
 		}
@@ -303,21 +303,21 @@ namespace chc {
 	inline void writeGraphFile(FileFormat format, std::string const& filename, GraphOutData<NodeT, EdgeT> const& data)
 	{
 		switch (format) {
-		case STD:
+		case FileFormat::STD:
 			writeGraphFile<FormatSTD::Writer>(filename, data);
 			return;
-		case SIMPLE:
+		case FileFormat::SIMPLE:
 			writeGraphFile<FormatSimple::Writer>(filename, data);
 			return;
-		case FMI:
+		case FileFormat::FMI:
 			writeGraphFile<FormatFMI::Writer>(filename, data);
 			return;
-		case FMI_DIST:
+		case FileFormat::FMI_DIST:
 			break;
-		case FMI_CH:
+		case FileFormat::FMI_CH:
 			writeGraphFile<FormatFMI_CH::Writer>(filename, data);
 			return;
-		case STEFAN_CH:
+		case FileFormat::STEFAN_CH:
 			writeGraphFile<FormatSTEFAN_CH::Writer>(filename, data);
 			return;
 		}

@@ -66,9 +66,9 @@ int main(int argc, char* argv[])
 	 */
 
 	std::string infile("");
-	FileFormat informat(FMI);
+	FileFormat informat(FileFormat::FMI);
 	std::string outfile("ch_out.graph");
-	FileFormat outformat(FMI_CH);
+	FileFormat outformat(FileFormat::FMI_CH);
 	uint nr_of_threads(1);
 
 	/*

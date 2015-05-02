@@ -42,54 +42,48 @@ namespace chc {
 	FileFormat toFileFormat(std::string const& format)
 	{
 		if (format == "STD") {
-			return STD;
+			return FileFormat::STD;
 		}
 		else if (format == "SIMPLE") {
-			return SIMPLE;
+			return FileFormat::SIMPLE;
 		}
 		else if (format == "FMI") {
-			return FMI;
+			return FileFormat::FMI;
 		}
 		else if (format == "FMI_DIST") {
-			return FMI_DIST;
+			return FileFormat::FMI_DIST;
 		}
 		else if (format == "FMI_CH") {
-			return FMI_CH;
+			return FileFormat::FMI_CH;
 		}
 		else if (format == "STEFAN_CH") {
-			return STEFAN_CH;
+			return FileFormat::STEFAN_CH;
 		}
 		else {
 			std::cerr << "Unknown fileformat: " << format << "\n";
 		}
 
-		return FMI;
+		return FileFormat::FMI;
 	}
 
 	std::string toString(FileFormat format)
 	{
-		if (format == STD) {
+		switch (format) {
+		case FileFormat::STD:
 			return "STD";
-		}
-		else if (format == SIMPLE) {
+		case FileFormat::SIMPLE:
 			return "SIMPLE";
-		}
-		else if (format == FMI) {
+		case FileFormat::FMI:
 			return "FMI";
-		}
-		else if (format == FMI_DIST) {
+		case FileFormat::FMI_DIST:
 			return "FMI_DIST";
-		}
-		else if (format == FMI_CH) {
+		case FileFormat::FMI_CH:
 			return "FMI_CH";
-		}
-		else if (format == STEFAN_CH) {
+		case FileFormat::STEFAN_CH:
 			return "STEFAN_CH";
 		}
-		else {
-			std::cerr << "Unknown fileformat: " << format << "\n";
-		}
 
+		std::cerr << "Unknown fileformat: " << static_cast<int>(format) << "\n";
 		return "FMI";
 	}
 
