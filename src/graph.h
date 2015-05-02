@@ -1,5 +1,4 @@
-#ifndef _GRAPH_H
-#define _GRAPH_H
+#pragma once
 
 #include "defs.h"
 #include "nodes_and_edges.h"
@@ -256,5 +255,3 @@ auto Graph<NodeT, EdgeT>::nodeEdges(NodeID node_id, EdgeType type) const -> node
 }
 
 }
-
-#endif

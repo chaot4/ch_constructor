@@ -1,5 +1,4 @@
-#ifndef _INDEXED_CONTAINER_H
-#define _INDEXED_CONTAINER_H
+#pragma once
 
 #include <algorithm>
 #include <functional>
@@ -233,5 +232,3 @@ namespace chc {
 	};
 
 }
-
-#endif

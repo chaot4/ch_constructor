@@ -1,5 +1,4 @@
-#ifndef _FUNCTION_TRAITS_H
-#define _FUNCTION_TRAITS_H
+#pragma once
 
 #include <tuple>
 #include <type_traits>
@@ -37,5 +36,3 @@ namespace chc {
 	template<typename _From, typename _To>
 	using is_static_castable_t = typename is_static_castable<_From, _To>::type;
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _DIJKSTRA_H
-#define _DIJKSTRA_H
+#pragma once
 
 #include "graph.h"
 #include "chgraph.h"
@@ -296,5 +295,3 @@ void CHDijkstra<Node,Edge>::_reset()
 }
 
 }
-
-#endif

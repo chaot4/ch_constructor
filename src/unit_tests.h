@@ -1,5 +1,4 @@
-#ifndef _UNIT_TESTS_H
-#define _UNIT_TESTS_H
+#pragma once
 
 namespace chc
 {
@@ -18,5 +17,3 @@ namespace unit_tests
 }
 
 }
-
-#endif

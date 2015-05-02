@@ -1,5 +1,4 @@
-#ifndef _FILE_FORMATS_HELPER_H
-#define _FILE_FORMATS_HELPER_H
+#pragma once
 
 #include "nodes_and_edges.h"
 #include "function_traits.h"
@@ -191,6 +190,3 @@ namespace chc {
 	};
 
 }
-
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _NODES_AND_EDGES_H
-#define _NODES_AND_EDGES_H
+#pragma once
 
 #include "defs.h"
 
@@ -349,5 +348,3 @@ struct EdgeSortSrcTgtDist
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _CHGRAPH_H
-#define _CHGRAPH_H
+#pragma once
 
 #include "graph.h"
 #include "nodes_and_edges.h"
@@ -227,5 +226,3 @@ auto SCGraph<NodeT, EdgeT>::exportData() -> GraphCHOutData<NodeT, Shortcut>
 }
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _FILE_FORMATS_H
-#define _FILE_FORMATS_H
+#pragma once
 
 #include "file_formats_helper.h"
 
@@ -325,6 +324,3 @@ namespace chc {
 		std::exit(1);
 	}
 }
-
-
-#endif

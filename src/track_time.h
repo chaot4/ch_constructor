@@ -1,5 +1,4 @@
-#ifndef _TRACK_TIME_H
-#define _TRACK_TIME_H
+#pragma once
 
 /* doesn't depend on any ch_constructor stuff, simple "drop in" implementation;
  * everything inlined
@@ -56,5 +55,3 @@ public:
 	}
 
 };
-
-#endif

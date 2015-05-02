@@ -1,5 +1,4 @@
-#ifndef _DEFS_H
-#define _DEFS_H
+#pragma once
 
 #include <iostream>
 
@@ -34,5 +33,3 @@ namespace chc
 {
 	typedef unsigned int uint;
 }
-
-#endif

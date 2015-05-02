@@ -1,5 +1,4 @@
-#ifndef _CH_CONSTRUCTOR
-#define _CH_CONSTRUCTOR
+#pragma once
 
 #include "defs.h"
 #include "nodes_and_edges.h"
@@ -479,5 +478,3 @@ void CHConstructor<NodeT, EdgeT>::rebuildCompleteGraph()
 
 
 }
-
-#endif
