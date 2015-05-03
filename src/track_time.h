@@ -55,3 +55,11 @@ public:
 	}
 
 };
+
+inline TrackTime VerboseTrackTime() {
+#ifndef NVERBOSE
+	return TrackTime(std::cout);
+#else
+	return TrackTime();
+#endif
+}

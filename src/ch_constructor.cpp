@@ -134,14 +134,7 @@ int main(int argc, char* argv[])
 	Print("Using " << nr_of_threads << " threads.");
 
 	readGraphForWriteFormat(outformat, informat, infile,
-		BuildAndStoreCHGraph { outformat, outfile, nr_of_threads,
-#ifndef NVERBOSE
-			TrackTime(std::cout)
-#else
-			TrackTime()
-#endif
-		}
-	);
+		BuildAndStoreCHGraph { outformat, outfile, nr_of_threads, VerboseTrackTime() });
 
 	return 0;
 }
