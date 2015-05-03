@@ -246,8 +246,14 @@ namespace chc {
 			std::make_signed<decltype(edge.dist)>::type signed_dist;
 
 			is >> edge.src >> edge.tgt >> signed_dist >> edge.type >> edge.speed;
-			edge.id = edge_id;
-			edge.dist = std::max(0, signed_dist); // set neg edges to 0
+			if (signed_dist >= 0) {
+				edge.id = edge_id;
+				edge.dist = signed_dist;
+			} else {
+				// mark as invalid edge with 0 length
+				edge.id = c::NO_EID;
+				edge.dist = 0;
+			}
 			calcTimeMetric(edge);
 			return edge;
 		});
@@ -261,8 +267,14 @@ namespace chc {
 			std::make_signed<decltype(edge.dist)>::type signed_dist;
 
 			is >> edge.src >> edge.tgt >> signed_dist >> edge.type >> edge.speed;
-			edge.id = edge_id;
-			edge.dist = std::max(0, signed_dist); // set neg edges to 0
+			if (signed_dist >= 0) {
+				edge.id = edge_id;
+				edge.dist = signed_dist;
+			} else {
+				// mark as invalid edge with 0 length
+				edge.id = c::NO_EID;
+				edge.dist = 0;
+			}
 			return edge;
 		});
 	}
@@ -281,8 +293,14 @@ namespace chc {
 			std::make_signed<decltype(edge.dist)>::type signed_dist;
 
 			is >> edge.src >> edge.tgt >> signed_dist;
-			edge.id = edge_id;
-			edge.dist = std::max(0, signed_dist); // set neg edges to 0
+			if (signed_dist >= 0) {
+				edge.id = edge_id;
+				edge.dist = signed_dist;
+			} else {
+				// mark as invalid edge with 0 length
+				edge.id = c::NO_EID;
+				edge.dist = 0;
+			}
 			return edge;
 		});
 	}

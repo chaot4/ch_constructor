@@ -68,12 +68,12 @@ namespace chc {
 					--i; --nr_of_edges;
 					continue;
 				}
-				else if (edge.dist == 0) {
-					std::cerr << "WARNING: input contained edge with dist smaller or equal to 0 (@" << i << "), dropped edge.\n";
+				else if (edge.id == c::NO_EID) {
+					std::cerr << "WARNING: input contained edge with invalid id (@" << i << "), dropped edge.\n";
 					--i; --nr_of_edges;
 					continue;
-
 				}
+
 				result.edges.push_back(std::move(edge));
 			}
 			Print("Read all the edges.");
