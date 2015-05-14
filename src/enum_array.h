@@ -74,13 +74,13 @@ namespace chc {
 			return _array;
 		}
 
-		iterator begin() { return &front(); }
-		const_iterator begin() const { return &front(); }
-		const_iterator cbegin() const { return &front(); }
+		iterator begin() { return _array; }
+		const_iterator begin() const { return _array; }
+		const_iterator cbegin() const { return _array; }
 
-		iterator end() { return &back(); }
-		const_iterator end() const { return &back(); }
-		const_iterator cend() const { return &back(); }
+		iterator end() { return _array + Size; }
+		const_iterator end() const { return _array + Size; }
+		const_iterator cend() const { return _array + Size; }
 
 		reverse_iterator rbegin() { return reverse_iterator(end()); }
 		const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
