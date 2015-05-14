@@ -359,6 +359,11 @@ namespace chc {
 			return text_readEdge<edge_type>(is, edge_id);
 		}
 
+		Writer_impl::Writer_impl(std::ostream& os) : os(os) {
+			os.precision(7);
+			os << std::fixed;
+		}
+
 		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
 		{
 			os << nr_of_nodes << "\n";
@@ -398,6 +403,11 @@ namespace chc {
 			return text_readEdge<edge_type>(is, edge_id);
 		}
 
+		Writer_impl::Writer_impl(std::ostream& os) : os(os) {
+			os.precision(7);
+			os << std::fixed;
+		}
+
 		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
 		{
 			os << nr_of_nodes << "\n";
@@ -415,59 +425,72 @@ namespace chc {
 		}
 	}
 
-
-	void FormatFMI::Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges,
-			Metadata& meta_data)
-	{
-		std::string line;
-		std::getline(is, line);
-		while (line != "") {
-			std::stringstream ss(line);
-			std::string hash;
-			std::string key;
-			std::string map;
-			std::string colon;
-			ss >> hash >> key >> colon >> map;
-
-			if (hash != "#") {
-				std::cout << "Error while parsing meta data: expected '#' instead of '"
-					<< hash << "'\n";
-			}
-			if (colon != ":") {
-				std::cout << "Error while parsing meta data: expected ':' instead of '"
-					<< colon << "'\n";
-			}
-
-			meta_data[key] = map;
-
+	namespace FormatFMI {
+		void Reader_impl::readHeader(NodeID& estimated_nr_nodes, EdgeID& estimated_nr_edges,
+				Metadata& meta_data)
+		{
+			std::string line;
 			std::getline(is, line);
+			while (line != "") {
+				std::stringstream ss(line);
+				std::string hash;
+				std::string key;
+				std::string map;
+				std::string colon;
+				ss >> hash >> key >> colon >> map;
+
+				if (hash != "#") {
+					std::cout << "Error while parsing meta data: expected '#' instead of '"
+						<< hash << "'\n";
+				}
+				if (colon != ":") {
+					std::cout << "Error while parsing meta data: expected ':' instead of '"
+						<< colon << "'\n";
+				}
+
+				meta_data[key] = map;
+
+				std::getline(is, line);
+			}
+
+			is >> estimated_nr_nodes >> estimated_nr_edges;
 		}
 
-		is >> estimated_nr_nodes >> estimated_nr_edges;
-	}
-
-	void FormatFMI::Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
-	{
-		os << "# Type : graph" << "\n";
-		os << "# Id : " << random_id(32) << "\n";
-		os << "# Revision : 1" << "\n";
-		os << "# Timestamp : " << time(nullptr) << "\n";
-		os << "# Origin : ch_constructor" << "\n";
-		for (auto it(meta_data.begin()); it != meta_data.end(); it++) {
-			os << "# Origin" << it->first << " : " << it->second << "\n";
+		Writer_impl::Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) {
+			os.precision(7);
+			os << std::fixed;
 		}
-		os << "\n";
 
-		os << nr_of_nodes << "\n";
-		os << nr_of_edges << "\n";
+		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
+		{
+			os << "# Type : graph" << "\n";
+			os << "# Id : " << random_id(32) << "\n";
+			os << "# Revision : 1" << "\n";
+			os << "# Timestamp : " << time(nullptr) << "\n";
+			os << "# Origin : ch_constructor" << "\n";
+			for (auto it(meta_data.begin()); it != meta_data.end(); it++) {
+				os << "# Origin" << it->first << " : " << it->second << "\n";
+			}
+			os << "\n";
+
+			os << nr_of_nodes << "\n";
+			os << nr_of_edges << "\n";
+		}
 	}
 
-	auto FormatFMI_DIST::Reader_impl::readEdge(EdgeID edge_id) -> edge_type
-	{
-		return text_readEdge<edge_type>(is, edge_id);
+	namespace FormatFMI_DIST {
+		auto Reader_impl::readEdge(EdgeID edge_id) -> edge_type
+		{
+			return text_readEdge<edge_type>(is, edge_id);
+		}
 	}
 
 	namespace FormatFMI_CH {
+		Writer_impl::Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) {
+			os.precision(7);
+			os << std::fixed;
+		}
+
 		void Writer_impl::writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data)
 		{
 			os << "# Type : chgraph" << "\n";
@@ -496,6 +519,11 @@ namespace chc {
 	}
 
 	namespace FormatSTEFAN_CH {
+		Writer_impl::Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) {
+			os.precision(7);
+			os << std::fixed;
+		}
+
 		void Writer_impl::writeNode(node_type const& out, NodeID)
 		{
 			text_writeNode<node_type>(os, out);

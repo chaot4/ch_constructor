@@ -48,7 +48,7 @@ namespace chc {
 
 		struct Writer_impl
 		{
-			Writer_impl(std::ostream& os) : os(os) { }
+			Writer_impl(std::ostream& os);
 			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
 			void writeNode(node_type const& out, NodeID node_id);
 			void writeEdge(edge_type const& out, EdgeID edge_id);
@@ -79,7 +79,7 @@ namespace chc {
 		struct Writer_impl
 		{
 		public:
-			Writer_impl(std::ostream& os) : os(os) { }
+			Writer_impl(std::ostream& os);
 			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
 			void writeNode(node_type const& out, NodeID node_id);
 			void writeEdge(edge_type const& out, EdgeID edge_id);
@@ -105,7 +105,7 @@ namespace chc {
 
 		struct Writer_impl : public FormatSTD::Writer_impl
 		{
-			Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) { }
+			Writer_impl(std::ostream& os);
 			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
 		};
 		typedef SimpleWriter<Writer_impl> Writer;
@@ -132,7 +132,7 @@ namespace chc {
 		struct Writer_impl : public FormatSTD::Writer_impl
 		{
 		public:
-			Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) { }
+			Writer_impl(std::ostream& os);
 			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
 			void writeNode(node_type const& out, NodeID node_id);
 			void writeEdge(edge_type const& out, EdgeID edge_id);
@@ -148,7 +148,7 @@ namespace chc {
 		struct Writer_impl : public FormatSTD::Writer_impl
 		{
 		public:
-			Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) { }
+			Writer_impl(std::ostream& os);
 			void writeNode(node_type const& out, NodeID node_id);
 			void writeEdge(edge_type const& out, EdgeID edge_id);
 		};
@@ -245,8 +245,6 @@ namespace chc {
 	inline void writeCHGraphFile(std::string const& filename, GraphCHOutData<NodeT, EdgeT> const& data)
 	{
 		std::ofstream os(filename.c_str());
-		os.precision(7);
-		os << std::fixed;
 
 		if (!os.is_open()) {
 			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
@@ -288,8 +286,6 @@ namespace chc {
 	inline void writeGraphFile(std::string const& filename, GraphOutData<NodeT, EdgeT> const& data)
 	{
 		std::ofstream os(filename.c_str());
-		os.precision(7);
-		os << std::fixed;
 
 		if (!os.is_open()) {
 			std::cerr << "FATAL_ERROR: Couldn't open graph file \'" <<
