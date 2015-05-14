@@ -34,7 +34,7 @@ struct BuildAndStoreCHGraph {
 		tt.track("reading input");
 
 		/* Read graph */
-		SCGraph<NodeT, EdgeT> g;
+		CHGraph<NodeT, EdgeT> g;
 		g.init(std::move(data));
 		tt.track("loading graph");
 

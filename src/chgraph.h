@@ -10,7 +10,7 @@ namespace chc
 {
 
 template <typename NodeT, typename EdgeT>
-class SCGraph : public Graph<NodeT, CHEdge<EdgeT> >
+class CHGraph : public Graph<NodeT, CHEdge<EdgeT> >
 {
 	private:
 		typedef CHEdge<EdgeT> Shortcut;
@@ -18,7 +18,7 @@ class SCGraph : public Graph<NodeT, CHEdge<EdgeT> >
 		using BaseGraph::_out_edges;
 		using BaseGraph::_in_edges;
 		using BaseGraph::_id_to_index;
-		using BaseGraph::_next_id;
+		using BaseGraph::edge_count;
 		using typename BaseGraph::OutEdgeSort;
 
 		std::vector<uint> _node_levels;
@@ -50,7 +50,7 @@ class SCGraph : public Graph<NodeT, CHEdge<EdgeT> >
 };
 
 template <typename NodeT, typename EdgeT>
-void SCGraph<NodeT, EdgeT>::restructure(
+void CHGraph<NodeT, EdgeT>::restructure(
 		std::vector<NodeID> const& deleted,
 		std::vector<bool> const& to_delete,
 		std::vector<Shortcut>& new_shortcuts)
@@ -124,7 +124,7 @@ void SCGraph<NodeT, EdgeT>::restructure(
 }
 
 template <typename NodeT, typename EdgeT>
-void SCGraph<NodeT, EdgeT>::_addNewEdge(Shortcut& new_edge,
+void CHGraph<NodeT, EdgeT>::_addNewEdge(Shortcut& new_edge,
 		std::vector<Shortcut>& new_edge_vec)
 {
 	if (!new_edge_vec.empty() && (c::NO_EID == new_edge.id)) {
@@ -148,13 +148,13 @@ void SCGraph<NodeT, EdgeT>::_addNewEdge(Shortcut& new_edge,
 	}
 
 	if (c::NO_EID == new_edge.id) {
-		new_edge.id = _next_id++;
+		new_edge.id = edge_count++;
 	}
 	new_edge_vec.push_back(new_edge);
 }
 
 template <typename NodeT, typename EdgeT>
-void SCGraph<NodeT, EdgeT>::rebuildCompleteGraph()
+void CHGraph<NodeT, EdgeT>::rebuildCompleteGraph()
 {
 	assert(_out_edges.empty() && _in_edges.empty());
 
@@ -166,7 +166,7 @@ void SCGraph<NodeT, EdgeT>::rebuildCompleteGraph()
 }
 
 template <typename NodeT, typename EdgeT>
-bool SCGraph<NodeT, EdgeT>::isUp(Shortcut const& edge, EdgeType direction) const
+bool CHGraph<NodeT, EdgeT>::isUp(Shortcut const& edge, EdgeType direction) const
 {
 	uint src_lvl = _node_levels[edge.src];
 	uint tgt_lvl = _node_levels[edge.tgt];
@@ -184,7 +184,7 @@ bool SCGraph<NodeT, EdgeT>::isUp(Shortcut const& edge, EdgeType direction) const
 }
 
 template <typename NodeT, typename EdgeT>
-auto SCGraph<NodeT, EdgeT>::exportData() -> GraphCHOutData<NodeT, Shortcut>
+auto CHGraph<NodeT, EdgeT>::exportData() -> GraphCHOutData<NodeT, Shortcut>
 {
 	std::vector<Shortcut>* edges_source;
 	std::vector<Shortcut> edges;

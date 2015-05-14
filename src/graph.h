@@ -36,7 +36,7 @@ class Graph
 		/* Maps edge id to index in the _out_edge vector. */
 		std::vector<uint> _id_to_index;
 
-		EdgeID _next_id = 0;
+		EdgeID edge_count = 0;
 
 		void sortInEdges();
 		void sortOutEdges();
@@ -86,7 +86,7 @@ void Graph<NodeT, EdgeT>::init(GraphInData<NodeT, EdgeT>&& data)
 	_nodes.swap(data.nodes);
 	_out_edges.swap(data.edges);
 	_in_edges = _out_edges;
-	_next_id = _out_edges.size();
+	edge_count = _out_edges.size();
 
 	update();
 
@@ -135,7 +135,7 @@ void Graph<NodeT, EdgeT>::printInfo(Range&& nodes) const
 		}
 	}
 
-	Print("#nodes: " << nodes.size() << ", #active nodes: " << active_nodes << ", #edges: " << _out_edges.size() << ", maximal edge id: " << _next_id - 1);
+	Print("#nodes: " << nodes.size() << ", #active nodes: " << active_nodes << ", #edges: " << _out_edges.size() << ", maximal edge id: " << edge_count - 1);
 
 	if (active_nodes != 0) {
 		auto mm_out_deg = std::minmax_element(out_deg.begin(), out_deg.end());
@@ -213,7 +213,7 @@ void Graph<NodeT, EdgeT>::initIdToIndex()
 {
 	Debug("Renew the index mapper.");
 
-	_id_to_index.resize(_next_id);
+	_id_to_index.resize(edge_count);
 	for (uint i(0), size(_out_edges.size()); i<size; i++) {
 		_id_to_index[_out_edges[i].id] = i;
 	}

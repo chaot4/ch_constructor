@@ -147,7 +147,7 @@ class CHDijkstra
 		typedef std::priority_queue<
 			PQElement, std::vector<PQElement>, std::greater<PQElement> > PQ;
 
-		SCGraph<Node, Edge> const& _g;
+		CHGraph<Node, Edge> const& _g;
 
 		/*
 		 * data stored per direction
@@ -162,7 +162,7 @@ class CHDijkstra
 		void _reset();
 		void _relaxAllEdges(PQ& pq, PQElement const& top);
 	public:
-		CHDijkstra(SCGraph<Node, Edge> const& g);
+		CHDijkstra(CHGraph<Node, Edge> const& g);
 
 		/**
 		 * @brief Computes the shortest path between src and tgt.
@@ -197,7 +197,7 @@ struct CHDijkstra<Node, Edge>::PQElement
 };
 
 template <typename Node, typename Edge>
-CHDijkstra<Node,Edge>::CHDijkstra(SCGraph<Node, Edge> const& g)
+CHDijkstra<Node,Edge>::CHDijkstra(CHGraph<Node, Edge> const& g)
 : _g(g) {
 	for(auto& dir_info: _dir) {
 		dir_info._dists.resize(g.getNrOfNodes(), c::NO_DIST);

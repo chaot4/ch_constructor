@@ -113,7 +113,7 @@ x Parser/Serializer würde ich in n extra file packen.
 
   (virtual write/read sieht jedenfalls komisch aus in kombination mit templates.)
 
-- Node/Edge: "<" sind mit sehr spezieller semantik.
+x Node/Edge: "<" sind mit sehr spezieller semantik.
   du hast ja schon separate comparator klassen, nimm die
   "==" auf Edge kann man vermutlich lassen - (src,tgt) sollte unique sein.
 
@@ -128,7 +128,7 @@ graph.h:
   x std::vector<T> mapped (u)int auf T, nicht andersrum:
     /* Maps edge id to index in the _out_edge vector. */
     std::vector<EdgeID> _id_to_index;
-  - _next_id ist irgendwie "hässlich":
+  x _next_id ist irgendwie "hässlich":
      a) _id_to_index.resize(_next_id); gehört in init(), _next_id nur als lokale variable.
      b) alternativ _next_id wenigstens in "edge_count" umbenennen
   x merge "public" api für sort*Edges, initOffsets, initIdToIndex:
@@ -145,23 +145,27 @@ graph.h:
 
 
 chgraph.h:
-- namen: SCGraph ?? das file heißt "chgraph", verwendet in ch_constructor.h mit typedef auf CHGraph...
-- api docu: restructure() ? buildCHGraph() ?
+x namen: SCGraph ?? das file heißt "chgraph", verwendet in ch_constructor.h mit typedef auf CHGraph...
+x api docu: restructure() ? buildCHGraph() ?
 
 
 
 TODOs bis ich dann mal 'ne fertige Version habe:
-	- CHGraph und SCGraph Benennungen irgendwie konsistenter machen
-	- vllt. Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
-	- Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen nach der Kontraktion und im CHDijkstra verwenden.
-	- das Sortieren der Kanten irgendwie zentral festlegen. Template Parameter? Vllt den CHGraph zu einem reinen Kontraktionsgraphen machen und dann zu 'nem CHGraphen konvertieren am Schluss?
+	x CHGraph und SCGraph Benennungen irgendwie konsistenter machen
+	x vllt. Schnellen Iterator verwenden. (also den der mit den neuen IDS arbeitet)
+		-> nope
+	x Edges im CHGraph so sortieren, dass sie von großem nach kleinem Level gehen nach der Kontraktion und im CHDijkstra verwenden.
+		-> nicht meine Aufgabe
+	x das Sortieren der Kanten irgendwie zentral festlegen. Template Parameter? Vllt den CHGraph zu einem reinen Kontraktionsgraphen machen und dann zu 'nem CHGraphen konvertieren am Schluss?
+		-> nope
+	x Stefans TODOs noch abarbeiten.
+	x Tests so schreiben, dass graphen bestimmt werden können.
+		-> nope. Habe ja Testdaten
 	- Kurzdoku. Eben nur eine Zeile comment, was die public Funktion macht. Am besten auch das private Zeugs, damit ich's auch wieder verstehe.
-	- Stefans TODOs noch abarbeiten.
-	- Tests so schreiben, dass graphen bestimmt werden können.
 	- Schlussputz.
 
 TODOs, damit auch andere das Projekt benutzen können:
-	- ReadWrite für FMI und FMI_CH.
+	x ReadWrite für FMI und FMI_CH. -> Reader für FMI_CH gibt gerade nicht viel Sinn
 	x Auf cmake umstellen oder so.
 	x Ne gute main schreiben mit Parametern und so. Am besten auch, dass man daraus gleich die Tests aufrufen kann, wenn man einen machen will.
 	x Parser von Klasse zu Funktionen machen, da man sonst für jeden Type immer auch ein Constructor zu jedem Type braucht.

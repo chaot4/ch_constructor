@@ -28,14 +28,14 @@ class CHConstructor{
 	private:
 		// typedef CHNode<NodeT> LvlNode;
 		typedef CHEdge<EdgeT> Shortcut;
-		typedef SCGraph<NodeT, EdgeT> CHGraph;
+		typedef CHGraph<NodeT, EdgeT> CHGraphT;
 
 		struct CompInOutProduct;
 		struct PQElement;
 		typedef std::priority_queue<
 				PQElement, std::vector<PQElement>, std::greater<PQElement> > PQ;
 
-		CHGraph& _base_graph;
+		CHGraphT& _base_graph;
 
 		struct ThreadData {
 			PQ pq;
@@ -72,7 +72,7 @@ class CHConstructor{
 		void _chooseAllForDelete(std::vector<NodeID> const& independent_set);
 		void _deleteNodes(std::list<NodeID>& nodes);
 	public:
-		CHConstructor(CHGraph& base_graph, uint num_threads = 1);
+		CHConstructor(CHGraphT& base_graph, uint num_threads = 1);
 
 		void quick_contract(std::list<NodeID>& nodes, uint max_degree,
 				uint max_rounds);
@@ -89,9 +89,9 @@ class CHConstructor{
 template <typename NodeT, typename EdgeT>
 struct CHConstructor<NodeT, EdgeT>::CompInOutProduct
 {
-	CHGraph const& g;
+	CHGraphT const& g;
 
-	CompInOutProduct(CHGraph const& g)
+	CompInOutProduct(CHGraphT const& g)
 		: g(g) {}
 
 	bool operator()(NodeID node1, NodeID node2) const
@@ -353,7 +353,7 @@ void CHConstructor<NodeT, EdgeT>::_deleteNodes(std::list<NodeID>& nodes)
  */
 
 template <typename NodeT, typename EdgeT>
-CHConstructor<NodeT, EdgeT>::CHConstructor(CHGraph& base_graph, uint num_threads)
+CHConstructor<NodeT, EdgeT>::CHConstructor(CHGraphT& base_graph, uint num_threads)
 		:_base_graph(base_graph), _num_threads(num_threads)
 {
 	if (!_num_threads) {

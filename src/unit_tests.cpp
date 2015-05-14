@@ -94,9 +94,9 @@ void unit_tests::testCHConstructor()
 	Print("===============================\n");
 
 	typedef CHEdge<OSMEdge> Shortcut;
-	typedef SCGraph<OSMNode, OSMEdge> CHGraph;
+	typedef CHGraph<OSMNode, OSMEdge> CHGraphOSM;
 
-	CHGraph g;
+	CHGraphOSM g;
 	g.init(FormatSTD::Reader::readGraph<OSMNode, Shortcut>("../test_data/test"));
 
 	CHConstructor<OSMNode, OSMEdge> chc(g, 2);
@@ -146,14 +146,14 @@ void unit_tests::testCHDijkstra()
 	Print("============================\n");
 
 	typedef CHEdge<OSMEdge> Shortcut;
-	typedef SCGraph<OSMNode, OSMEdge> CHGraph;
+	typedef CHGraph<OSMNode, OSMEdge> CHGraphOSM;
 
 	/* Init normal graph */
 	Graph<OSMNode, OSMEdge> g;
 	g.init(FormatSTD::Reader::readGraph<OSMNode, OSMEdge>("../test_data/15kSZHK.txt"));
 
 	/* Init CH graph */
-	CHGraph chg;
+	CHGraphOSM chg;
 	chg.init(FormatSTD::Reader::readGraph<OSMNode, Shortcut>("../test_data/15kSZHK.txt"));
 
 	/* Build CH */
