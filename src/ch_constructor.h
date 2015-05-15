@@ -283,11 +283,11 @@ std::vector<NodeID> CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::list<N
 	std::vector<bool> marked(_base_graph.getNrOfNodes(), false);
 	independent_set.reserve(nodes.size());
 
-	for (auto it(nodes.begin()), end(nodes.end()); it != end; it++) {
-		if (!marked[*it] && max_degree >= _base_graph.getNrOfEdges(*it)) {
-			marked[*it] = true;
-			_markNeighbours(*it, marked);
-			independent_set.push_back(*it);
+	for (NodeID node: nodes) {
+		if (!marked[node] && max_degree >= _base_graph.getNrOfEdges(node)) {
+			marked[node] = true;
+			_markNeighbours(node, marked);
+			independent_set.push_back(node);
 		}
 	}
 	return independent_set;

@@ -116,12 +116,12 @@ void unit_tests::testCHConstructor()
 	auto independent_set = chc._calcIndependentSet(remaining_nodes);
 	Print("Size of the independent set of all nodes: " << independent_set.size());
 
-	for (auto it(independent_set.begin()); it != independent_set.end(); it++) {
-		is_in_ind_set[*it] = true;
+	for (NodeID node: independent_set) {
+		is_in_ind_set[node] = true;
 	}
 
-	for (auto it(independent_set.begin()); it != independent_set.end(); it++) {
-		for (auto const& edge: g.nodeEdges(*it, EdgeType::OUT)) {
+	for (NodeID node: independent_set) {
+		for (auto const& edge: g.nodeEdges(node, EdgeType::OUT)) {
 			Test(!is_in_ind_set[edge.tgt]);
 		}
 	}
