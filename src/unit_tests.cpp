@@ -209,9 +209,9 @@ void unit_tests::testDijkstra()
 	Test(dist == 18);
 
 	Print("Shortest path from 0 to " << tgt << ":");
-	for (uint i(0); i<path.size(); i++) {
-		Edge const& edge(g.getEdge(path[i]));
-		Print("EdgeID: " << path[i] << ", src: " << edge.src << ", tgt: " << edge.tgt);
+	for (auto edge_id: path) {
+		Edge const& edge(g.getEdge(edge_id));
+		Print("EdgeID: " << edge_id << ", src: " << edge.src << ", tgt: " << edge.tgt);
 	}
 
 	Print("Test if shortest paths are the same from both sides for the 'test' graph.");

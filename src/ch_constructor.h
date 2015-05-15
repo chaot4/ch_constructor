@@ -307,15 +307,14 @@ template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_chooseDeleteNodes(std::vector<NodeID> const& independent_set)
 {
 	double edge_diff_mean(0);
-	for (uint i(0), size(independent_set.size()); i<size; i++) {
-		edge_diff_mean += _edge_diffs[independent_set[i]];
+	for (NodeID node: independent_set) {
+		edge_diff_mean += _edge_diffs[node];
 	}
 	edge_diff_mean /= independent_set.size();
 	Print("The average edge difference is " << edge_diff_mean << ".");
 
 	assert(_delete.empty());
-	for (uint i(0), size(independent_set.size()); i<size; i++) {
-		NodeID node(independent_set[i]);
+	for (NodeID node: independent_set) {
 		if (_edge_diffs[node] <= edge_diff_mean) {
 			_delete.push_back(node);
 			_to_delete[node] = true;
@@ -327,8 +326,7 @@ template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_chooseAllForDelete(std::vector<NodeID> const& independent_set)
 {
 	assert(_delete.empty());
-	for (uint i(0), size(independent_set.size()); i<size; i++) {
-		NodeID node(independent_set[i]);
+	for (NodeID node: independent_set) {
 		_delete.push_back(node);
 		_to_delete[node] = true;
 	}

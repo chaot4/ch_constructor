@@ -115,8 +115,8 @@ namespace chc {
 		std::uniform_int_distribution<> dist(0, 15);
 
 		std::string s; s.resize(len);
-		for (unsigned int i = 0; i < len; ++i) {
-			s[i] = hex[dist(gen)];
+		for (auto& c: s) {
+			c = hex[dist(gen)];
 		}
 		return s;
 	}
@@ -468,8 +468,8 @@ namespace chc {
 			os << "# Revision : 1" << "\n";
 			os << "# Timestamp : " << time(nullptr) << "\n";
 			os << "# Origin : ch_constructor" << "\n";
-			for (auto it(meta_data.begin()); it != meta_data.end(); it++) {
-				os << "# Origin" << it->first << " : " << it->second << "\n";
+			for (auto const& meta_datum: meta_data) {
+				os << "# Origin" << meta_datum.first << " : " << meta_datum.second << "\n";
 			}
 			os << "\n";
 
@@ -498,8 +498,8 @@ namespace chc {
 			os << "# Revision : 1" << "\n";
 			os << "# Timestamp : " << time(nullptr) << "\n";
 			os << "# Origin : ch_constructor" << "\n";
-			for (auto it(meta_data.begin()); it != meta_data.end(); it++) {
-				os << "# Origin" << it->first << " : " << it->second << "\n";
+			for (auto const& meta_datum: meta_data) {
+				os << "# Origin" << meta_datum.first << " : " << meta_datum.second << "\n";
 			}
 			os << "\n";
 

@@ -60,9 +60,9 @@ void CHGraph<NodeT, EdgeT>::restructure(
 	/*
 	 * Process contracted nodes.
 	 */
-	for (uint i(0); i<deleted.size(); i++) {
-		_node_levels[deleted[i]] = _next_lvl;
-		assert(to_delete[deleted[i]]);
+	for (NodeID node: deleted) {
+		_node_levels[node] = _next_lvl;
+		assert(to_delete[node]);
 	}
 	_next_lvl++;
 
@@ -75,10 +75,8 @@ void CHGraph<NodeT, EdgeT>::restructure(
 	std::sort(new_shortcuts.begin(), new_shortcuts.end(), outEdgeSort);
 
 	/* Manually merge the new_shortcuts and _out_edges vector. */
-	uint j(0);
-	for (uint i(0); i<_out_edges.size(); i++) {
-
-		Shortcut const& edge(_out_edges[i]);
+	size_t j(0);
+	for (auto& edge: _out_edges) {
 		/* edge greater than new_sc */
 		for (;j < new_shortcuts.size() && outEdgeSort(new_shortcuts[j], edge); ++j) {
 			Shortcut& new_sc(new_shortcuts[j]);
@@ -96,10 +94,10 @@ void CHGraph<NodeT, EdgeT>::restructure(
 
 		/* edge less than or equal new_sc */
 		if (!to_delete[edge.src] && !to_delete[edge.tgt]) {
-			_addNewEdge(_out_edges[i], new_edge_vec);
+			_addNewEdge(edge, new_edge_vec);
 		}
 		else {
-			_edges_dump.push_back(_out_edges[i]);
+			_edges_dump.push_back(edge);
 		}
 	}
 
