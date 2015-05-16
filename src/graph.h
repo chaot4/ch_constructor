@@ -5,12 +5,7 @@
 #include "indexed_container.h"
 
 #include <vector>
-#include <list>
-#include <string>
-#include <fstream>
-#include <sstream>
 #include <algorithm>
-#include <limits>
 
 namespace chc
 {

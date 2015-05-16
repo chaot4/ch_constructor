@@ -8,6 +8,7 @@
 #include <chrono>
 #include <queue>
 #include <mutex>
+#include <list>
 #include <omp.h>
 
 namespace chc
