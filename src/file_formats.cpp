@@ -53,8 +53,14 @@ namespace chc {
 		else if (format == "FMI_DIST") {
 			return FileFormat::FMI_DIST;
 		}
+		else if (format == "FMI_EUCL") {
+			return FileFormat::FMI_EUCL;
+		}
 		else if (format == "FMI_CH") {
 			return FileFormat::FMI_CH;
+		}
+		else if (format == "FMI_EUCL_CH") {
+			return FileFormat::FMI_EUCL_CH;
 		}
 		else if (format == "STEFAN_CH") {
 			return FileFormat::STEFAN_CH;
@@ -77,8 +83,12 @@ namespace chc {
 			return "FMI";
 		case FileFormat::FMI_DIST:
 			return "FMI_DIST";
+		case FileFormat::FMI_EUCL:
+			return "FMI_EUCL";
 		case FileFormat::FMI_CH:
 			return "FMI_CH";
+		case FileFormat::FMI_EUCL_CH:
+			return "FMI_EUCL_CH";
 		case FileFormat::STEFAN_CH:
 			return "STEFAN_CH";
 		}
@@ -279,6 +289,28 @@ namespace chc {
 	}
 
 	template<>
+	EuclOSMEdge text_readEdge<EuclOSMEdge>(std::istream& is, EdgeID edge_id)
+	{
+		return readLine(is, [edge_id](std::istream& is) {
+			EuclOSMEdge edge;
+			std::make_signed<decltype(edge.dist)>::type signed_dist;
+
+			is >> edge.src >> edge.tgt >> signed_dist >> edge.type >> edge.speed;
+			if (signed_dist >= 0) {
+				edge.id = edge_id;
+				edge.dist = signed_dist;
+			} else {
+				// mark as invalid edge with 0 length
+				edge.id = c::NO_EID;
+				edge.dist = 0;
+			}
+			edge.eucl_dist = edge.dist;
+			calcTimeMetric(edge);
+			return edge;
+		});
+	}
+
+	template<>
 	OSMDistEdge text_readEdge<OSMDistEdge>(std::istream& is, EdgeID edge_id)
 	{
 		return readLine(is, [edge_id](std::istream& is) {
@@ -329,6 +361,15 @@ namespace chc {
 	{
 		os << edge.src << " " << edge.tgt << " " << edge.dist << " "
 			<< edge.type << " " << edge.speed << " "
+			<< (edge.child_edge1 == c::NO_EID ? "-1" : std::to_string(edge.child_edge1)) << " "
+			<< (edge.child_edge2 == c::NO_EID ? "-1" : std::to_string(edge.child_edge2)) << "\n";
+	}
+
+	template<>
+	void text_writeEdge<CHEdge<EuclOSMEdge>>(std::ostream& os, CHEdge<EuclOSMEdge> const& edge)
+	{
+		os << edge.src << " " << edge.tgt << " " << edge.dist << " "
+			<< edge.type << " " << edge.eucl_dist << " "
 			<< (edge.child_edge1 == c::NO_EID ? "-1" : std::to_string(edge.child_edge1)) << " "
 			<< (edge.child_edge2 == c::NO_EID ? "-1" : std::to_string(edge.child_edge2)) << "\n";
 	}
@@ -485,6 +526,13 @@ namespace chc {
 		}
 	}
 
+	namespace FormatFMI_EUCL {
+		auto Reader_impl::readEdge(EdgeID edge_id) -> edge_type
+		{
+			return text_readEdge<edge_type>(is, edge_id);
+		}
+	}
+
 	namespace FormatFMI_CH {
 		Writer_impl::Writer_impl(std::ostream& os) : FormatSTD::Writer_impl(os) {
 			os.precision(7);
@@ -512,6 +560,13 @@ namespace chc {
 			text_writeNode<node_type>(os, out);
 		}
 
+		void Writer_impl::writeEdge(edge_type const& out, EdgeID)
+		{
+			text_writeEdge<edge_type>(os, out);
+		}
+	}
+
+	namespace FormatFMI_EUCL_CH {
 		void Writer_impl::writeEdge(edge_type const& out, EdgeID)
 		{
 			text_writeEdge<edge_type>(os, out);

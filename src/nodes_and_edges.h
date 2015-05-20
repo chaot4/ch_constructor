@@ -313,6 +313,16 @@ OSMEdge concat(OSMEdge const& edge1, OSMEdge const& edge2);
 
 struct OSMDistEdge : OSMEdge { };
 
+struct EuclOSMEdge : OSMEdge
+{
+	uint eucl_dist = c::NO_DIST;
+
+	EuclOSMEdge() { }
+	EuclOSMEdge(EdgeID id, NodeID src, NodeID tgt, uint dist, uint type, int speed, uint eucl_dist)
+	: OSMEdge(id, src, tgt, dist, type, speed), eucl_dist(eucl_dist) { }
+};
+EuclOSMEdge concat(EuclOSMEdge const& edge1, EuclOSMEdge const& edge2);
+
 /*
  * EdgeSort
  */

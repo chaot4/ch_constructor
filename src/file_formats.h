@@ -22,11 +22,14 @@ namespace chc {
 	template<> void text_writeEdge<OSMEdge>(std::ostream& os, OSMEdge const& edge);
 	template<> void text_writeEdge<Edge>(std::ostream& os, Edge const& edge);
 	template<> void text_writeEdge<CHEdge<OSMEdge>>(std::ostream& os, CHEdge<OSMEdge> const& edge);
+	template<> void text_writeEdge<CHEdge<EuclOSMEdge>>(std::ostream& os, CHEdge<EuclOSMEdge> const& edge);
 	template<> void text_writeEdge<CHEdge<StefanEdge>>(std::ostream& os, CHEdge<StefanEdge> const& edge);
 
 	template<typename EdgeT>
 	EdgeT text_readEdge(std::istream& is, EdgeID edge_id = c::NO_EID);
 	template<> OSMEdge text_readEdge<OSMEdge>(std::istream& is, EdgeID edge_id);
+	template<> EuclOSMEdge text_readEdge<EuclOSMEdge>(std::istream& is, EdgeID edge_id);
+	template<> OSMDistEdge text_readEdge<OSMDistEdge>(std::istream& is, EdgeID edge_id);
 	template<> Edge text_readEdge<Edge>(std::istream& is, EdgeID edge_id);
 
 	namespace FormatSTD
@@ -124,6 +127,19 @@ namespace chc {
 		typedef SimpleReader<Reader_impl> Reader;
 	}
 
+	namespace FormatFMI_EUCL
+	{
+		typedef OSMNode node_type;
+		typedef EuclOSMEdge edge_type;
+
+		struct Reader_impl : public FormatFMI::Reader_impl
+		{
+			edge_type readEdge(EdgeID edge_id);
+			Reader_impl(std::istream& is) : FormatFMI::Reader_impl(is) { }
+		};
+		typedef SimpleReader<Reader_impl> Reader;
+	}
+
 	namespace FormatFMI_CH
 	{
 		typedef CHNode<OSMNode> node_type;
@@ -135,6 +151,20 @@ namespace chc {
 			Writer_impl(std::ostream& os);
 			void writeHeader(NodeID nr_of_nodes, EdgeID nr_of_edges, Metadata const& meta_data);
 			void writeNode(node_type const& out, NodeID node_id);
+			void writeEdge(edge_type const& out, EdgeID edge_id);
+		};
+		typedef SimpleWriter<Writer_impl> Writer;
+	}
+
+	namespace FormatFMI_EUCL_CH
+	{
+		typedef CHNode<OSMNode> node_type;
+		typedef CHEdge<EuclOSMEdge> edge_type;
+
+		struct Writer_impl : public FormatFMI_CH::Writer_impl
+		{
+		public:
+			Writer_impl(std::ostream& os) : FormatFMI_CH::Writer_impl(os) { }
 			void writeEdge(edge_type const& out, EdgeID edge_id);
 		};
 		typedef SimpleWriter<Writer_impl> Writer;
@@ -157,7 +187,7 @@ namespace chc {
 
 
 
-	enum class FileFormat { STD, SIMPLE, FMI, FMI_DIST, FMI_CH, STEFAN_CH };
+	enum class FileFormat { STD, SIMPLE, FMI, FMI_DIST, FMI_EUCL, FMI_CH, FMI_EUCL_CH, STEFAN_CH };
 	static constexpr FileFormat LastFileFormat = FileFormat::STEFAN_CH;
 
 	FileFormat toFileFormat(std::string const& format);
@@ -177,7 +207,11 @@ namespace chc {
 			return FormatFMI::Reader::readGraph<Node, Edge>(filename);
 		case FileFormat::FMI_DIST:
 			return FormatFMI_DIST::Reader::readGraph<Node, Edge>(filename);
+		case FileFormat::FMI_EUCL:
+			return FormatFMI_EUCL::Reader::readGraph<Node, Edge>(filename);
 		case FileFormat::FMI_CH:
+			break;
+		case FileFormat::FMI_EUCL_CH:
 			break;
 		case FileFormat::STEFAN_CH:
 			break;
@@ -198,8 +232,12 @@ namespace chc {
 		case FileFormat::FMI:
 			callable(FormatFMI::Reader::readGraph(filename));
 		case FileFormat::FMI_DIST:
-			callable(FormatFMI::Reader::readGraph(filename));
+			callable(FormatFMI_DIST::Reader::readGraph(filename));
+		case FileFormat::FMI_EUCL:
+			callable(FormatFMI_EUCL::Reader::readGraph(filename));
 		case FileFormat::FMI_CH:
+			break;
+		case FileFormat::FMI_EUCL_CH:
 			break;
 		case FileFormat::STEFAN_CH:
 			break;
@@ -230,8 +268,13 @@ namespace chc {
 			break;
 		case FileFormat::FMI_DIST:
 			break;
+		case FileFormat::FMI_EUCL:
+			break;
 		case FileFormat::FMI_CH:
 			callable(readGraphForWriter<FormatFMI_CH::Writer>(read_format, filename));
+			return;
+		case FileFormat::FMI_EUCL_CH:
+			callable(readGraphForWriter<FormatFMI_EUCL_CH::Writer>(read_format, filename));
 			return;
 		case FileFormat::STEFAN_CH:
 			callable(readGraphForWriter<FormatSTEFAN_CH::Writer>(read_format, filename));
@@ -271,8 +314,13 @@ namespace chc {
 			break;
 		case FileFormat::FMI_DIST:
 			break;
+		case FileFormat::FMI_EUCL:
+			break;
 		case FileFormat::FMI_CH:
 			writeCHGraphFile<FormatFMI_CH::Writer>(filename, data);
+			return;
+		case FileFormat::FMI_EUCL_CH:
+			writeCHGraphFile<FormatFMI_EUCL_CH::Writer>(filename, data);
 			return;
 		case FileFormat::STEFAN_CH:
 			writeCHGraphFile<FormatSTEFAN_CH::Writer>(filename, data);
@@ -313,8 +361,13 @@ namespace chc {
 			return;
 		case FileFormat::FMI_DIST:
 			break;
+		case FileFormat::FMI_EUCL:
+			break;
 		case FileFormat::FMI_CH:
 			writeGraphFile<FormatFMI_CH::Writer>(filename, data);
+			return;
+		case FileFormat::FMI_EUCL_CH:
+			writeGraphFile<FormatFMI_EUCL_CH::Writer>(filename, data);
 			return;
 		case FileFormat::STEFAN_CH:
 			writeGraphFile<FormatSTEFAN_CH::Writer>(filename, data);
