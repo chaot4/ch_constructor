@@ -38,8 +38,8 @@ class CHGraph : public Graph<NodeT, CHEdge<EdgeT> >
 		}
 
 
-		void restructure(std::vector<NodeID> const& deleted,
-				std::vector<bool> const& to_delete,
+		void restructure(std::vector<NodeID> const& removed,
+				std::vector<bool> const& to_remove,
 				std::vector<Shortcut>& new_shortcuts);
 		void rebuildCompleteGraph();
 
@@ -51,8 +51,8 @@ class CHGraph : public Graph<NodeT, CHEdge<EdgeT> >
 
 template <typename NodeT, typename EdgeT>
 void CHGraph<NodeT, EdgeT>::restructure(
-		std::vector<NodeID> const& deleted,
-		std::vector<bool> const& to_delete,
+		std::vector<NodeID> const& removed,
+		std::vector<bool> const& to_remove,
 		std::vector<Shortcut>& new_shortcuts)
 {
 	OutEdgeSort outEdgeSort;
@@ -60,9 +60,9 @@ void CHGraph<NodeT, EdgeT>::restructure(
 	/*
 	 * Process contracted nodes.
 	 */
-	for (NodeID node: deleted) {
+	for (NodeID node: removed) {
 		_node_levels[node] = _next_lvl;
-		assert(to_delete[node]);
+		assert(to_remove[node]);
 	}
 	_next_lvl++;
 
@@ -80,9 +80,9 @@ void CHGraph<NodeT, EdgeT>::restructure(
 		/* edge greater than new_sc */
 		for (;j < new_shortcuts.size() && outEdgeSort(new_shortcuts[j], edge); ++j) {
 			Shortcut& new_sc(new_shortcuts[j]);
-			if (to_delete[new_sc.center_node]) {
+			if (to_remove[new_sc.center_node]) {
 				_addNewEdge(new_sc, new_edge_vec);
-				assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
+				assert(!to_remove[new_sc.src] && !to_remove[new_sc.tgt]);
 			}
 		}
 
@@ -93,7 +93,7 @@ void CHGraph<NodeT, EdgeT>::restructure(
 		debug_assert(j >= new_shortcuts.size() || !outEdgeSort(new_shortcuts[j], edge));
 
 		/* edge less than or equal new_sc */
-		if (!to_delete[edge.src] && !to_delete[edge.tgt]) {
+		if (!to_remove[edge.src] && !to_remove[edge.tgt]) {
 			_addNewEdge(edge, new_edge_vec);
 		}
 		else {
@@ -104,9 +104,9 @@ void CHGraph<NodeT, EdgeT>::restructure(
 	/* Rest of new_shortcuts */
 	for (; j < new_shortcuts.size(); ++j) {
 		Shortcut& new_sc(new_shortcuts[j]);
-		if (to_delete[new_sc.center_node]) {
+		if (to_remove[new_sc.center_node]) {
 			_addNewEdge(new_sc, new_edge_vec);
-			assert(!to_delete[new_sc.src] && !to_delete[new_sc.tgt]);
+			assert(!to_remove[new_sc.src] && !to_remove[new_sc.tgt]);
 		}
 	}
 

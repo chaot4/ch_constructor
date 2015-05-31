@@ -105,12 +105,12 @@ void unit_tests::testCHConstructor()
 	 * Test the independent set construction.
 	 */
 
-	std::list<NodeID> all_nodes;
-	for (uint i(0); i<g.getNrOfNodes(); i++) {
-		all_nodes.push_back(i);
+	std::vector<NodeID> all_nodes(g.getNrOfNodes());
+	for (NodeID i(0); i<all_nodes.size(); i++) {
+		all_nodes[i] = i;
 	}
 
-	std::list<NodeID> remaining_nodes(all_nodes);
+	std::vector<NodeID> remaining_nodes(all_nodes);
 	std::vector<bool> is_in_ind_set(g.getNrOfNodes(), false);
 
 	auto independent_set = chc._calcIndependentSet(remaining_nodes);
@@ -158,9 +158,9 @@ void unit_tests::testCHDijkstra()
 
 	/* Build CH */
 	CHConstructor<OSMNode, OSMEdge> chc(chg, 2);
-	std::list<NodeID> all_nodes;
-	for (uint i(0); i<chg.getNrOfNodes(); i++) {
-		all_nodes.push_back(i);
+	std::vector<NodeID> all_nodes(g.getNrOfNodes());
+	for (NodeID i(0); i<all_nodes.size(); i++) {
+		all_nodes[i] = i;
 	}
 	chc.quick_contract(all_nodes, 4, 5);
 	chc.contract(all_nodes);

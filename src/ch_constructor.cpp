@@ -3,6 +3,7 @@
 #include "ch_constructor.h"
 #include "file_formats.h"
 #include "track_time.h"
+#include "prioritizers.h"
 
 #include <getopt.h>
 
@@ -20,6 +21,7 @@ void printHelp()
 		<< "  -o, --outfile <path>       Write graph to <path> (default: ch_out.graph)\n"
 		<< "  -g, --outformat <format>   Writes outfile in <format> (" << getAllFileFormatsString() << " - default FMI_CH)\n"
 		<< "  -t, --threads <number>     Number of threads to use in the calculations (default: 1)\n"
+		<< "  -p, --prioritizer <type>   Uses prioritizer <type> for the CH construction. (default: NONE)\n"
 		<< "Note: not all formats are available as input / ouput format, and not all combinations are possible.\n";
 }
 
@@ -28,6 +30,8 @@ struct BuildAndStoreCHGraph {
 	std::string outfile;
 	uint nr_of_threads;
 	TrackTime tt;
+
+	PrioritizerType prioritizer_type;
 
 	template<typename NodeT, typename EdgeT>
 	void operator()(GraphInData<NodeT, CHEdge<EdgeT>>&& data) {
@@ -40,12 +44,19 @@ struct BuildAndStoreCHGraph {
 
 		/* Build CH */
 		CHConstructor<NodeT, EdgeT> chc(g, nr_of_threads);
-		std::list<NodeID> all_nodes;
-		for (uint i(0); i<g.getNrOfNodes(); i++) {
-			all_nodes.push_back(i);
+		std::vector<NodeID> all_nodes(g.getNrOfNodes());
+		for (NodeID i(0); i<all_nodes.size(); i++) {
+			all_nodes[i] = i;
 		}
-		chc.quick_contract(all_nodes, 4, 5);
-		chc.contract(all_nodes);
+
+		if (prioritizer_type == PrioritizerType::NONE) {
+			chc.quick_contract(all_nodes, 4, 5);
+			chc.contract(all_nodes);
+		}
+		else {
+			auto prioritizer(createPrioritizer(prioritizer_type, g));
+			chc.contract(all_nodes, *prioritizer);
+		}
 
 		tt.track("contracting graph");
 
@@ -71,6 +82,7 @@ int main(int argc, char* argv[])
 	std::string outfile("ch_out.graph");
 	FileFormat outformat(FileFormat::FMI_CH);
 	uint nr_of_threads(1);
+	PrioritizerType prioritizer_type(PrioritizerType::NONE);
 
 	/*
 	 * Getopt argument parsing.
@@ -83,6 +95,7 @@ int main(int argc, char* argv[])
 		{"outfile",     required_argument,  0, 'o'},
 		{"outformat",   required_argument,  0, 'g'},
 		{"threads",	required_argument,  0, 't'},
+		{"prioritizer",	required_argument,  0, 'p'},
 		{0,0,0,0},
 	};
 
@@ -90,7 +103,7 @@ int main(int argc, char* argv[])
 	int iarg(0);
 	opterr = 1;
 
-	while((iarg = getopt_long(argc, argv, "hi:f:o:g:t:", longopts, &index)) != -1) {
+	while((iarg = getopt_long(argc, argv, "hi:f:o:g:t:p:", longopts, &index)) != -1) {
 		switch (iarg) {
 			case 'h':
 				printHelp();
@@ -118,6 +131,9 @@ int main(int argc, char* argv[])
 					}
 				}
 				break;
+			case 'p':
+				prioritizer_type = toPrioritizerType(optarg);
+				break;
 			default:
 				printHelp();
 				return 1;
@@ -134,7 +150,7 @@ int main(int argc, char* argv[])
 	Print("Using " << nr_of_threads << " threads.");
 
 	readGraphForWriteFormat(outformat, informat, infile,
-		BuildAndStoreCHGraph { outformat, outfile, nr_of_threads, VerboseTrackTime() });
+		BuildAndStoreCHGraph { outformat, outfile, nr_of_threads, VerboseTrackTime(), prioritizer_type });
 
 	return 0;
 }

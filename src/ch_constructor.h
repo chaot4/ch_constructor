@@ -4,12 +4,14 @@
 #include "nodes_and_edges.h"
 #include "graph.h"
 #include "chgraph.h"
+#include "prioritizer.h"
 
 #include <chrono>
 #include <queue>
 #include <mutex>
-#include <list>
+#include <vector>
 #include <omp.h>
+#include <algorithm>
 
 namespace chc
 {
@@ -50,8 +52,8 @@ class CHConstructor{
 
 		std::vector<Shortcut> _new_shortcuts;
 		std::vector<int> _edge_diffs;
-		std::vector<NodeID> _delete;
-		std::vector<bool> _to_delete;
+		std::vector<NodeID> _remove;
+		std::vector<bool> _to_remove;
 		std::mutex _new_shortcuts_mutex;
 
 
@@ -65,19 +67,20 @@ class CHConstructor{
 		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
 				EdgeType direction = EdgeType::OUT);
 
-		std::vector<NodeID> _calcIndependentSet(std::list<NodeID> const& nodes,
+		std::vector<NodeID> _calcIndependentSet(std::vector<NodeID> const& nodes,
 				uint max_degree = MAX_UINT);
 		void _markNeighbours(NodeID node, std::vector<bool>& marked);
 
-		void _chooseDeleteNodes(std::vector<NodeID> const& independent_set);
-		void _chooseAllForDelete(std::vector<NodeID> const& independent_set);
-		void _deleteNodes(std::list<NodeID>& nodes);
+		void _chooseRemoveNodes(std::vector<NodeID> const& independent_set);
+		void _chooseAllForRemove(std::vector<NodeID> const& independent_set);
+		void _removeNodes(std::vector<NodeID>& nodes);
 	public:
 		CHConstructor(CHGraphT& base_graph, uint num_threads = 1);
 
-		void quick_contract(std::list<NodeID>& nodes, uint max_degree,
+		void quick_contract(std::vector<NodeID>& nodes, uint max_degree,
 				uint max_rounds);
-		void contract(std::list<NodeID>& nodes);
+		void contract(std::vector<NodeID>& nodes);
+		void contract(std::vector<NodeID>& nodes, Prioritizer& prioritizer);
 		void rebuildCompleteGraph();
 
 		friend void unit_tests::testCHConstructor();
@@ -134,8 +137,8 @@ template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_initVectors()
 {
 	_new_shortcuts.clear();
-	_delete.clear();
-	_to_delete.assign(_base_graph.getNrOfNodes(), false);
+	_remove.clear();
+	_to_remove.assign(_base_graph.getNrOfNodes(), false);
 }
 
 template <typename NodeT, typename EdgeT>
@@ -277,7 +280,7 @@ void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcu
 }
 
 template <typename NodeT, typename EdgeT>
-std::vector<NodeID> CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::list<NodeID> const& nodes,
+std::vector<NodeID> CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::vector<NodeID> const& nodes,
 		uint max_degree)
 {
 	std::vector<NodeID> independent_set;
@@ -305,7 +308,7 @@ void CHConstructor<NodeT, EdgeT>::_markNeighbours(NodeID node, std::vector<bool>
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_chooseDeleteNodes(std::vector<NodeID> const& independent_set)
+void CHConstructor<NodeT, EdgeT>::_chooseRemoveNodes(std::vector<NodeID> const& independent_set)
 {
 	double edge_diff_mean(0);
 	for (NodeID node: independent_set) {
@@ -314,37 +317,43 @@ void CHConstructor<NodeT, EdgeT>::_chooseDeleteNodes(std::vector<NodeID> const& 
 	edge_diff_mean /= independent_set.size();
 	Print("The average edge difference is " << edge_diff_mean << ".");
 
-	assert(_delete.empty());
+	assert(_remove.empty());
 	for (NodeID node: independent_set) {
 		if (_edge_diffs[node] <= edge_diff_mean) {
-			_delete.push_back(node);
-			_to_delete[node] = true;
+			_remove.push_back(node);
+			_to_remove[node] = true;
 		}
 	}
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_chooseAllForDelete(std::vector<NodeID> const& independent_set)
+void CHConstructor<NodeT, EdgeT>::_chooseAllForRemove(std::vector<NodeID> const& independent_set)
 {
-	assert(_delete.empty());
+	assert(_remove.empty());
 	for (NodeID node: independent_set) {
-		_delete.push_back(node);
-		_to_delete[node] = true;
+		_remove.push_back(node);
+		_to_remove[node] = true;
 	}
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_deleteNodes(std::list<NodeID>& nodes)
+void CHConstructor<NodeT, EdgeT>::_removeNodes(std::vector<NodeID>& nodes)
 {
-	auto it(nodes.begin());
-	while (it != nodes.end()) {
-		if (_to_delete[*it]) {
-			it = nodes.erase(it);
+	size_t remaining_nodes(nodes.size());
+	size_t i(0);
+	while (i < remaining_nodes) {
+		NodeID node(nodes[i]);
+		if (_to_remove[node]) {
+			remaining_nodes--;
+			nodes[i] = nodes[remaining_nodes];
+			nodes[remaining_nodes] = node;
 		}
 		else {
-			it++;
+			i++;
 		}
 	}
+
+	nodes.resize(remaining_nodes);
 }
 
 /*
@@ -363,18 +372,18 @@ CHConstructor<NodeT, EdgeT>::CHConstructor(CHGraphT& base_graph, uint num_thread
 
 	_thread_data.resize(_num_threads);
 	_edge_diffs.resize(nr_of_nodes);
-	_to_delete.resize(nr_of_nodes);
+	_to_remove.resize(nr_of_nodes);
 
 	for (auto& td: _thread_data) {
 		td.dists.assign(nr_of_nodes, c::NO_DIST);
 		td.reset_dists.reserve(nr_of_nodes);
 	}
 	_new_shortcuts.reserve(_base_graph.getNrOfEdges());
-	_delete.reserve(nr_of_nodes);
+	_remove.reserve(nr_of_nodes);
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint max_degree, uint max_rounds)
+void CHConstructor<NodeT, EdgeT>::quick_contract(std::vector<NodeID>& nodes, uint max_degree, uint max_rounds)
 {
 	using namespace std::chrono;
 
@@ -387,7 +396,7 @@ void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint 
 		_initVectors();
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
-		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
+		std::sort(nodes.begin(), nodes.end(), CompInOutProduct(_base_graph));
 
 		Debug("Constructing the independent set.");
 		auto independent_set = _calcIndependentSet(nodes, max_degree);
@@ -404,15 +413,15 @@ void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint 
 		}
 		Print("Number of possible new Shortcuts: " << _new_shortcuts.size());
 
-		Debug("Delete the nodes with low edge difference.");
-		_chooseAllForDelete(independent_set);
-		_deleteNodes(nodes);
-		Print("Deleted " << _delete.size() << " nodes with low edge difference.");
+		Debug("Remove the nodes with low edge difference.");
+		_chooseAllForRemove(independent_set);
+		_removeNodes(nodes);
+		Print("Removed " << _remove.size() << " nodes with low edge difference.");
 
 		Debug("Restructuring the graph.");
-		_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
+		_base_graph.restructure(_remove, _to_remove, _new_shortcuts);
 
-		Debug("Graph info:");
+		Print("Graph info:");
 		_base_graph.printInfo(nodes);
 
 		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
@@ -422,7 +431,7 @@ void CHConstructor<NodeT, EdgeT>::quick_contract(std::list<NodeID>& nodes, uint 
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
+void CHConstructor<NodeT, EdgeT>::contract(std::vector<NodeID>& nodes)
 {
 	using namespace std::chrono;
 
@@ -435,7 +444,7 @@ void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
 		_initVectors();
 
 		Print("Sorting the remaining " << nodes.size() << " nodes.");
-		nodes.sort<CompInOutProduct>(CompInOutProduct(_base_graph));
+		std::sort(nodes.begin(), nodes.end(), CompInOutProduct(_base_graph));
 
 		Debug("Constructing the independent set.");
 		auto independent_set = _calcIndependentSet(nodes);
@@ -450,20 +459,68 @@ void CHConstructor<NodeT, EdgeT>::contract(std::list<NodeID>& nodes)
 		}
 		Print("Number of possible new Shortcuts: " << _new_shortcuts.size());
 
-		Debug("Delete the nodes with low edge difference.");
-		_chooseDeleteNodes(independent_set);
-		_deleteNodes(nodes);
-		Print("Deleted " << _delete.size() << " nodes with low edge difference.");
+		Debug("Remove the nodes with low edge difference.");
+		_chooseRemoveNodes(independent_set);
+		_removeNodes(nodes);
+		Print("Removed " << _remove.size() << " nodes with low edge difference.");
 
 		Debug("Restructuring the graph.");
-		_base_graph.restructure(_delete, _to_delete, _new_shortcuts);
+		_base_graph.restructure(_remove, _to_remove, _new_shortcuts);
 
-		Debug("Graph info:");
+		Print("Graph info:");
 		_base_graph.printInfo(nodes);
 
 		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
 		Print("Round took " << time_span.count() << " seconds.\n");
 		Unused(time_span);
+	}
+}
+
+template <typename NodeT, typename EdgeT>
+void CHConstructor<NodeT, EdgeT>::contract(std::vector<NodeID>& nodes, Prioritizer& prioritizer)
+{
+	using namespace std::chrono;
+
+	Print("\nStarting the contraction of " << nodes.size() << " nodes.\n");
+
+	prioritizer.init(nodes);
+
+	uint round(1);
+	while (prioritizer.hasNodesLeft()) {
+		steady_clock::time_point t1 = steady_clock::now();
+		Print("Starting round " << round);
+		Debug("Initializing the vectors for a new round.");
+		_initVectors();
+
+		Debug("Calculating list of nodes to be contracted next.");
+		auto next_nodes = prioritizer.getNextNodes();
+		Print("There are " << next_nodes.size() << " nodes to be contracted in this round.");
+
+		Debug("Contracting all the nodes in the independent set.");
+		uint size(next_nodes.size());
+		#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
+		for (uint i = 0; i < size; i++) {
+			uint node(next_nodes[i]);
+			_contract(node);
+		}
+		Print("Number of new Shortcuts: " << _new_shortcuts.size());
+
+		Debug("Remove the nodes that were contracted.");
+		_chooseAllForRemove(next_nodes);
+		prioritizer.remove(_to_remove);
+		Print("Removed " << _remove.size() << " nodes.");
+
+		Debug("Restructuring the graph.");
+		_base_graph.restructure(_remove, _to_remove, _new_shortcuts);
+
+		Print("Graph info:");
+		_base_graph.printInfo(prioritizer.getRemainingNodes());
+
+		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
+		Print("Round took " << time_span.count() << " seconds.\n");
+		Unused(time_span);
+
+		round++;
 	}
 }
 
@@ -474,6 +531,5 @@ void CHConstructor<NodeT, EdgeT>::rebuildCompleteGraph()
 
 	_base_graph.rebuildCompleteGraph();
 }
-
 
 }
