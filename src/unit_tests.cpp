@@ -11,6 +11,7 @@
 #include "chgraph.h"
 #include "ch_constructor.h"
 #include "dijkstra.h"
+#include "prioritizers.h"
 
 #include <map>
 #include <iostream>
@@ -27,6 +28,7 @@ void unit_tests::testAll()
 	unit_tests::testCHConstructor();
 	unit_tests::testCHDijkstra();
 	unit_tests::testDijkstra();
+	unit_tests::testPrioritizer();
 }
 
 void unit_tests::testNodesAndEdges()
@@ -224,6 +226,56 @@ void unit_tests::testDijkstra()
 	Print("\n=================================");
 	Print("TEST: Dijkstra test successful.");
 	Print("=================================\n");
+}
+
+void unit_tests::testPrioritizer()
+{
+	Print("\n=============================");
+	Print("TEST: Start Prioritizer test.");
+	Print("=============================\n");
+
+	typedef CHEdge<OSMEdge> Shortcut;
+	typedef CHGraph<OSMNode, OSMEdge> CHGraphOSM;
+
+	/* Init normal graph */
+	Graph<OSMNode, OSMEdge> g;
+	g.init(FormatSTD::Reader::readGraph<OSMNode, OSMEdge>("../test_data/test"));
+
+	/* Init CH graph */
+	CHGraphOSM chg;
+	chg.init(FormatSTD::Reader::readGraph<OSMNode, Shortcut>("../test_data/test"));
+
+	/* Build CH */
+	CHConstructor<OSMNode, OSMEdge> chc(chg, 2);
+	std::vector<NodeID> all_nodes(g.getNrOfNodes());
+	for (NodeID i(0); i<all_nodes.size(); i++) {
+		all_nodes[i] = i;
+	}
+	std::random_shuffle(all_nodes.begin(), all_nodes.end()); /* random contraction order */
+	auto prioritizer(createPrioritizer(PrioritizerType::ONE_BY_ONE, chg));
+	chc.contract(all_nodes, *prioritizer);
+	chc.rebuildCompleteGraph();
+
+	/* Random Dijkstras */
+	Print("\nStarting random Dijkstras.");
+	uint nr_of_dij(1000);
+	Dijkstra<OSMNode, OSMEdge> dij(g);
+	CHDijkstra<OSMNode, OSMEdge> chdij(chg);
+
+	std::default_random_engine gen(std::chrono::system_clock::now().time_since_epoch().count());
+	std::uniform_int_distribution<uint> dist(0,g.getNrOfNodes()-1);
+	auto rand_node = std::bind (dist, gen);
+	std::vector<EdgeID> path;
+	for (uint i(0); i<nr_of_dij; i++) {
+		NodeID src = rand_node();
+		NodeID tgt = rand_node();
+		Debug("From " << src << " to " << tgt << ".");
+		Test(dij.calcShopa(src,tgt,path) == chdij.calcShopa(src,tgt,path));
+	}
+
+	Print("\n==================================");
+	Print("TEST: Prioritizer test successful.");
+	Print("==================================\n");
 }
 
 }
