@@ -493,7 +493,7 @@ void CHConstructor<NodeT, EdgeT>::contract(std::vector<NodeID>& nodes, Prioritiz
 		_initVectors();
 
 		Debug("Calculating list of nodes to be contracted next.");
-		auto next_nodes = prioritizer.getNextNodes();
+		auto next_nodes(prioritizer.extractNextNodes());
 		Print("There are " << next_nodes.size() << " nodes to be contracted in this round.");
 
 		Debug("Contracting all the nodes in the independent set.");
@@ -505,16 +505,15 @@ void CHConstructor<NodeT, EdgeT>::contract(std::vector<NodeID>& nodes, Prioritiz
 		}
 		Print("Number of new Shortcuts: " << _new_shortcuts.size());
 
-		Debug("Remove the nodes that were contracted.");
+		Debug("Mark nodes for removal from graph.");
 		_chooseAllForRemove(next_nodes);
-		prioritizer.remove(_to_remove);
-		Print("Removed " << _remove.size() << " nodes.");
+		Print("Marked " << _remove.size() << " nodes.");
 
 		Debug("Restructuring the graph.");
 		_base_graph.restructure(_remove, _to_remove, _new_shortcuts);
 
 		Print("Graph info:");
-		_base_graph.printInfo(prioritizer.getRemainingNodes());
+//		_base_graph.printInfo(prioritizer.getRemainingNodes());
 
 		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
 		Print("Round took " << time_span.count() << " seconds.\n");

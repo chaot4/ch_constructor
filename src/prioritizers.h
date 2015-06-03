@@ -26,16 +26,46 @@ class OneByOnePrioritizer : public Prioritizer
 		GraphT const& _base_graph;
 		std::vector<NodeID> _prio_vec;
 
+		std::vector<NodeID> _chooseIndependentSet();
+		void _remove(std::vector<NodeID> const& nodes);
 	public:
 		OneByOnePrioritizer(GraphT const& base_graph) : _base_graph(base_graph) { }
-		void init(std::vector<NodeID>& node_ids);
-		void remove(std::vector<bool> const& to_remove);
-		std::vector<NodeID> getNextNodes();
-		std::vector<NodeID> const& getRemainingNodes();
+		void init(std::vector<NodeID>& node_ids); // steals the data from node_ids
+		std::vector<NodeID> extractNextNodes();
 		bool hasNodesLeft();
 
 		friend void unit_tests::testPrioritizer();
 };
+
+template <typename GraphT>
+void OneByOnePrioritizer<GraphT>::_remove(std::vector<NodeID> const& nodes)
+{
+	std::vector<bool> to_remove(_base_graph.getNrOfNodes(), false);
+	for (auto node: nodes) {
+		to_remove[node] = true;
+	}
+
+	size_t remaining_nodes(_prio_vec.size());
+	size_t i(0);
+	while (i < remaining_nodes) {
+		NodeID node(_prio_vec[i]);
+		if (to_remove[node]) {
+			remaining_nodes--;
+			_prio_vec[i] = _prio_vec[remaining_nodes];
+			_prio_vec[remaining_nodes] = node;
+		}
+		else {
+			i++;
+		}
+	}
+
+	_prio_vec.resize(remaining_nodes);
+}
+
+template <typename GraphT>
+std::vector<NodeID> OneByOnePrioritizer<GraphT>::_chooseIndependentSet() {
+	return std::vector<NodeID>(1, _prio_vec.back());
+}
 
 template <typename GraphT>
 void OneByOnePrioritizer<GraphT>::init(std::vector<NodeID>& node_ids)
@@ -44,32 +74,14 @@ void OneByOnePrioritizer<GraphT>::init(std::vector<NodeID>& node_ids)
 }
 
 template <typename GraphT>
-void OneByOnePrioritizer<GraphT>::remove(std::vector<bool> const& to_remove)
-{
-	size_t remaining_nodes(_prio_vec.size());
-	for (size_t i(0); i<_prio_vec.size(); i++) {
-		NodeID node(_prio_vec[i]);
-		if (to_remove[node]) {
-			remaining_nodes--;
-			_prio_vec[i] = _prio_vec[remaining_nodes];
-			_prio_vec[remaining_nodes] = node;
-		}
-	}
-
-	_prio_vec.resize(remaining_nodes);
-}
-
-template <typename GraphT>
-std::vector<NodeID> const& OneByOnePrioritizer<GraphT>::getRemainingNodes()
-{
-	return _prio_vec;
-}
-
-template <typename GraphT>
-std::vector<NodeID> OneByOnePrioritizer<GraphT>::getNextNodes()
+std::vector<NodeID> OneByOnePrioritizer<GraphT>::extractNextNodes()
 {
 	assert(!_prio_vec.empty());
-	return std::vector<NodeID>(1, _prio_vec.back());
+
+	auto next_nodes(_chooseIndependentSet());
+	_remove(next_nodes);
+
+	return next_nodes;
 }
 
 template <typename GraphT>
