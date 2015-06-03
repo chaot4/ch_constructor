@@ -513,7 +513,7 @@ void CHConstructor<NodeT, EdgeT>::contract(std::vector<NodeID>& nodes, Prioritiz
 		_base_graph.restructure(_remove, _to_remove, _new_shortcuts);
 
 		Print("Graph info:");
-//		_base_graph.printInfo(prioritizer.getRemainingNodes());
+		_base_graph.printInfo();
 
 		duration<double> time_span = duration_cast<duration<double>>(steady_clock::now() - t1);
 		Print("Round took " << time_span.count() << " seconds.\n");
