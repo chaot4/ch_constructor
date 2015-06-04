@@ -59,17 +59,16 @@ class CHConstructor{
 
 		void _initVectors();
 		void _contract(NodeID node);
+		std::vector<Shortcut> _contract(NodeID node, ThreadData& td) const;
 		void _quickContract(NodeID node);
-		uint _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
-				EdgeType direction);
-		void _calcShortestDists(ThreadData& td, NodeID start_node, EdgeType direction, uint radius);
-		void _handleNextPQElement(EdgeType direction);
-		void _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
-				EdgeType direction = EdgeType::OUT);
+		std::vector<Shortcut> _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
+				EdgeType direction, ThreadData& td) const; // FIXME rename
+		void _calcShortestDists(ThreadData& td, NodeID start_node, EdgeType direction,
+				uint radius) const;
+		Shortcut _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
+				EdgeType direction = EdgeType::OUT) const;
 
-		std::vector<NodeID> _calcIndependentSet(std::vector<NodeID> const& nodes,
-				uint max_degree = MAX_UINT);
-		void _markNeighbours(NodeID node, std::vector<bool>& marked);
+		void _markNeighbours(NodeID node, std::vector<bool>& marked) const;
 
 		void _chooseRemoveNodes(std::vector<NodeID> const& independent_set);
 		void _chooseAllForRemove(std::vector<NodeID> const& independent_set);
@@ -77,11 +76,21 @@ class CHConstructor{
 	public:
 		CHConstructor(CHGraphT& base_graph, uint num_threads = 1);
 
+		/* functions for contraction */
 		void quick_contract(std::vector<NodeID>& nodes, uint max_degree,
 				uint max_rounds);
 		void contract(std::vector<NodeID>& nodes);
 		void contract(std::vector<NodeID>& nodes, Prioritizer& prioritizer);
 		void rebuildCompleteGraph();
+
+		/* const functions that use algorithms from the CHConstructor */
+		std::vector<NodeID> calcIndependentSet(std::vector<NodeID> const& nodes,
+				uint max_degree = MAX_UINT) const;
+		int calcEdgeDiff(NodeID node) const;
+		std::vector<int> calcEdgeDiffs(std::vector<NodeID> const& nodes) const;
+		std::vector<Shortcut> testContract(NodeID node) const; // FIXME rename
+		std::vector<Shortcut> testContract(std::vector<NodeID> const& nodes) const; // FIXME rename
+		std::vector<Shortcut> quickContract(NodeID node) const; // FIXME rename
 
 		friend void unit_tests::testCHConstructor();
 };
@@ -144,6 +153,18 @@ void CHConstructor<NodeT, EdgeT>::_initVectors()
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 {
+	ThreadData& td(_myThreadData());
+	auto shortcuts(_contract(node, td));
+
+	_edge_diffs[node] = shortcuts.size() - (int) _base_graph.getNrOfEdges(node);
+
+	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
+	_new_shortcuts.insert(_new_shortcuts.end(), shortcuts.begin(), shortcuts.end());
+}
+
+template <typename NodeT, typename EdgeT>
+auto CHConstructor<NodeT, EdgeT>::_contract(NodeID node, ThreadData& td) const -> std::vector<Shortcut>
+{
 	EdgeType search_direction;
 
 	if (_base_graph.getNrOfEdges(node, EdgeType::IN) <= _base_graph.getNrOfEdges(node, EdgeType::OUT)) {
@@ -153,35 +174,46 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 		search_direction = EdgeType::IN;
 	}
 
-	int nr_new_edges(0);
+	std::vector<Shortcut> shortcuts;
 	for (auto const& edge: _base_graph.nodeEdges(node, !search_direction)) {
 		if (edge.tgt == edge.src) continue; /* skip loops */
-		nr_new_edges += _calcShortcuts(edge, node, search_direction);
+		auto new_shortcuts(_calcShortcuts(edge, node, search_direction, td));
+		shortcuts.insert(shortcuts.end(), new_shortcuts.begin(), new_shortcuts.end());
 	}
 
-	_edge_diffs[node] = nr_new_edges - (int) _base_graph.getNrOfEdges(node);
+	return shortcuts;
 }
 
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_quickContract(NodeID node)
 {
+	auto shortcuts(quickContract(node));
+
+	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
+	_new_shortcuts.insert(_new_shortcuts.end(), shortcuts.begin(), shortcuts.end());
+}
+
+template <typename NodeT, typename EdgeT>
+auto CHConstructor<NodeT, EdgeT>::quickContract(NodeID node) const -> std::vector<Shortcut>
+{
+	std::vector<Shortcut> shortcuts;
 	for (auto const& in_edge: _base_graph.nodeEdges(node, EdgeType::IN)) {
 		if (in_edge.tgt == in_edge.src) continue; /* skip loops */
 		for (auto const& out_edge: _base_graph.nodeEdges(node, EdgeType::OUT)) {
 			if (out_edge.tgt == out_edge.src) continue; /* skip loops */
 			if (in_edge.src != out_edge.tgt) { /* don't create loops */
-				_createShortcut(in_edge, out_edge);
+				shortcuts.push_back(_createShortcut(in_edge, out_edge));
 			}
 		}
 	}
+
+	return shortcuts;
 }
 
 template <typename NodeT, typename EdgeT>
-uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, NodeID center_node,
-		EdgeType direction)
+auto CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, NodeID center_node,
+		EdgeType direction, ThreadData& td) const -> std::vector<Shortcut> 
 {
-	ThreadData& td(_myThreadData());
-
 	struct Target {
 		NodeID end_node;
 		Shortcut const& end_edge;
@@ -205,25 +237,25 @@ uint CHConstructor<NodeT, EdgeT>::_calcShortcuts(Shortcut const& start_edge, Nod
 	_calcShortestDists(td, start_node, direction, radius);
 
 	/* abort if start_edge wasn't a shortest path from start_node to center_node */
-	if (td.dists[center_node] != start_edge.distance()) return 0;
+	if (td.dists[center_node] != start_edge.distance()) return std::vector<Shortcut>();
 
-	uint nr_new_edges(0);
+	std::vector<Shortcut> shortcuts;
 	for (auto const& target: targets) {
 		/* we know a path within radius - so _calcShortestDists must have found one */
 		assert(c::NO_DIST != td.dists[target.end_node]);
 
 		uint center_node_dist(start_edge.distance() + target.end_edge.distance());
 		if (td.dists[target.end_node] == center_node_dist) {
-			_createShortcut(start_edge, target.end_edge, direction);
-			nr_new_edges++;
+			shortcuts.push_back(_createShortcut(start_edge, target.end_edge, direction));
 		}
 	}
 
-	return nr_new_edges;
+	return shortcuts;
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_calcShortestDists(ThreadData& td, NodeID start_node, EdgeType direction, uint radius)
+void CHConstructor<NodeT, EdgeT>::_calcShortestDists(ThreadData& td, NodeID start_node,
+		EdgeType direction, uint radius) const
 {
 	/* calculates all shortest paths within radius distance from start_node */
 
@@ -260,45 +292,26 @@ void CHConstructor<NodeT, EdgeT>::_calcShortestDists(ThreadData& td, NodeID star
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcut const& edge2,
-		EdgeType direction)
+auto CHConstructor<NodeT, EdgeT>::_createShortcut(Shortcut const& edge1, Shortcut const& edge2,
+		EdgeType direction) const -> Shortcut
 {
 	/* make sure no "loop" edges are used */
 	assert(edge1.src != edge1.tgt && edge2.src != edge2.tgt);
 
-	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	if (direction == EdgeType::OUT) {
 		/* make sure no "loop" edges are created */
 		assert(edge1.src != edge2.tgt);
-		_new_shortcuts.push_back(make_shortcut(edge1, edge2));
+		return make_shortcut(edge1, edge2);
 	}
 	else {
 		/* make sure no "loop" edges are created */
 		assert(edge2.src != edge1.tgt);
-		_new_shortcuts.push_back(make_shortcut(edge2, edge1));
+		return make_shortcut(edge2, edge1);
 	}
 }
 
 template <typename NodeT, typename EdgeT>
-std::vector<NodeID> CHConstructor<NodeT, EdgeT>::_calcIndependentSet(std::vector<NodeID> const& nodes,
-		uint max_degree)
-{
-	std::vector<NodeID> independent_set;
-	std::vector<bool> marked(_base_graph.getNrOfNodes(), false);
-	independent_set.reserve(nodes.size());
-
-	for (NodeID node: nodes) {
-		if (!marked[node] && max_degree >= _base_graph.getNrOfEdges(node)) {
-			marked[node] = true;
-			_markNeighbours(node, marked);
-			independent_set.push_back(node);
-		}
-	}
-	return independent_set;
-}
-
-template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::_markNeighbours(NodeID node, std::vector<bool>& marked)
+void CHConstructor<NodeT, EdgeT>::_markNeighbours(NodeID node, std::vector<bool>& marked) const
 {
 	for (uint i(0); i<2; i++) {
 		for (auto const& edge: _base_graph.nodeEdges(node, (EdgeType) i)) {
@@ -399,7 +412,7 @@ void CHConstructor<NodeT, EdgeT>::quick_contract(std::vector<NodeID>& nodes, uin
 		std::sort(nodes.begin(), nodes.end(), CompInOutProduct(_base_graph));
 
 		Debug("Constructing the independent set.");
-		auto independent_set = _calcIndependentSet(nodes, max_degree);
+		auto independent_set = calcIndependentSet(nodes, max_degree);
 		Print("The independent set has size " << independent_set.size() << ".");
 
 		if (independent_set.empty()) break;
@@ -447,7 +460,7 @@ void CHConstructor<NodeT, EdgeT>::contract(std::vector<NodeID>& nodes)
 		std::sort(nodes.begin(), nodes.end(), CompInOutProduct(_base_graph));
 
 		Debug("Constructing the independent set.");
-		auto independent_set = _calcIndependentSet(nodes);
+		auto independent_set = calcIndependentSet(nodes);
 		Print("The independent set has size " << independent_set.size() << ".");
 
 		Debug("Contracting all the nodes in the independent set.");
@@ -529,6 +542,98 @@ void CHConstructor<NodeT, EdgeT>::rebuildCompleteGraph()
 	Print("Restoring edges from contracted nodes.");
 
 	_base_graph.rebuildCompleteGraph();
+}
+
+template <typename NodeT, typename EdgeT>
+std::vector<NodeID> CHConstructor<NodeT, EdgeT>::calcIndependentSet(std::vector<NodeID> const& nodes,
+		uint max_degree) const
+{
+	std::vector<NodeID> independent_set;
+	std::vector<bool> marked(_base_graph.getNrOfNodes(), false);
+	independent_set.reserve(nodes.size());
+
+	for (NodeID node: nodes) {
+		if (!marked[node] && max_degree >= _base_graph.getNrOfEdges(node)) {
+			marked[node] = true;
+			_markNeighbours(node, marked);
+			independent_set.push_back(node);
+		}
+	}
+	return independent_set;
+}
+
+template <typename NodeT, typename EdgeT>
+int CHConstructor<NodeT, EdgeT>::calcEdgeDiff(NodeID node) const
+{
+	auto shortcuts(testContract(node));
+	return shortcuts.size() - (int) _base_graph.getNrOfEdges(node);
+}
+
+template <typename NodeT, typename EdgeT>
+std::vector<int> CHConstructor<NodeT, EdgeT>::calcEdgeDiffs(std::vector<NodeID> const& nodes) const
+{ // FIXME use testConstract somehow nicely?
+	std::vector<int> edge_diffs(nodes.size());
+
+	/* init thread data */
+	std::vector<ThreadData> thread_data;
+	thread_data.resize(_num_threads);
+	auto nr_of_nodes(_base_graph.getNrOfNodes());
+	for (auto& td: thread_data) {
+		td.dists.assign(nr_of_nodes, c::NO_DIST);
+		td.reset_dists.reserve(nr_of_nodes);
+	}
+
+	/* calc edge difference */
+	uint size(nodes.size());
+	#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
+	for (uint i = 0; i < size; i++) {
+		uint node(nodes[i]);
+
+		auto td(thread_data[omp_get_thread_num()]);
+		auto shortcuts(_contract(node, td));
+
+		edge_diffs[i] = shortcuts.size() - (int) _base_graph.getNrOfEdges(node);
+	}
+
+	return edge_diffs;
+}
+
+template <typename NodeT, typename EdgeT>
+auto CHConstructor<NodeT, EdgeT>::testContract(NodeID node) const -> std::vector<Shortcut>
+{
+	ThreadData td;
+	return _contract(node, td);
+}
+
+template <typename NodeT, typename EdgeT>
+auto CHConstructor<NodeT, EdgeT>::testContract(std::vector<NodeID> const& nodes) const -> std::vector<Shortcut>
+{
+	std::vector<Shortcut> shortcuts;
+	std::mutex shortcuts_mutex;
+
+	/* init thread data */
+	std::vector<ThreadData> thread_data;
+	thread_data.resize(_num_threads);
+	auto nr_of_nodes(_base_graph.getNrOfNodes());
+	for (auto& td: thread_data) {
+		td.dists.assign(nr_of_nodes, c::NO_DIST);
+		td.reset_dists.reserve(nr_of_nodes);
+	}
+
+	/* calc shortcuts */
+	uint size(nodes.size());
+	#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
+	for (uint i = 0; i < size; i++) {
+		uint node(nodes[i]);
+
+		auto td(thread_data[omp_get_thread_num()]);
+		auto new_shortcuts(_contract(node, td));
+
+		std::unique_lock<std::mutex> lock(shortcuts_mutex);
+		shortcuts.insert(shortcuts.end(), new_shortcuts.begin(), new_shortcuts.end());
+	}
+
+	return shortcuts;
 }
 
 }

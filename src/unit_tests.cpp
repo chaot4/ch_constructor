@@ -115,7 +115,7 @@ void unit_tests::testCHConstructor()
 	std::vector<NodeID> remaining_nodes(all_nodes);
 	std::vector<bool> is_in_ind_set(g.getNrOfNodes(), false);
 
-	auto independent_set = chc._calcIndependentSet(remaining_nodes);
+	auto independent_set = chc.calcIndependentSet(remaining_nodes);
 	Print("Size of the independent set of all nodes: " << independent_set.size());
 
 	for (NodeID node: independent_set) {
