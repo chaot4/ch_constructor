@@ -252,7 +252,7 @@ void unit_tests::testPrioritizer()
 		all_nodes[i] = i;
 	}
 	std::random_shuffle(all_nodes.begin(), all_nodes.end()); /* random contraction order */
-	auto prioritizer(createPrioritizer(PrioritizerType::ONE_BY_ONE, chg));
+	auto prioritizer(createPrioritizer(PrioritizerType::ONE_BY_ONE, chg, chc));
 	chc.contract(all_nodes, *prioritizer);
 	chc.rebuildCompleteGraph();
 
