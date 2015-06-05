@@ -10,7 +10,7 @@ namespace chc
 
 namespace unit_tests
 {
-	void testPrioritizer();
+	void testPrioritizers();
 }
 
 /*
@@ -35,7 +35,7 @@ class OneByOnePrioritizer : public Prioritizer
 		std::vector<NodeID> extractNextNodes();
 		bool hasNodesLeft();
 
-		friend void unit_tests::testPrioritizer();
+		friend void unit_tests::testPrioritizers();
 };
 
 template <class GraphT>
@@ -113,7 +113,7 @@ class EdgeDiffPrioritizer : public Prioritizer
 		std::vector<NodeID> extractNextNodes();
 		bool hasNodesLeft();
 
-//		friend void unit_tests::testEdgeDiffPrioritizer(); FIXME implement test!
+		friend void unit_tests::testPrioritizers();
 };
 
 template <class GraphT, class CHConstructorT>
@@ -211,6 +211,7 @@ bool EdgeDiffPrioritizer<GraphT, CHConstructorT>::hasNodesLeft()
  */
 
 enum class PrioritizerType { NONE = 0, ONE_BY_ONE, EDGE_DIFF };
+static constexpr PrioritizerType LastPrioritizerType = PrioritizerType::EDGE_DIFF;
 
 PrioritizerType toPrioritizerType(std::string const& type)
 {
@@ -228,6 +229,21 @@ PrioritizerType toPrioritizerType(std::string const& type)
 	}
 
 	return PrioritizerType::NONE;
+}
+
+std::string to_string(PrioritizerType type)
+{
+	switch (type) {
+	case PrioritizerType::NONE:
+		return "NONE";
+	case PrioritizerType::ONE_BY_ONE:
+		return "ONE_BY_ONE";
+	case PrioritizerType::EDGE_DIFF:
+		return "EDGE_DIFF";
+	}
+
+	std::cerr << "Unknown prioritizer type: " << static_cast<int>(type) << "\n";
+	return "NONE";
 }
 
 template <class GraphT, class CHConstructorT>
