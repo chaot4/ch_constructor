@@ -89,8 +89,9 @@ class CHConstructor{
 		int calcEdgeDiff(NodeID node) const;
 		std::vector<int> calcEdgeDiffs(std::vector<NodeID> const& nodes) const;
 		std::vector<Shortcut> testContract(NodeID node) const; // FIXME rename
-		std::vector<Shortcut> testContract(std::vector<NodeID> const& nodes) const; // FIXME rename
+		std::vector<std::vector<Shortcut>> testContract(std::vector<NodeID> const& nodes) const; // FIXME rename
 		std::vector<Shortcut> quickContract(NodeID node) const; // FIXME rename
+		std::vector<std::vector<Shortcut>> quickContract(std::vector<NodeID> const& nodes) const; // FIXME rename
 
 		friend void unit_tests::testCHConstructor();
 };
@@ -191,23 +192,6 @@ void CHConstructor<NodeT, EdgeT>::_quickContract(NodeID node)
 
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	_new_shortcuts.insert(_new_shortcuts.end(), shortcuts.begin(), shortcuts.end());
-}
-
-template <typename NodeT, typename EdgeT>
-auto CHConstructor<NodeT, EdgeT>::quickContract(NodeID node) const -> std::vector<Shortcut>
-{
-	std::vector<Shortcut> shortcuts;
-	for (auto const& in_edge: _base_graph.nodeEdges(node, EdgeType::IN)) {
-		if (in_edge.tgt == in_edge.src) continue; /* skip loops */
-		for (auto const& out_edge: _base_graph.nodeEdges(node, EdgeType::OUT)) {
-			if (out_edge.tgt == out_edge.src) continue; /* skip loops */
-			if (in_edge.src != out_edge.tgt) { /* don't create loops */
-				shortcuts.push_back(_createShortcut(in_edge, out_edge));
-			}
-		}
-	}
-
-	return shortcuts;
 }
 
 template <typename NodeT, typename EdgeT>
@@ -571,28 +555,14 @@ int CHConstructor<NodeT, EdgeT>::calcEdgeDiff(NodeID node) const
 
 template <typename NodeT, typename EdgeT>
 std::vector<int> CHConstructor<NodeT, EdgeT>::calcEdgeDiffs(std::vector<NodeID> const& nodes) const
-{ // FIXME use testConstract somehow nicely?
+{
 	std::vector<int> edge_diffs(nodes.size());
+	auto shortcuts(testContract(nodes));
 
-	/* init thread data */
-	std::vector<ThreadData> thread_data;
-	thread_data.resize(_num_threads);
-	auto nr_of_nodes(_base_graph.getNrOfNodes());
-	for (auto& td: thread_data) {
-		td.dists.assign(nr_of_nodes, c::NO_DIST);
-		td.reset_dists.reserve(nr_of_nodes);
-	}
-
-	/* calc edge difference */
 	uint size(nodes.size());
 	#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
-	for (uint i = 0; i < size; i++) {
-		uint node(nodes[i]);
-
-		auto td(thread_data[omp_get_thread_num()]);
-		auto shortcuts(_contract(node, td));
-
-		edge_diffs[i] = shortcuts.size() - (int) _base_graph.getNrOfEdges(node);
+	for (uint i = 0; i<size; i++) {
+		edge_diffs[i] = shortcuts[i].size() - (int) _base_graph.getNrOfEdges(nodes[i]);
 	}
 
 	return edge_diffs;
@@ -606,10 +576,10 @@ auto CHConstructor<NodeT, EdgeT>::testContract(NodeID node) const -> std::vector
 }
 
 template <typename NodeT, typename EdgeT>
-auto CHConstructor<NodeT, EdgeT>::testContract(std::vector<NodeID> const& nodes) const -> std::vector<Shortcut>
+auto CHConstructor<NodeT, EdgeT>::testContract(std::vector<NodeID> const& nodes) const
+		-> std::vector<std::vector<Shortcut>>
 {
-	std::vector<Shortcut> shortcuts;
-	std::mutex shortcuts_mutex;
+	std::vector<std::vector<Shortcut>> shortcuts(nodes.size());
 
 	/* init thread data */
 	std::vector<ThreadData> thread_data;
@@ -627,10 +597,39 @@ auto CHConstructor<NodeT, EdgeT>::testContract(std::vector<NodeID> const& nodes)
 		uint node(nodes[i]);
 
 		auto td(thread_data[omp_get_thread_num()]);
-		auto new_shortcuts(_contract(node, td));
+		shortcuts[i] = _contract(node, td);
+	}
 
-		std::unique_lock<std::mutex> lock(shortcuts_mutex);
-		shortcuts.insert(shortcuts.end(), new_shortcuts.begin(), new_shortcuts.end());
+	return shortcuts;
+}
+
+template <typename NodeT, typename EdgeT>
+auto CHConstructor<NodeT, EdgeT>::quickContract(NodeID node) const -> std::vector<Shortcut>
+{
+	std::vector<Shortcut> shortcuts;
+	for (auto const& in_edge: _base_graph.nodeEdges(node, EdgeType::IN)) {
+		if (in_edge.tgt == in_edge.src) continue; /* skip loops */
+		for (auto const& out_edge: _base_graph.nodeEdges(node, EdgeType::OUT)) {
+			if (out_edge.tgt == out_edge.src) continue; /* skip loops */
+			if (in_edge.src != out_edge.tgt) { /* don't create loops */
+				shortcuts.push_back(_createShortcut(in_edge, out_edge));
+			}
+		}
+	}
+
+	return shortcuts;
+}
+
+template <typename NodeT, typename EdgeT>
+auto CHConstructor<NodeT, EdgeT>::quickContract(std::vector<NodeID> const& nodes) const -> std::vector<std::vector<Shortcut>>
+{
+	std::vector<std::vector<Shortcut>> shortcuts(nodes.size());
+
+	/* calc shortcuts */
+	uint size(nodes.size());
+	#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
+	for (uint i = 0; i < size; i++) {
+		shortcuts[i] = quickContract(nodes[i]);
 	}
 
 	return shortcuts;
