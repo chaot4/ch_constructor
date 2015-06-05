@@ -50,7 +50,7 @@ struct BuildAndStoreCHGraph {
 		}
 
 		if (prioritizer_type == PrioritizerType::NONE) {
-			chc.quick_contract(all_nodes, 4, 5);
+			chc.quickContract(all_nodes, 4, 5);
 			chc.contract(all_nodes);
 		}
 		else {

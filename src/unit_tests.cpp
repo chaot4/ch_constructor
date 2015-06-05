@@ -164,7 +164,7 @@ void unit_tests::testCHDijkstra()
 	for (NodeID i(0); i<all_nodes.size(); i++) {
 		all_nodes[i] = i;
 	}
-	chc.quick_contract(all_nodes, 4, 5);
+	chc.quickContract(all_nodes, 4, 5);
 	chc.contract(all_nodes);
 	chc.rebuildCompleteGraph();
 

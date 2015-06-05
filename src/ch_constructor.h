@@ -62,7 +62,7 @@ class CHConstructor{
 		std::vector<Shortcut> _contract(NodeID node, ThreadData& td) const;
 		void _quickContract(NodeID node);
 		std::vector<Shortcut> _calcShortcuts(Shortcut const& start_edge, NodeID center_node,
-				EdgeType direction, ThreadData& td) const; // FIXME rename
+				EdgeType direction, ThreadData& td) const;
 		void _calcShortestDists(ThreadData& td, NodeID start_node, EdgeType direction,
 				uint radius) const;
 		Shortcut _createShortcut(Shortcut const& edge1, Shortcut const& edge2,
@@ -77,7 +77,7 @@ class CHConstructor{
 		CHConstructor(CHGraphT& base_graph, uint num_threads = 1);
 
 		/* functions for contraction */
-		void quick_contract(std::vector<NodeID>& nodes, uint max_degree,
+		void quickContract(std::vector<NodeID>& nodes, uint max_degree,
 				uint max_rounds);
 		void contract(std::vector<NodeID>& nodes);
 		void contract(std::vector<NodeID>& nodes, Prioritizer& prioritizer);
@@ -88,10 +88,10 @@ class CHConstructor{
 				uint max_degree = MAX_UINT) const;
 		int calcEdgeDiff(NodeID node) const;
 		std::vector<int> calcEdgeDiffs(std::vector<NodeID> const& nodes) const;
-		std::vector<Shortcut> testContract(NodeID node) const; // FIXME rename
-		std::vector<std::vector<Shortcut>> testContract(std::vector<NodeID> const& nodes) const; // FIXME rename
-		std::vector<Shortcut> quickContract(NodeID node) const; // FIXME rename
-		std::vector<std::vector<Shortcut>> quickContract(std::vector<NodeID> const& nodes) const; // FIXME rename
+		std::vector<Shortcut> getShortcutsOfContracting(NodeID node) const;
+		std::vector<std::vector<Shortcut>> getShortcutsOfContracting(std::vector<NodeID> const& nodes) const;
+		std::vector<Shortcut> getShortcutsOfQuickContracting(NodeID node) const;
+		std::vector<std::vector<Shortcut>> getShortcutsOfQuickContracting(std::vector<NodeID> const& nodes) const;
 
 		friend void unit_tests::testCHConstructor();
 };
@@ -188,7 +188,7 @@ auto CHConstructor<NodeT, EdgeT>::_contract(NodeID node, ThreadData& td) const -
 template <typename NodeT, typename EdgeT>
 void CHConstructor<NodeT, EdgeT>::_quickContract(NodeID node)
 {
-	auto shortcuts(quickContract(node));
+	auto shortcuts(getShortcutsOfQuickContracting(node));
 
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	_new_shortcuts.insert(_new_shortcuts.end(), shortcuts.begin(), shortcuts.end());
@@ -380,7 +380,7 @@ CHConstructor<NodeT, EdgeT>::CHConstructor(CHGraphT& base_graph, uint num_thread
 }
 
 template <typename NodeT, typename EdgeT>
-void CHConstructor<NodeT, EdgeT>::quick_contract(std::vector<NodeID>& nodes, uint max_degree, uint max_rounds)
+void CHConstructor<NodeT, EdgeT>::quickContract(std::vector<NodeID>& nodes, uint max_degree, uint max_rounds)
 {
 	using namespace std::chrono;
 
@@ -549,7 +549,7 @@ std::vector<NodeID> CHConstructor<NodeT, EdgeT>::calcIndependentSet(std::vector<
 template <typename NodeT, typename EdgeT>
 int CHConstructor<NodeT, EdgeT>::calcEdgeDiff(NodeID node) const
 {
-	auto shortcuts(testContract(node));
+	auto shortcuts(getShortcutsOfContracting(node));
 	return shortcuts.size() - (int) _base_graph.getNrOfEdges(node);
 }
 
@@ -557,7 +557,7 @@ template <typename NodeT, typename EdgeT>
 std::vector<int> CHConstructor<NodeT, EdgeT>::calcEdgeDiffs(std::vector<NodeID> const& nodes) const
 {
 	std::vector<int> edge_diffs(nodes.size());
-	auto shortcuts(testContract(nodes));
+	auto shortcuts(getShortcutsOfContracting(nodes));
 
 	uint size(nodes.size());
 	#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
@@ -569,14 +569,14 @@ std::vector<int> CHConstructor<NodeT, EdgeT>::calcEdgeDiffs(std::vector<NodeID> 
 }
 
 template <typename NodeT, typename EdgeT>
-auto CHConstructor<NodeT, EdgeT>::testContract(NodeID node) const -> std::vector<Shortcut>
+auto CHConstructor<NodeT, EdgeT>::getShortcutsOfContracting(NodeID node) const -> std::vector<Shortcut>
 {
 	ThreadData td;
 	return _contract(node, td);
 }
 
 template <typename NodeT, typename EdgeT>
-auto CHConstructor<NodeT, EdgeT>::testContract(std::vector<NodeID> const& nodes) const
+auto CHConstructor<NodeT, EdgeT>::getShortcutsOfContracting(std::vector<NodeID> const& nodes) const
 		-> std::vector<std::vector<Shortcut>>
 {
 	std::vector<std::vector<Shortcut>> shortcuts(nodes.size());
@@ -604,7 +604,7 @@ auto CHConstructor<NodeT, EdgeT>::testContract(std::vector<NodeID> const& nodes)
 }
 
 template <typename NodeT, typename EdgeT>
-auto CHConstructor<NodeT, EdgeT>::quickContract(NodeID node) const -> std::vector<Shortcut>
+auto CHConstructor<NodeT, EdgeT>::getShortcutsOfQuickContracting(NodeID node) const -> std::vector<Shortcut>
 {
 	std::vector<Shortcut> shortcuts;
 	for (auto const& in_edge: _base_graph.nodeEdges(node, EdgeType::IN)) {
@@ -621,7 +621,7 @@ auto CHConstructor<NodeT, EdgeT>::quickContract(NodeID node) const -> std::vecto
 }
 
 template <typename NodeT, typename EdgeT>
-auto CHConstructor<NodeT, EdgeT>::quickContract(std::vector<NodeID> const& nodes) const -> std::vector<std::vector<Shortcut>>
+auto CHConstructor<NodeT, EdgeT>::getShortcutsOfQuickContracting(std::vector<NodeID> const& nodes) const -> std::vector<std::vector<Shortcut>>
 {
 	std::vector<std::vector<Shortcut>> shortcuts(nodes.size());
 
@@ -629,7 +629,7 @@ auto CHConstructor<NodeT, EdgeT>::quickContract(std::vector<NodeID> const& nodes
 	uint size(nodes.size());
 	#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
 	for (uint i = 0; i < size; i++) {
-		shortcuts[i] = quickContract(nodes[i]);
+		shortcuts[i] = getShortcutsOfQuickContracting(nodes[i]);
 	}
 
 	return shortcuts;
