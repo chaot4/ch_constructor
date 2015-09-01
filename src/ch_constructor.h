@@ -157,7 +157,7 @@ void CHConstructor<NodeT, EdgeT>::_contract(NodeID node)
 	ThreadData& td(_myThreadData());
 	auto shortcuts(_contract(node, td));
 
-	_edge_diffs[node] = shortcuts.size() - (int) _base_graph.getNrOfEdges(node);
+	_edge_diffs[node] = int(shortcuts.size()) - int(_base_graph.getNrOfEdges(node));
 
 	std::unique_lock<std::mutex> lock(_new_shortcuts_mutex);
 	_new_shortcuts.insert(_new_shortcuts.end(), shortcuts.begin(), shortcuts.end());
