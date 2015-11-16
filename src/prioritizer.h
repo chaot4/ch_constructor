@@ -14,6 +14,8 @@ namespace chc
 class Prioritizer
 {
 	public:
+		virtual ~Prioritizer() { };
+
 		/*
 		 * Initialize the list of all the nodes to be prioritized with <node_ids>.
 		 */
