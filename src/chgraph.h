@@ -55,6 +55,8 @@ void CHGraph<NodeT, EdgeT>::restructure(
 		std::vector<bool> const& to_remove,
 		std::vector<Shortcut>& new_shortcuts)
 {
+	BaseGraph::_is_dirty = true;
+
 	OutEdgeSort outEdgeSort;
 
 	/*
@@ -125,6 +127,8 @@ template <typename NodeT, typename EdgeT>
 void CHGraph<NodeT, EdgeT>::_addNewEdge(Shortcut& new_edge,
 		std::vector<Shortcut>& new_edge_vec)
 {
+	BaseGraph::_is_dirty = true;
+
 	if (!new_edge_vec.empty() && (c::NO_EID == new_edge.id)) {
 		Shortcut& last_edge(new_edge_vec.back());
 
@@ -184,6 +188,8 @@ bool CHGraph<NodeT, EdgeT>::isUp(Shortcut const& edge, EdgeType direction) const
 template <typename NodeT, typename EdgeT>
 auto CHGraph<NodeT, EdgeT>::exportData() -> GraphCHOutData<NodeT, Shortcut>
 {
+	BaseGraph::_is_dirty = true;
+
 	std::vector<Shortcut>* edges_source;
 	std::vector<Shortcut> edges;
 

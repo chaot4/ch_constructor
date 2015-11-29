@@ -19,6 +19,8 @@ template <typename NodeT, typename EdgeT>
 class Graph
 {
 	protected:
+		bool _is_dirty;
+
 		Metadata _meta_data;
 
 		std::vector<NodeT> _nodes;
@@ -47,6 +49,8 @@ class Graph
 		typedef EdgeSortSrcTgt<EdgeT> OutEdgeSort;
 		typedef EdgeSortTgtSrc<EdgeT> InEdgeSort;
 
+		Graph () : _is_dirty(false) {}
+
 		/* Init the graph from file 'filename' and sort
 		 * the edges according to OutEdgeSort and InEdgeSort. */
 		void init(GraphInData<NodeT,EdgeT>&& data);
@@ -57,9 +61,9 @@ class Graph
 
 		uint getNrOfNodes() const { return _nodes.size(); }
 		uint getNrOfEdges() const { return _out_edges.size(); }
-		EdgeT const& getEdge(EdgeID edge_id) const { return _out_edges[_id_to_index[edge_id]]; }
-		NodeT const& getNode(NodeID node_id) const { return _nodes[node_id]; }
 		Metadata const& getMetadata() const { return _meta_data; }
+		EdgeT const& getEdge(EdgeID edge_id) const;
+		NodeT const& getNode(NodeID node_id) const;
 
 		uint getNrOfEdges(NodeID node_id) const;
 		uint getNrOfEdges(NodeID node_id, EdgeType type) const;
@@ -221,6 +225,24 @@ void Graph<NodeT, EdgeT>::update()
 	sortInEdges();
 	initOffsets();
 	initIdToIndex();
+
+	_is_dirty = false;
+}
+
+template <typename NodeT, typename EdgeT>
+EdgeT const& Graph<NodeT, EdgeT>::getEdge(EdgeID edge_id) const
+{
+	assert (!_is_dirty);
+
+	return _out_edges[_id_to_index[edge_id]];
+}
+
+template <typename NodeT, typename EdgeT>
+NodeT const& Graph<NodeT, EdgeT>::getNode(NodeID node_id) const
+{
+	assert (!_is_dirty);
+
+	return _nodes[node_id];
 }
 
 template <typename NodeT, typename EdgeT>
