@@ -557,7 +557,7 @@ template <typename NodeT, typename EdgeT>
 std::vector<int> CHConstructor<NodeT, EdgeT>::calcEdgeDiffs(std::vector<NodeID> const& nodes) const
 {
 	std::vector<int> edge_diffs(nodes.size());
-	const auto& shortcuts(getShortcutsOfContracting(nodes));
+	auto shortcuts(getShortcutsOfContracting(nodes));
 
 	uint size(nodes.size());
 	#pragma omp parallel for num_threads(_num_threads) schedule(dynamic)
