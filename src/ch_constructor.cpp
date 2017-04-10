@@ -17,7 +17,7 @@ void printHelp()
 		<< "Mandatory arguments are:\n"
 		<< "  -i, --infile <path>        Read graph from <path>\n"
 		<< "Optional arguments are:\n"
-		<< "  -f, --informat <format>    Expects infile in <format> (" << getAllFileFormatsString() << " - default FMI)\n"
+		<< "  -f, --informat <format>    Expects infile in <format> (" << getAllFileFormatsString() << " - default FMI_DIST)\n"
 		<< "  -o, --outfile <path>       Write graph to <path> (default: ch_out.graph)\n"
 		<< "  -g, --outformat <format>   Writes outfile in <format> (" << getAllFileFormatsString() << " - default FMI_CH)\n"
 		<< "  -t, --threads <number>     Number of threads to use in the calculations (default: 1)\n"
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 	 */
 
 	std::string infile("");
-	FileFormat informat(FileFormat::FMI);
+	FileFormat informat(FileFormat::FMI_DIST);
 	std::string outfile("ch_out.graph");
 	FileFormat outformat(FileFormat::FMI_CH);
 	uint nr_of_threads(1);
